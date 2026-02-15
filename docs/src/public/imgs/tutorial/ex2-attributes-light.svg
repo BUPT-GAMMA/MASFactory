@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="420" viewBox="0 0 980 420">
+  <defs>
+    <style>
+      :root {
+        --c-title: #0b1220;
+        --c-box-fill: #ffffff;
+        --c-box-stroke: #5b8def;
+        --c-attr-fill: #eef2ff;
+        --c-attr-stroke: #7c83ff;
+        --c-txt: #0f172a;
+        --c-hint: #5a6b85;
+        --c-arrow: #7b8da8;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .attr { fill: var(--c-attr-fill); stroke: var(--c-attr-stroke); stroke-width: 2; rx: 10; ry: 10; }
+      .txt { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); text-anchor: middle; }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; stroke-linecap: round; marker-end: url(#m); fill: none; }
+      .dash { stroke-dasharray: 6 5; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">示例 2：节点变量（counter）通过 pull/push 在图内更新</text>
+
+  <rect x="320" y="90" width="340" height="72" class="attr"/>
+  <text x="490" y="126" class="txt">Graph attributes: counter = 0 → 2</text>
+
+  <rect x="40" y="240" width="180" height="72" class="box"/>
+  <text x="130" y="276" class="txt">ENTRY</text>
+
+  <rect x="290" y="240" width="180" height="72" class="box"/>
+  <text x="380" y="276" class="txt">bump_1</text>
+  <text x="380" y="342" class="hint">counter += 1</text>
+
+  <rect x="540" y="240" width="180" height="72" class="box"/>
+  <text x="630" y="276" class="txt">bump_2</text>
+  <text x="630" y="342" class="hint">counter += 1</text>
+
+  <rect x="790" y="240" width="180" height="72" class="box"/>
+  <text x="880" y="276" class="txt">EXIT</text>
+
+  <path d="M220 276 L290 276" class="arrow"/>
+  <path d="M470 276 L540 276" class="arrow"/>
+  <path d="M720 276 L790 276" class="arrow"/>
+
+  <path d="M430 162 C410 190,395 215,380 240" class="arrow dash"/>
+  <path d="M550 162 C575 190,605 215,630 240" class="arrow dash"/>
+  <text x="310" y="210" class="hint">pull counter</text>
+  <text x="690" y="210" class="hint">pull counter</text>
+
+  <path d="M380 312 C400 382,430 386,440 90" class="arrow dash"/>
+  <path d="M630 312 C610 382,580 386,540 90" class="arrow dash"/>
+  <text x="420" y="408" class="hint">push counter</text>
+  <text x="560" y="408" class="hint">push counter</text>
+</svg>

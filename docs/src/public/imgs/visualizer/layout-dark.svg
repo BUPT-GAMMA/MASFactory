@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680">
+  <defs>
+    <style>
+      :root {
+        --bg: #0b1224;
+        --panel: #0f172a;
+        --stroke: #334155;
+        --title: #e5e7eb;
+        --text: #cbd5e1;
+        --accent: #8ea2ff;
+        --muted: #9aa8c2;
+      }
+      .bg { fill: var(--bg); }
+      .panel { fill: var(--panel); stroke: var(--stroke); stroke-width: 2; rx: 18; ry: 18; }
+      .dash { fill: none; stroke: var(--stroke); stroke-width: 2.5; stroke-dasharray: 10 10; rx: 16; ry: 16; }
+      .h1 { font: 800 34px 'Segoe UI', Arial, sans-serif; fill: var(--title); }
+      .p { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: var(--text); }
+      .label { font: 700 16px 'Segoe UI', Arial, sans-serif; fill: var(--muted); }
+      .box { fill: rgba(142, 162, 255, 0.12); stroke: var(--accent); stroke-width: 2; rx: 14; ry: 14; }
+      .tag { font: 800 14px 'Segoe UI', Arial, sans-serif; fill: var(--accent); }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="680" class="bg"/>
+  <text x="120" y="64" class="h1">占位图：Visualizer 页面布局</text>
+
+  <rect x="80" y="84" width="1040" height="512" class="panel"/>
+
+  <!-- Tabs -->
+  <rect x="120" y="120" width="960" height="56" class="dash"/>
+  <text x="140" y="154" class="label">顶部选项卡：Preview / Debug / Run / Vibe</text>
+
+  <!-- Main canvas -->
+  <rect x="120" y="196" width="680" height="320" class="dash"/>
+  <text x="140" y="232" class="label">主画布（Canvas）：节点与边拓扑渲染</text>
+
+  <!-- Details -->
+  <rect x="820" y="196" width="260" height="320" class="dash"/>
+  <text x="840" y="232" class="label">右侧详情（Details）</text>
+
+  <!-- Bottom panels -->
+  <rect x="120" y="536" width="960" height="56" class="dash"/>
+  <text x="140" y="570" class="label">下方面板（Logs / Messages / System / Human / Graph Structure）</text>
+
+  <rect x="120" y="612" width="320" height="40" class="box"/>
+  <text x="140" y="638" class="tag">说明</text>
+  <text x="190" y="638" class="p">此图为占位示意，后续请替换为真实截图。</text>
+</svg>
+

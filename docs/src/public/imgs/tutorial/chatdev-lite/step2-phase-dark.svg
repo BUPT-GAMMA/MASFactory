@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560">
+  <defs>
+    <style>
+      :root {
+        --c-title: #e5e7eb;
+        --c-box-fill: #131b2e;
+        --c-box-stroke: #8ea2ff;
+        --c-group-fill: #0f172a;
+        --c-group-stroke: #334155;
+        --c-txt: #e2e8f0;
+        --c-hint: #9aa8c2;
+        --c-arrow: #8fa2bf;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .group { fill: var(--c-group-fill); stroke: var(--c-group-stroke); stroke-width: 2; rx: 14; ry: 14; }
+      .txt { font: 700 16.5px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .dash { stroke-dasharray: 6 6; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="36" class="title">ChatDev Lite · Step 2：Phase 作为 Graph（attributes + 控制流边）</text>
+
+  <!-- Pipeline (control flow) -->
+  <rect x="120" y="90" width="420" height="56" class="box"/>
+  <text x="330" y="118" class="txt">ENTRY</text>
+
+  <rect x="120" y="170" width="420" height="68" class="box"/>
+  <text x="330" y="197" class="txt">demand_analysis_phase</text>
+  <text x="330" y="222" class="hint" text-anchor="middle">Graph (Phase)</text>
+
+  <rect x="120" y="260" width="420" height="68" class="box"/>
+  <text x="330" y="287" class="txt">language_choose_phase</text>
+  <text x="330" y="312" class="hint" text-anchor="middle">Graph (Phase)</text>
+
+  <rect x="120" y="350" width="420" height="68" class="box"/>
+  <text x="330" y="377" class="txt">coding_phase</text>
+  <text x="330" y="402" class="hint" text-anchor="middle">Graph (Phase)</text>
+
+  <rect x="120" y="440" width="420" height="56" class="box"/>
+  <text x="330" y="468" class="txt">EXIT</text>
+
+  <path d="M330 146 L330 170" class="arrow"/>
+  <path d="M330 238 L330 260" class="arrow"/>
+  <path d="M330 328 L330 350" class="arrow"/>
+  <path d="M330 418 L330 440" class="arrow"/>
+
+  <!-- Attributes store -->
+  <rect x="590" y="150" width="330" height="290" class="group"/>
+  <text x="605" y="178" class="hint">graph attributes (vertical state)</text>
+  <text x="605" y="212" class="hint">task</text>
+  <text x="605" y="238" class="hint">description</text>
+  <text x="605" y="264" class="hint">modality</text>
+  <text x="605" y="290" class="hint">language</text>
+  <text x="605" y="316" class="hint">unimplemented_file</text>
+  <text x="605" y="360" class="hint">…</text>
+
+  <text x="605" y="408" class="hint">Phase: pull / push via keys</text>
+
+  <!-- Pull/Push arrows (illustrative) -->
+  <path d="M540 204 C565 204,565 204,590 204" class="arrow dash"/>
+  <path d="M590 224 C565 224,565 224,540 224" class="arrow dash"/>
+  <text x="548" y="194" class="hint">push</text>
+  <text x="548" y="240" class="hint">pull</text>
+
+  <text x="40" y="536" class="hint">说明：这一步开始，边更偏“控制流”，数据主要沉淀在 attributes 中。</text>
+</svg>

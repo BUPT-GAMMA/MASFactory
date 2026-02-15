@@ -1,0 +1,46 @@
+{
+  "graph_design": {
+    "nodes": [
+      {
+        "name": "loop_1",
+        "type": "Loop",
+        "label": "TestErrorSummary (ChatDev Lite): summarize test failures",
+        "max_iterations": 1,
+        "push_keys": {
+          "error_summary": ""
+        },
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "instructor_agent",
+              "type": "Action",
+              "label": "Software Test Engineer: analyze reports",
+              "agent": "Software Test Engineer",
+              "input_fields": ["task", "language", "codes", "test_reports", "exist_bugs_flag", "chatdev_prompt"],
+              "output_fields": ["test_analysis"],
+              "instructions": "You are a Software Test Engineer. Read the test_reports and draft a concise error summary and key failing symptoms. Output ONLY your analysis text in field test_analysis."
+            },
+            {
+              "name": "assistant_agent",
+              "type": "Action",
+              "label": "Programmer: output error summary only",
+              "agent": "Programmer",
+              "input_fields": ["test_analysis"],
+              "output_fields": ["error_summary"],
+              "instructions": "You are the Programmer. Based on test_analysis, output ONLY the plain-text error summary and NOTHING else. If there are no errors, output exactly: No errors found."
+            }
+          ],
+          "edges": [
+            { "source": "CONTROLLER", "target": "instructor_agent" },
+            { "source": "instructor_agent", "target": "assistant_agent" },
+            { "source": "assistant_agent", "target": "CONTROLLER" }
+          ]
+        }
+      }
+    ],
+    "edges": [
+      { "source": "ENTRY", "target": "loop_1" },
+      { "source": "loop_1", "target": "EXIT" }
+    ]
+  }
+}

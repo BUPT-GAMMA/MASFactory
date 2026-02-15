@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520">
+  <defs>
+    <style>
+      :root {
+        --c-title: #0f172a;
+        --c-group-fill: #f8fafc;
+        --c-group-stroke: #cbd5e1;
+        --c-box-fill: #ffffff;
+        --c-box-stroke: #5b7cfa;
+        --c-controller-fill: #eef2ff;
+        --c-controller-stroke: #7c83ff;
+        --c-txt: #0f172a;
+        --c-hint: #475569;
+        --c-arrow: #64748b;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .group { fill: var(--c-group-fill); stroke: var(--c-group-stroke); stroke-width: 2; rx: 14; ry: 14; }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .controller { fill: var(--c-controller-fill); stroke: var(--c-controller-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .txt { font: 700 16.5px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="36" class="title">ChatDev Lite · Step 4：test_loop（Loop）</text>
+
+  <rect x="60" y="220" width="200" height="56" class="box"/>
+  <text x="160" y="248" class="txt">code_review_phase</text>
+
+  <rect x="300" y="110" width="520" height="300" class="group"/>
+  <text x="320" y="138" class="hint">test_loop (Loop)</text>
+
+  <rect x="350" y="240" width="180" height="60" class="controller"/>
+  <text x="440" y="270" class="txt">CONTROLLER</text>
+
+  <rect x="580" y="180" width="200" height="56" class="box"/>
+  <text x="680" y="208" class="txt">error_summary</text>
+  <text x="680" y="232" class="hint" text-anchor="middle">phase</text>
+
+  <rect x="580" y="300" width="200" height="56" class="box"/>
+  <text x="680" y="328" class="txt">modification</text>
+  <text x="680" y="352" class="hint" text-anchor="middle">phase</text>
+
+  <path d="M260 248 L300 248" class="arrow"/>
+
+  <path d="M530 270 L580 208" class="arrow"/>
+  <path d="M680 236 L680 300" class="arrow"/>
+  <path d="M580 328 C520 328,520 312,440 300" class="arrow"/>
+
+  <text x="612" y="160" class="hint">CONTROLLER → error_summary</text>
+  <text x="612" y="386" class="hint">terminate when exist_bugs_flag == False</text>
+
+  <rect x="860" y="220" width="120" height="56" class="box"/>
+  <text x="920" y="248" class="txt">EXIT</text>
+  <path d="M820 248 L860 248" class="arrow"/>
+
+  <text x="40" y="492" class="hint">说明：Loop 的回环通过 CONTROLLER 建立；终止条件通常读取 attributes。</text>
+</svg>

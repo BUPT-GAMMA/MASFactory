@@ -1,0 +1,175 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+.venv
+.uv-cache/
+env/
+venv/
+ENV/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.spyderproject
+.spyproject
+.ropeproject
+.project
+.pydevproject
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# LLM specific
+# API keys and secrets
+.env
+.env.local
+api_keys.yaml
+secrets.json
+
+# Model weights and checkpoints
+*.pt
+*.pth
+*.h5
+*.ckpt
+*.pb
+weights/
+checkpoints/
+
+# Generated outputs
+outputs/
+results/
+logs/
+*.log
+
+# Example specific
+examples/**/output/
+examples/**/*.log
+
+# Documentation
+docs/_build/
+site/
+
+# Node/npm (for docs/ or VitePress etc.)
+docs/node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/.vitepress/temp/
+docs/.env
+docs/.env.*
+docs/.DS_Store
+
+# npm/vsce caches (local only)
+**/.npm-cache/
+**/.npm-cache-vsce/
+
+# Configuration overrides
+config.local.yaml
+config.local.json
+config.local.toml
+
+# Temporary files
+tmp/
+temp/
+bug_pic/
+test/**
+test/
+!test/
+!test/masfactory-visualizer/
+!test/masfactory-visualizer/**
+!test/test_*.py
+!test/**/test_*.py
+test/masfactory-visualizer/**/__pycache__/
+test/masfactory-visualizer/**/*.py[cod]
+masfactory-visualizer/test/**
+masfactory-visualizer/test/
+**/tests/
+**/output/
+
+simplified_chatdev_*/
+
+WareHouse/
+data/
+**/output/
+**/output_old/
+**/node_modules
+**/.vscode
+Agent.md
+data/
+masfactory-visualizer/out/
+**/*.vsix
+
+# masfactory-visualizer webview-ui build output
+masfactory-visualizer/media/webview-ui/
+
+backup/
+vibe_optimizing.md
+
+suite_runs/
+vibe_test/**/results/
+vibe_test/**/legacy_backup/
+test_format/
+**/experiments/
+test/
+vibe_test/
+/examples/
+**/out/
+
+plugins/

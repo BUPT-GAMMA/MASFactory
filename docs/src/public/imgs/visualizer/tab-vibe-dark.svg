@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680">
+  <defs>
+    <style>
+      :root { --bg:#0b1224; --panel:#0f172a; --stroke:#334155; --title:#e5e7eb; --text:#cbd5e1; --accent:#8ea2ff; }
+      .bg{fill:var(--bg)} .panel{fill:var(--panel);stroke:var(--stroke);stroke-width:2;rx:18;ry:18}
+      .dash{fill:none;stroke:var(--stroke);stroke-width:2.5;stroke-dasharray:10 10;rx:16;ry:16}
+      .h1{font:800 34px 'Segoe UI',Arial,sans-serif;fill:var(--title)}
+      .p{font:600 18px 'Segoe UI',Arial,sans-serif;fill:var(--text)}
+      .badge{fill:rgba(142,162,255,.14);stroke:var(--accent);stroke-width:2;rx:12;ry:12}
+      .badgeText{font:800 16px 'Segoe UI',Arial,sans-serif;fill:var(--accent)}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="680" class="bg"/>
+  <text x="120" y="64" class="h1">占位图：Vibe（graph_design 预览与编辑）</text>
+  <rect x="80" y="84" width="1040" height="512" class="panel"/>
+  <rect x="120" y="140" width="960" height="400" class="dash"/>
+  <rect x="120" y="160" width="150" height="40" class="badge"/>
+  <text x="140" y="186" class="badgeText">Vibe</text>
+  <text x="120" y="620" class="p">后续请替换为真实截图：展示 graph_design.json 的预览、编辑与保存入口。</text>
+</svg>
+

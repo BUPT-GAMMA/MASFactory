@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="640" viewBox="0 0 980 640">
+  <defs>
+    <style>
+      :root {
+        --c-title: #0f172a;
+        --c-box-fill: #ffffff;
+        --c-box-stroke: #5b7cfa;
+        --c-txt: #0f172a;
+        --c-hint: #475569;
+        --c-arrow: #64748b;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .txt { font: 700 16.5px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="36" class="title">ChatDev Lite · Step 1：主链路骨架（水平消息）</text>
+
+  <!-- Boxes -->
+  <rect x="280" y="90" width="420" height="56" class="box"/>
+  <text x="490" y="118" class="txt">ENTRY</text>
+
+  <rect x="280" y="164" width="420" height="56" class="box"/>
+  <text x="490" y="192" class="txt">pre_processing</text>
+
+  <rect x="280" y="238" width="420" height="56" class="box"/>
+  <text x="490" y="266" class="txt">demand_analysis_phase</text>
+
+  <rect x="280" y="312" width="420" height="56" class="box"/>
+  <text x="490" y="340" class="txt">language_choose_phase</text>
+
+  <rect x="280" y="386" width="420" height="56" class="box"/>
+  <text x="490" y="414" class="txt">coding_phase</text>
+
+  <rect x="280" y="460" width="420" height="56" class="box"/>
+  <text x="490" y="488" class="txt">post_processing</text>
+
+  <rect x="280" y="534" width="420" height="56" class="box"/>
+  <text x="490" y="562" class="txt">EXIT</text>
+
+  <!-- Arrows -->
+  <path d="M490 146 L490 164" class="arrow"/>
+  <path d="M490 220 L490 238" class="arrow"/>
+  <path d="M490 294 L490 312" class="arrow"/>
+  <path d="M490 368 L490 386" class="arrow"/>
+  <path d="M490 442 L490 460" class="arrow"/>
+  <path d="M490 516 L490 534" class="arrow"/>
+
+  <!-- Edge labels -->
+  <text x="40" y="620" class="hint">说明：Step 1 用 edge keys 传递字段，先把流程拓扑跑通。</text>
+</svg>

@@ -1,0 +1,242 @@
+{
+  "DemandAnalysis": {
+    "assistant_role_name": "Chief Product Officer",
+    "user_role_name": "Chief Executive Officer",
+    "phase_prompt": [
+      "ChatDev has made products in the following form before:",
+      "Image: can present information in line chart, bar chart, flow chart, cloud chart, Gantt chart, etc.",
+      "Document: can present information via .docx files.",
+      "PowerPoint: can present information via .pptx files.",
+      "Excel: can present information via .xlsx files.",
+      "PDF: can present information via .pdf files.",
+      "Website: can present personal resume, tutorial, products, or ideas, via .html files.",
+      "Application: can implement visualized game, software, tool, etc, via python.",
+      "Dashboard: can display a panel visualizing real-time information.",
+      "Mind Map: can represent ideas, with related concepts arranged around a core concept.",
+      "As the {role_name}, to satisfy the new user's demand and the product should be realizable, you should keep discussing with me to decide which product modality do we want the product to be?",
+      "Note that we must ONLY discuss the product modality and do not discuss anything else! Once we all have expressed our opinion(s) and agree with the results of the discussion unanimously, any of us must actively terminate the discussion with a concrete modality field and set discussion_finished to True. Before that, you can keep discussing and set the modality with empty str in your output, give your disscussion opinion in corresponding field, and set discussion_finished to False. At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields."
+    ]
+  },
+  "LanguageChoose": {
+    "assistant_role_name": "Chief Technology Officer",
+    "user_role_name": "Chief Executive Officer",
+    "phase_prompt": [
+      "According to the new user's task and some creative brainstorm ideas listed below: ",
+      "Task: \"{task}\".",
+      "Modality: \"{modality}\".",
+      "We have decided to complete the task through a executable software implemented via a programming language. ",
+      "As the Chief Technology Officer, to satisfy the new user's demand and make the software realizable, you should propose a concrete programming language. If python can complete this task via Python, please answer Python; otherwise, answer another programming language (e.g., Java, C++, etc,).",
+      "Note that we must ONLY discuss the target programming language and do not discuss anything else! Once we all have expressed our opinion(s) and agree with the results of the discussion unanimously, any of us must actively terminate the discussion and conclude the best programming language we have discussed without any other words or reasons and set discussion_finished to True, Before that you can keep discussing and set the language with empty str in your output, give your disscussion opinion in corresponding field,and set discussion_finished to False. At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields."
+    ]
+  },
+  "Coding": {
+    "assistant_role_name": "Programmer",
+    "user_role_name": "Chief Technology Officer",
+    "phase_prompt": [
+      "According to the new user's task and our software designs listed below: ",
+      "Task: \"{task}\".",
+      "Modality: \"{modality}\".",
+      "Programming Language: \"{language}\"",
+      "We have decided to complete the task through a executable software with multiple files implemented via {language}. As the Programmer, to satisfy the new user's demands, you should write one or multiple files and make sure that every detail of the architecture is, in the end, implemented as code.",
+      "Think step by step and reason yourself to the right decisions to make sure we get it right.",
+      "You will first lay out the names of the core classes, functions, methods that will be necessary, as well as a quick comment on their purpose.",
+      "Then you will output the content of each file including complete code. ",
+      "At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.",
+      "You will start with the \"main\" file, then go to the ones that are imported by that file, and so on.",
+      "Please note that the code should be fully functional. Ensure to implement all functions. No placeholders (such as 'pass' in Python)."
+    ],
+    "tool_instruction" : "[CRITICAL TOOL USAGE PROTOCOL]\n\nYou MUST follow this EXACT sequence after generating code:\n\nSTEP 1: Call codes_check_and_processing_tool\n- Parameter: codes (list of dicts with filename, language, docstring, code)\n- Example: codes_check_and_processing_tool(codes=[{\"filename\": \"main.py\", \"language\": \"Python\", \"docstring\": \"...\", \"code\": \"...\"}])\n\nSTEP 2: Call check_code_completeness_tool\n- No parameters needed\n- This checks if there are any unimplemented functions (containing 'pass' or 'NotImplementedError')\n- Returns JSON: {\"has_unimplemented\": bool, \"filename\": str or null}\n\nSTEP 3: Report the result\n- If has_unimplemented is False: Output \"All code is complete and functional.\"\n- If has_unimplemented is True: Output \"Warning: {unimplemented_file} contains unimplemented code that needs completion.\"\n\nDO NOT skip any step. DO NOT change the order.\n\n---\n"
+  },
+  "ArtDesign": {
+    "assistant_role_name": "Programmer",
+    "user_role_name": "Chief Creative Officer",
+    "phase_prompt": [
+      "Our developed source codes and corresponding test reports are listed below: ",
+      "Task: \"{task}\".",
+      "Programming Language: \"{language}\"",
+      "Source Codes:",
+      "\"{codes}\"",
+      "At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.",
+      "As the Programmer, to satisfy the new user's demand and equip the software with a beautiful graphical user interface (GUI), we will discuss and design many decorative images for GUI decoration. Now, we keep discussing the GUI beautification by listing some functionally independent elements in GUI that are being considered to be decorated by different pictures. For example, ten digits (0-9) in a calculator are functionally independent.",
+      "To answer, you should output two fields for one image:'image_name' and 'description', where \"image_name\" is the filename of the image and \"descriptions\" denotes the detailed description of the independent elements. For example:",
+      "images:[",
+      "  {",
+      "    image_name: \"button_1.png\"",
+      "    description: \"The button with the number '1' on it.\"",
+      "  }",
+      "  {",
+      "    image_name: \"button_multiply.png\"",
+      "    description: \"The button with the multiplication symbol '*' on it.\"",
+      "  }]",
+      "Now, list all functionally independent elements as much as possible."
+    ]
+  },
+  "ArtIntegration": {
+    "assistant_role_name": "Programmer",
+    "user_role_name": "Chief Creative Officer",
+    "phase_prompt": [
+      "Our developed source codes and corresponding test reports are listed below: ",
+      "Task: \"{task}\".",
+      "Programming Language: \"{language}\"",
+      "Source Codes:",
+      "\"{codes}\"",
+      "At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.",
+      "As the Programmer, to satisfy the new user's demand and equip the software with a beautiful graphical user interface (GUI), you will incorporate our designed images for GUI decoration. Here are some ready-made high-quality pictures and corresponding descriptions:",
+      "{images}",
+      "Note that the designed images have a fixed size of 256x256 pixels and the images are located in the same directory as all the Python files; please dynamically scaling these images according to the size of GUI, and use \"self.*\" to avoid displaying-related problems caused by automatic garbage collection. For example:",
+      "```",
+      "self.image = ImageTk.PhotoImage(Image.open(\"./image.png\").resize((50, 50)))",
+      "```",
+      "Now, use some or all of the pictures into the GUI to make it more beautiful and creative. Output codes strictly following the required format mentioned above."
+    ]
+  },
+  "CodeComplete": {
+    "assistant_role_name": "Programmer",
+    "user_role_name": "Chief Technology Officer",
+    "phase_prompt": [
+      "According to the new user's task and our software designs listed below: ",
+      "Task: \"{task}\".",
+      "Modality: \"{modality}\".",
+      "Programming Language: \"{language}\"",
+      "Codes:",
+      "\"{codes}\"",
+      "Unimplemented File:",
+      "\"{unimplemented_file}\"",
+      "At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.",
+      "As the Programmer, to satisfy the complete function of our developed software, you have to implement all methods in the {unimplemented_file} file which contains a unimplemented class. Now, implement all methods of the {unimplemented_file} and all other codes needed, then output the fully implemented codes, strictly following the required format."
+    ],
+    "tool_instruction": "[TOOL USAGE - CODE COMPLETION]\nYou have access to codes_check_and_processing_tool(codes=[...]) to save completed code files.\n\nCONTEXT:\nYou are working on completing unimplemented functions in the file: {unimplemented_file}\n\nWORKFLOW:\n1. Review the current codes and identify functions with 'pass' or 'NotImplementedError'\n2. Implement all missing functions with proper logic\n3. Call codes_check_and_processing_tool(codes=[...]) to save the completed code\n4. Output the codes field to complete the phase\n\nThe 'codes' parameter must be a list of dictionaries:\n[\n    {\n        \"filename\": \"main.py\",\n        \"language\": \"Python\",\n        \"docstring\": \"Main module documentation\",\n        \"code\": \"# Full implementation - NO 'pass' or 'NotImplementedError'\"\n    },\n    ...\n]\n\nCRITICAL: All functions must be fully implemented. No placeholders allowed."
+  },
+  "CodeReviewComment": {
+    "assistant_role_name": "Code Reviewer",
+    "user_role_name": "Programmer",
+    "phase_prompt": [
+      "According to the new user's task and our software designs: ",
+      "Task: \"{task}\".",
+      "Modality: \"{modality}\".",
+      "Programming Language: \"{language}\"",
+      "Codes:",
+      "\"{codes}\"",
+      "As the Code Reviewer, to make the software directly operable without further coding, ChatDev have formulated the following regulations:",
+      "1) all referenced classes should be imported;",
+      "2) all methods should be implemented;",
+      "3) all methods need to have the necessary comments;",
+      "4) no potential bugs;",
+      "5) The entire project conforms to the tasks proposed by the user;",
+      "6) most importantly, do not only check the errors in the code, but also the logic of code. Make sure that user can interact with generated software without losing any feature in the requirement;",
+      "Now, you should check the above regulations one by one and review the codes in detail, propose one comment with the highest priority about the codes, and give me instructions on how to fix. Tell me your comment with the highest priority and corresponding suggestions on revision. If the codes are perfect and you have no comment on them, your review_comments should be \"Finished\" and set discussion_finished to True."
+    ],
+    "tool_instruction": "[TOOL USAGE]\nYou have access to codes_check_and_processing_tool(codes=[...]) to save modified code files to disk.\n\nUSAGE:\n- The 'codes' parameter must be a list of dictionaries, each with filename, language, docstring, and code.\n- Example:\n[\n    {\n        \"filename\": \"main.py\",\n        \"language\": \"Python\",\n        \"docstring\": \"Main module\",\n        \"code\": \"# Complete fixed implementation\"\n    },\n    ...\n]\n- After saving, output both codes and review_conclusion fields as required.\n- Ensure all code quality issues are fixed before saving.\n"
+  },
+  "CodeReviewModification": {
+    "assistant_role_name": "Programmer",
+    "user_role_name": "Code Reviewer",
+    "phase_prompt": [
+      "According to the new user's task, our designed product modality, languages and ideas, our developed first-edition source codes are listed below: ",
+      "Task: \"{task}\".",
+      "Modality: \"{modality}\".",
+      "Programming Language: \"{language}\"",
+      "Codes: ",
+      "\"{codes}\"",
+      "Comments on Codes:",
+      "\"{review_comments}\"",
+      "At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.",
+      "As the Programmer, to satisfy the new user's demand and make the software creative, executive and robust, you should modify corresponding codes according to the comments. Then, output the full and complete codes with all bugs fixed based on the comments. Return all codes strictly following the required format."
+    ]
+  },
+  "TestErrorSummary": {
+    "assistant_role_name": "Programmer",
+    "user_role_name": "Software Test Engineer",
+    "phase_prompt": [
+      "Our developed source codes and corresponding test reports are listed below: ",
+      "Programming Language: \"{language}\"",
+      "Source Codes:",
+      "\"{codes}\"",
+      "Test Reports of Source Codes:",
+      "\"{test_reports}\"",
+      "According to my test reports, please locate and summarize the bugs that cause the problem."
+    ],
+    "tool_instruction": "[TOOL USAGE]\nYou MUST call the run_tests_tool after generating or modifying code files.\n- This tool will execute all available tests and return a test report and error summary.\n- After calling the tool, summarize the errors found (if any) and output both 'error_summary' and 'test_reports' fields as required by the output schema.\n- If all tests pass, set 'error_summary' to 'No errors found.'\n"
+  },
+  "TestModification": {
+    "assistant_role_name": "Programmer",
+    "user_role_name": "Software Test Engineer",
+    "phase_prompt": [
+      "Our developed source codes and corresponding test reports are listed below: ",
+      "Programming Language: \"{language}\"",
+      "Source Codes:",
+      "\"{codes}\"",
+      "Test Reports of Source Codes:",
+      "\"{test_reports}\"",
+      "Error Summary of Test Reports:",
+      "\"{error_summary}\"",
+      "At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.",
+      "As the Programmer, to satisfy the new user's demand and make the software execute smoothly and robustly, you should modify the codes based on the error summary. Now, use the format exemplified above and modify the problematic codes based on the error summary. Output the codes that you fixed based on the test reported and corresponding explanations (strictly follow the format defined at the end of this message, including filename, language, docstring and code in field codes; incomplete \"TODO\" codes are strictly prohibited). If no bugs are reported, please write \"Finished\" in field \"modification_conclusion\" and write True in field \"discussion_finished\"."
+    ],
+    "tool_instruction": "[TOOL USAGE]\nAfter analyzing the test reports and error summary, you MUST fix the code and then call codes_check_and_processing_tool to save the updated code files.\n- The parameter 'codes' should be a list of code file dicts (filename, language, docstring, code).\n- After saving, set 'modification_conclusion' to 'Finished!' if all issues are fixed, or 'Need improve' if further fixes are needed.\n"
+  },
+  "EnvironmentDoc": {
+    "assistant_role_name": "Programmer",
+    "user_role_name": "Chief Technology Officer",
+    "phase_prompt": [
+      "The new user's task and our developed codes are listed: ",
+      "Task: \"{task}\".",
+      "Modality: \"{modality}\".",
+      "Programming Language: \"{language}\"",
+      "Codes: ",
+      "\"{codes}\"",
+      "As the Programmer, you should write a requirements.txt file, which is commonly used in Python projects to specify the dependencies or packages required for the project to run properly. It serves as a way to document and manage the project's dependencies in a standardized format. For example:",
+      "requirements.txt",
+      "```",
+      "numpy==1.19.2",
+      "pandas>=1.1.4",
+      "```",
+      "According to the codes and file format listed above, write a requirements.txt file to specify the dependencies or packages required for the project to run properly.",
+      "Note that we must ONLY discuss the target requirements doc and do not discuss anything else! Once we all have expressed our opinion(s) and agree with the results of the discussion unanimously, any of us must actively terminate the discussion and conclude the best requirements doc we have discussed without any other words or reasons and set discussion_finished to True. Before that, you can keep discussing and set the document with empty str in your output, give your discussion opinion in the corresponding field, and set discussion_finished to False. At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields."
+    ],
+    "tool_instruction": "[TOOL USAGE]\nAfter analyzing the codebase, you MUST generate a requirements.txt content and call save_requirements_tool to save it.\n- The parameter 'content' should be the full requirements.txt content as a string.\n- After saving, output the 'requirements' field as required by the output schema.\n"
+  },
+  "Manual": {
+    "assistant_role_name": "Chief Product Officer",
+    "user_role_name": "Chief Executive Officer",
+    "phase_prompt": [
+      "The new user's task, our developed codes and required dependencies are listed: ",
+      "Task: \"{task}\".",
+      "Modality: \"{modality}\".",
+      "Programming Language: \"{language}\"",
+      "Codes: ",
+      "\"{codes}\"",
+      "Requirements:",
+      "\"{requirements}\"",
+      "As the Chief Product Officer, by using Markdown, you should write a manual.md file which is a detailed user manual to use the software, including introducing main functions of the software, how to install environment dependencies and how to use/play it. For example:",
+      "manual.md",
+      "```",
+      "# LangChain",
+      "Building applications with LLMs through composability",
+      "Looking for the JS/TS version? Check out LangChain.js.",
+      "**Production Support:** As you move your LangChains into production, we'd love to offer more comprehensive support.",
+      "Please fill out this form and we'll set up a dedicated support Slack channel.",
+      "## Quick Install",
+      "`pip install langchain`",
+      "or",
+      "`conda install langchain -c conda-forge`",
+      "## 🤔 What is this?",
+      "Large language models (LLMs) are emerging as a transformative technology, enabling developers to build applications that they previously could not. However, using these LLMs in isolation is often insufficient for creating a truly powerful app - the real power comes when you can combine them with other sources of computation or knowledge.",
+      "This library aims to assist in the development of those types of applications. Common examples of these applications include:",
+      "**❓ Question Answering over specific documents**",
+      "- Documentation",
+      "- End-to-end Example: Question Answering over Notion Database",
+      "**🤖 Agents**",
+      "- Documentation",
+      "- End-to-end Example: GPT+WolframAlpha",
+      "## 📖 Documentation",
+      "Please see [here](https://python.langchain.com) for full documentation on:",
+      "- Getting started (installation, setting up the environment, simple examples)",
+      "- How-To examples (demos, integrations, helper functions)",
+      "- Reference (full API docs)",
+      "- Resources (high-level explanation of core concepts)",
+      "```"
+    ],
+    "tool_instruction": "[TOOL USAGE]\nAfter all code and requirements are ready, you MUST generate a user manual and call save_manual_tool to save it.\n- The parameter 'content' should be the full manual.md content as a string (in Markdown format).\n- After saving, output the 'manual' field as required by the output schema.\n"
+  }
+}

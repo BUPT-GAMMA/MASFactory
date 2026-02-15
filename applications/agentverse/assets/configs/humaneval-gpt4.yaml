@@ -1,0 +1,254 @@
+cnt_agents: &cnt_agents 4
+max_turn: &max_turn 2
+max_criticizing_rounds: 2
+
+prompts:
+  role_assigner_prepend_prompt: &role_assigner_prepend_prompt |-
+    # Role Description
+    You are the leader of a group of experts, now you need to recruit a small group of experts with diverse identity to correctly write the code to solve the given problems:
+    {task_description}
+    
+    You can recruit {cnt_critic_agents} expert in different fields. What experts will you recruit to better generate an accurate solution?
+
+    Here are some suggestion:
+    {advice}
+    
+  role_assigner_append_prompt: &role_assigner_append_prompt |-
+    # Response Format Guidance
+    You should respond with a list of expert description. For example:
+    1. an electrical engineer specified in the filed of xxx.
+    2. an economist who is good at xxx.
+    3. a lawyer with a good knowledge of xxx.
+    ...
+
+    Only respond with the description of each role. Do not include your reason.
+
+  solver_prepend_prompt: &solver_prepend_prompt |-
+    Can you complete the following code?
+    ```python 
+    {task_description} 
+    ```
+
+    # Previous Solution
+    The solution you gave in the last step is:
+    {previous_plan}
+
+    # Evaluation
+    The unit testing/evaluation feedback below may be noisy or incorrect; use it as a hint, but prioritize the task specification and docstring examples:
+    {advice}
+
+    # Critics
+    The following messages are critics' feedback (may also contain mistakes). Address them only when they are consistent with the task specification:
+    {criticisms}
+  
+  solver_append_prompt: &solver_append_prompt |-
+    You are {role_description}. Provide a correct completion of the code. Explain your reasoning. Your response should contain only Python code. Do not give any additional information. Use ```python to put the completed Python code in markdown quotes. When responding, please include the given code and the completion.
+
+  critic_prepend_prompt: &critic_prepend_prompt |-
+    You are in a discussion group, aiming to complete the following code function:
+    ```python
+    {task_description}
+    ```
+
+  # Below is a possible code completion:
+  # ```
+  # {preliminary_solution}
+  # ```
+
+  critic_append_prompt: &critic_append_prompt |-
+    You are {role_description}. Based on your knowledge, can you check the functional correctness of the latest completion given below? 
+    Below is a possible code completion:
+    ```python
+    {solution}
+    ```
+    When responding, you should follow the following rules:
+    1. If the latest provided solution is correct, end your response with a special token "[Agree]". 
+    2. If the solution is incorrect, give your comment and end your response with a special token "[Disagree]".
+  
+
+  manager_prompt: &manager_prompt |-
+    According to the Previous Solution and the Previous Sentences, select the most appropriate Critic from a specific Role and output the Role.
+    ```python 
+    {task_description} 
+    ```
+    # Previous Solution
+    The solution you gave in the last step is:
+    {former_solution}
+
+    # Critics
+    There are some critics on the above solution:
+    ```
+    {critic_opinions}
+    ```
+
+    # Previous Sentences
+    The previous sentences in the previous rounds is:
+    {previous_sentence}
+
+  executor_prepend_prompt: &executor_prepend_prompt |-
+    You are an experienced program tester. Now your team is trying to solve the problem: 
+    '''
+    Complete the Python function:
+    {task_description}
+    '''
+
+  executor_append_prompt: &executor_append_prompt |-
+    The solution has been written to `tmp/main.py`. You are going to write the unit testing code for this solution.
+
+    You MUST respond with a single JSON object with the following fields:
+
+    {
+      "thought": "your high-level thought about how to test this function",
+      "reasoning": "your detailed reasoning on the testing cases",
+      "criticism": "constructive self-criticism of your testing strategy",
+      "file_path": "the path to write your testing code, e.g., tmp/test_main.py",
+      "code": "the complete testing code in Python",
+      "command": "the shell command to execute your testing code, e.g., python tmp/test_main.py"
+    }
+
+    Requirements:
+    - Make sure the testing code is valid Python and can run the solution in `tmp/main.py`.
+    - In the test code, import the target function with `from main import ...` (do NOT use `from tmp.main import ...`).
+    - Make sure to write the inputs in assertions so they appear in the unit test report, and the expected answers are correct.
+    - Do NOT add any other top-level fields besides the six specified.
+    - Do NOT output any text before or after the JSON object.
+
+  evaluator_prepend_prompt: &evaluator_prepend_prompt |-
+    # Problem
+    Complete the following function
+    ```python
+    {task_description}
+    ```
+    
+    # Experts
+    The experts recruited in this turn includes:
+    {roles}
+
+    # Writer's Solution: 
+    {solution}
+
+    # Tester's Feedback:
+    {result}
+
+  evaluator_append_prompt: &evaluator_append_prompt |-
+    You MUST respond with a single JSON object with the following fields:
+
+    {
+      "score": 0 or 1,
+      "advice": "your detailed advice on how to correct the solution, and your suggestion on what experts should recruit in the next round"
+    }
+
+    Requirements:
+    - "score" MUST be 0 if the solution is incorrect, and 1 if it is correct.
+    - "advice" MUST be a natural language explanation.
+    - Do NOT add any other top-level fields.
+    - Do NOT output any text before or after the JSON object.
+    
+
+environment:
+  env_type: task-basic
+  max_turn: *max_turn
+  rule:
+    role_assigner:
+      type: role_description
+      cnt_agents: *cnt_agents
+    decision_maker:
+      type: vertical-solver-first
+    executor:
+      type: code-test
+    evaluator:
+      type: basic
+
+agents:
+  - #role_assigner_agent:
+    agent_type: role_assigner
+    name: role assigner
+    max_retry: 1000
+    prepend_prompt_template: *role_assigner_prepend_prompt
+    append_prompt_template: *role_assigner_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: "gpt-4"
+      temperature: 0
+      max_tokens: 512
+
+
+  - #solver_agent:
+    agent_type: solver
+    name: Planner
+    max_retry: 1000
+    prepend_prompt_template: *solver_prepend_prompt
+    append_prompt_template: *solver_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: "gpt-4"
+      temperature: 0
+      max_tokens: 1024
+
+
+  - #critic_agents:
+    agent_type: critic
+    name: Critic 1
+    max_retry: 1000
+    role_description: |-
+      Waiting to be assigned.
+    prepend_prompt_template: *critic_prepend_prompt
+    append_prompt_template: *critic_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: "gpt-4"
+      temperature: 0
+      max_tokens: 1024
+
+
+  - #executor_agent:
+    agent_type: executor
+    name: Executor
+    max_retry: 1000
+    prepend_prompt_template: *executor_prepend_prompt
+    append_prompt_template: *executor_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: gpt-4
+      temperature: 0
+      max_tokens: 1024
+
+
+  - #evaluator_agent:
+    agent_type: evaluator
+    name: Evaluator
+    max_retry: 1000
+    role_description: |-
+      Evaluator
+    prepend_prompt_template: *evaluator_prepend_prompt
+    append_prompt_template: *evaluator_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: gpt-4
+      temperature: 0.3
+      max_tokens: 1024
+
+
+
+  - #manager_agent:
+    agent_type: manager
+    name: Manager
+    max_retry: 1000
+    prompt_template: *manager_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: "gpt-4"
+      temperature: 0
+      max_tokens: 1024

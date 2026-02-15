@@ -1,0 +1,46 @@
+{
+  "graph_design": {
+    "nodes": [
+      {
+        "name": "loop_1",
+        "type": "Loop",
+        "label": "TestModification (ChatDev Lite): fix code from errors",
+        "max_iterations": 1,
+        "push_keys": {
+          "codes": ""
+        },
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "instructor_agent",
+              "type": "Action",
+              "label": "Software Test Engineer: summarize required fixes",
+              "agent": "Software Test Engineer",
+              "input_fields": ["task", "language", "codes", "test_reports", "error_summary", "chatdev_prompt"],
+              "output_fields": ["fix_plan"],
+              "instructions": "You are a Software Test Engineer. Based on test_reports and error_summary, summarize required fixes and constraints. Output ONLY the fix plan text in field fix_plan."
+            },
+            {
+              "name": "assistant_agent",
+              "type": "Action",
+              "label": "Programmer: update existing files only",
+              "agent": "Programmer",
+              "input_fields": ["fix_plan"],
+              "output_fields": ["codes"],
+              "instructions": "You are the Programmer. Based on fix_plan, output ONLY updated code files and NOTHING else. IMPORTANT: do NOT create new files; only update existing filenames. Use the same <filename> + fenced code blocks format."
+            }
+          ],
+          "edges": [
+            { "source": "CONTROLLER", "target": "instructor_agent" },
+            { "source": "instructor_agent", "target": "assistant_agent" },
+            { "source": "assistant_agent", "target": "CONTROLLER" }
+          ]
+        }
+      }
+    ],
+    "edges": [
+      { "source": "ENTRY", "target": "loop_1" },
+      { "source": "loop_1", "target": "EXIT" }
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+Phase: LanguageChoose (ChatDev Lite)
+Goal: Choose the target programming language ONLY (do not discuss anything else).
+
+Actors (exactly two Agents):
+- instructor_agent: Chief Executive Officer
+- assistant_agent: Chief Technology Officer
+
+Graph-generation hard constraints (MUST):
+- The generated sub-graph MUST include EXACTLY ONE Loop and EXACTLY TWO Agents.
+- The two Agents MUST be named exactly: instructor_agent and assistant_agent.
+- The Loop max_iterations <= 1.
+- The workflow MUST contain EXACTLY TWO steps with IDs 1..2.
+- Step 1 role MUST be "Chief Executive Officer" and agent_id MUST be "instructor_agent".
+- Step 2 role MUST be "Chief Technology Officer" and agent_id MUST be "assistant_agent".
+- Final output MUST contain ONLY: language (no other fields, no JSON).
+
+Topology requirement (to guarantee exactly one Loop + two Agents):
+[STEPS]
+1: [Chief Executive Officer] State constraints/preferences for the programming language based on the task and modality.
+2: [Chief Technology Officer] Make the final language decision (e.g., Python).
+
+[GRAPH]
+START -> 1
+1 -> 2
+2 -> 1
+2 -> END
+
+Phase prompt (from ChatDev Lite config):
+According to the new user's task and some creative brainstorm ideas listed below: 
+Task: "{task}".
+Modality: "{modality}".
+We have decided to complete the task through a executable software implemented via a programming language. 
+As the Chief Technology Officer, to satisfy the new user's demand and make the software realizable, you should propose a concrete programming language. If python can complete this task via Python, please answer Python; otherwise, answer another programming language (e.g., Java, C++, etc,).
+Note that we must ONLY discuss the target programming language and do not discuss anything else! Once we all have expressed our opinion(s) and agree with the results of the discussion unanimously, any of us must actively terminate the discussion and conclude the best programming language we have discussed without any other words or reasons and set discussion_finished to True, Before that you can keep discussing and set the language with empty str in your output, give your disscussion opinion in corresponding field,and set discussion_finished to False. At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields.
+
+Role prompt context (from ChatDev Lite config):
+Chief Executive Officer:
+{chatdev_prompt}
+You are Chief Executive Officer. Now, we are both working at ChatDev and we share a common interest in collaborating to successfully complete a task assigned by a new customer.
+Your main responsibilities include being an active decision-maker on users' demands and other key policy issues, leader, manager, and executor. Your decision-making role involves high-level decisions about policy and strategy; and your communicator role can involve speaking to the organization's management and employees.
+Here is a new customer's task: {task}.
+To complete the task, I will give you one or more instructions, and you must help me to write a specific solution that appropriately solves the requested instruction based on your expertise and my needs.
+
+Chief Technology Officer:
+{chatdev_prompt}
+You are Chief Technology Officer. we are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You are very familiar to information technology. You will make high-level decisions for the overarching technology infrastructure that closely align with the organization's goals, while you work alongside the organization's information technology ("IT") staff members to perform everyday operations.
+Here is a new customer's task: {task}.
+To complete the task, You must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.
+
+Input fields: task, modality, chatdev_prompt
+Output fields: language
+
+Output requirement (STRICT):
+assistant_agent MUST output EXACTLY ONE WORD and nothing else.
+Do NOT output any explanation, punctuation, or extra whitespace.

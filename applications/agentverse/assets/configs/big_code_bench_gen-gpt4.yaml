@@ -1,0 +1,249 @@
+cnt_agents: &cnt_agents 4
+max_turn: &max_turn 2
+
+prompts:
+  role_assigner_prepend_prompt: &role_assigner_prepend_prompt |-
+    # Role Description
+    You are the leader of a competitive programming team. Recruit a small group of experts with diverse skills to solve the following BigCodeBench programming task and implement the required entry point correctly:
+    {task_description}
+
+    You can recruit {cnt_critic_agents} experts. Output EXACTLY {cnt_critic_agents} roles (one per line). The FIRST role will be the main writer/solver; the remaining roles will be critics/reviewers.
+    What experts will you recruit to maximize correctness (edge cases, determinism, spec conformance), efficiency (time/space), and Python implementation details?
+    Important: do NOT over-engineer; avoid adding extra input validation or raising exceptions unless explicitly required by the task.
+    If the suggestion/advice contains unit-test failures/tracebacks, make sure one expert is specifically good at interpreting failing assertions and reconciling spec vs tests.
+
+    Here are some suggestion:
+    {advice}
+
+  role_assigner_append_prompt: &role_assigner_append_prompt |-
+    # Response Format Guidance
+    You should respond with a list of expert descriptions. For example:
+    1. a competitive programmer specialized in ...
+    2. an algorithms expert who is good at ...
+    3. a Python engineer experienced with ...
+    4. a QA engineer experienced with ...
+    ...
+
+    Only respond with the description of each role. Do not include your reason.
+
+  solver_prepend_prompt: &solver_prepend_prompt |-
+    Solve the following BigCodeBench programming task in Python:
+    {task_description}
+
+    Focus on:
+    - Correctness for all edge cases (and required exceptions only when actually required)
+    - Matching the required entry point signature exactly
+    - Using the starter snippet/imports as hints (if you ignore an import, double-check you did not misread the task)
+
+    # Previous Solution
+    The solution you gave in the last step is:
+    {previous_plan}
+
+    # Test Feedback
+    The feedback below comes from running the provided unit tests. Use it to fix bugs and align behavior:
+    {advice}
+
+    Important:
+    - If Test Feedback is empty or says "No advice yet.", do NOT rewrite the solution just because of speculative critic messages.
+    - If Test Feedback is NON-empty, treat it as ground truth. If the natural-language spec (including “output with” / “raise exception for”) conflicts with the unit tests, FOLLOW THE TESTS.
+    - Only change code when you can justify it by concrete failing tests or clear, unambiguous parts of the task spec.
+    - When fixing failures, START FROM the Previous Solution and apply a minimal patch; do not refactor/rewrite unrelated parts.
+    - Pay close attention to return type/shape: do NOT return extra data (e.g., a tuple) unless tests clearly expect it.
+    - Do not add extra keys/fields to structured outputs (dict/JSON) unless explicitly required; if the input provides a set of keys, default to outputting only those keys.
+    - If failures show an unexpected exception, remove that exception-throwing behavior and return the expected value instead.
+    - Prefer minimal, targeted fixes over full rewrites.
+
+  solver_append_prompt: &solver_append_prompt |-
+    You are {role_description}. Provide a correct and self-contained Python implementation in a single file.
+    Requirements:
+    - Use Python 3.
+    - Use only the Python standard library unless the task description's starter snippet explicitly includes other imports.
+    - No internet access, no external files.
+    - Do not print/debug-log unless the task explicitly requires output via printing.
+    - Do NOT include `if __name__ == "__main__":` unless the task explicitly asks for a script/CLI. Default to function-only.
+    - If the task does not require randomness, avoid using randomness. If randomness is required, keep it well-scoped.
+    - Do NOT add extra input validation (type checks, `ValueError`, etc.) unless explicitly required by the task/tests. Prefer implementing exactly what the spec asks.
+    - If the task description is ambiguous or self-contradictory, choose the simplest behavior that matches the unit tests (when test feedback is present).
+    - If `task_func` takes input arguments, operate on the given inputs; do NOT generate new random data or hardcode unrelated filenames/paths.
+    - Do NOT add extra keys/fields to output structures (e.g., don't include departments not present in the input dict, unless explicitly required).
+    - Do NOT use placeholder stubs like `pass`, `TODO`, or `...` anywhere in the code.
+    - Make the code testable (prefer pure functions/classes).
+
+    Your response MUST contain only Python code. Use ```python to wrap the full file content (no explanations).
+
+  critic_prepend_prompt: &critic_prepend_prompt |-
+    You are in a discussion group, aiming to solve the following BigCodeBench programming task:
+    {task_description}
+
+    # Test Feedback (from the previous run; may be empty)
+    {advice}
+
+    Below is the latest implementation to review:
+    ```python
+    {solution}
+    ```
+
+  critic_append_prompt: &critic_append_prompt |-
+    You are {role_description}. Check the functional correctness of the latest implementation.
+    Pay special attention to spec conformance (signature/behavior), edge cases explicitly required by the spec/tests, and required exceptions only if explicitly required.
+    Do NOT suggest adding extra input validation or raising exceptions unless the task explicitly requires it. Prefer minimal changes that fix the failing tests.
+    If Test Feedback is present, use it as ground truth: read failing assertions carefully (expected vs actual, and exception types). Watch out for type/shape mismatches (e.g., returning a tuple where a scalar/bool is expected, or tuple truthiness causing `is not false` failures).
+    Use starter imports as hints: if an import like `re`, `pathlib`, `zipfile`, `Counter`, `heapq` is present but unused, double-check whether the implementation missed an intended requirement.
+    Also check for over-engineering/regressions during refinement: avoid suggesting full rewrites; prefer minimal diffs, and flag solutions that add extra output keys/fields not required by the tests/spec.
+    If Test Feedback is empty or "No advice yet.", be conservative: only output "[Disagree]" when you can point to a concrete spec violation (ideally with a specific counterexample). Otherwise output "[Agree]".
+    When responding, follow these rules:
+    1. If the latest provided solution is correct, end your response with a special token "[Agree]".
+    2. If the solution is incorrect, give your comment and end your response with a special token "[Disagree]".
+    3. Do NOT include any code blocks in your response.
+    4. The LAST line of your response MUST be exactly "[Agree]" or "[Disagree]" (no extra text after it).
+
+  manager_prompt: &manager_prompt |-
+    According to the Previous Solution and the Previous Sentences, select the most appropriate Critic role to review the solution and output the Role.
+    {task_description}
+    # Previous Solution
+    The solution you gave in the last step is:
+    {former_solution}
+
+    # Critics
+    There are some critics on the above solution:
+    ```
+    {critic_opinions}
+    ```
+
+    # Previous Sentences
+    The previous sentences in the previous rounds is:
+    {previous_sentence}
+
+  executor_prepend_prompt: &executor_prepend_prompt |-
+    You are an automated judge. The system will run the provided unit tests directly; you do not need to generate any tests.
+    {task_description}
+
+  executor_append_prompt: &executor_append_prompt |-
+    Do nothing. (This agent is unused in the BigCodeBench runner.)
+    Return exactly: {}
+
+  evaluator_prepend_prompt: &evaluator_prepend_prompt |-
+    # Problem
+    Solve the following BigCodeBench programming task:
+    {task_description}
+
+    # Experts
+    The experts recruited in this turn includes:
+    {roles}
+
+    # Writer's Solution:
+    {solution}
+
+    # Tester's Feedback:
+    {result}
+
+  evaluator_append_prompt: &evaluator_append_prompt |-
+    You MUST respond with a single JSON object with the following fields:
+
+    {
+      "score": 0 or 1,
+      "advice": "your detailed advice on how to correct the solution, and your suggestion on what experts should recruit in the next round"
+    }
+
+    Requirements:
+    - "score" MUST be 1 iff the unit tests passed (EXIT_CODE == 0). Otherwise 0.
+    - "advice" MUST be a natural language explanation.
+    - Do NOT add any other top-level fields.
+    - Do NOT output any text before or after the JSON object.
+
+
+environment:
+  env_type: task-basic
+  max_turn: *max_turn
+  rule:
+    role_assigner:
+      type: role_description
+      cnt_agents: *cnt_agents
+    decision_maker:
+      type: vertical-solver-first
+    executor:
+      type: bigcodebench-test
+    evaluator:
+      type: basic
+
+agents:
+  - agent_type: role_assigner
+    name: role assigner
+    max_retry: 1000
+    prepend_prompt_template: *role_assigner_prepend_prompt
+    append_prompt_template: *role_assigner_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: "gpt-4"
+      temperature: 0
+      max_tokens: 512
+
+  - agent_type: solver
+    name: Planner
+    max_retry: 1000
+    prepend_prompt_template: *solver_prepend_prompt
+    append_prompt_template: *solver_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: "gpt-4"
+      temperature: 0
+      max_tokens: 2048
+
+  - agent_type: critic
+    name: Critic 1
+    max_retry: 1000
+    role_description: |-
+      Waiting to be assigned.
+    prepend_prompt_template: *critic_prepend_prompt
+    append_prompt_template: *critic_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: "gpt-4"
+      temperature: 0
+      max_tokens: 1024
+
+  - agent_type: executor
+    name: Executor
+    max_retry: 1000
+    prepend_prompt_template: *executor_prepend_prompt
+    append_prompt_template: *executor_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: gpt-4
+      temperature: 0
+      max_tokens: 1024
+
+  - agent_type: evaluator
+    name: Evaluator
+    max_retry: 1000
+    role_description: |-
+      Evaluator
+    prepend_prompt_template: *evaluator_prepend_prompt
+    append_prompt_template: *evaluator_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: gpt-4
+      temperature: 0
+      max_tokens: 1024
+
+  - agent_type: manager
+    name: Manager
+    max_retry: 1000
+    prompt_template: *manager_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4
+      model: "gpt-4"
+      temperature: 0
+      max_tokens: 512

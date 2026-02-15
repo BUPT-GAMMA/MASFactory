@@ -1,0 +1,46 @@
+{
+  "graph_design": {
+    "nodes": [
+      {
+        "name": "loop_1",
+        "type": "Loop",
+        "label": "DemandAnalysis (ChatDev Lite): decide modality",
+        "max_iterations": 1,
+        "push_keys": {
+          "modality": ""
+        },
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "instructor_agent",
+              "type": "Action",
+              "label": "Chief Executive Officer: propose modality",
+              "agent": "Chief Executive Officer",
+              "input_fields": ["task", "chatdev_prompt"],
+              "output_fields": ["modality_discussion"],
+              "instructions": "You are the Chief Executive Officer. Discuss and propose a feasible product modality for the task. Focus ONLY on modality. Output ONLY your discussion/proposal text in field modality_discussion."
+            },
+            {
+              "name": "assistant_agent",
+              "type": "Action",
+              "label": "Chief Product Officer: finalize modality",
+              "agent": "Chief Product Officer",
+              "input_fields": ["modality_discussion"],
+              "output_fields": ["modality"],
+              "instructions": "You are the Chief Product Officer. Based on modality_discussion, output the final modality as EXACTLY ONE lowercase word and NOTHING else. Allowed: application | website | game | tool | library."
+            }
+          ],
+          "edges": [
+            { "source": "CONTROLLER", "target": "instructor_agent" },
+            { "source": "instructor_agent", "target": "assistant_agent" },
+            { "source": "assistant_agent", "target": "CONTROLLER" }
+          ]
+        }
+      }
+    ],
+    "edges": [
+      { "source": "ENTRY", "target": "loop_1" },
+      { "source": "loop_1", "target": "EXIT" }
+    ]
+  }
+}

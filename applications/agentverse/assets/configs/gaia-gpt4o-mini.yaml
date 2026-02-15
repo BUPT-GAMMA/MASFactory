@@ -1,0 +1,17 @@
+max_turn: 12
+max_tool_call_times: 10
+
+# Planner uses OPENAI_API_KEY / OPENAI_BASE_URL (cheap, no tool calls)
+model:
+  model_name: "gpt-4o-mini"
+  temperature: 0
+  max_tokens: 512
+
+# Executor uses TOOL_OPENAI_API_KEY / TOOL_OPENAI_BASE_URL (tool calls)
+tool_model:
+  model_name: "gpt-4o-mini"
+  temperature: 0
+  max_tokens: 1024
+
+planner_max_tokens: 512
+executor_max_tokens: 1024

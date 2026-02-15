@@ -1,0 +1,66 @@
+Phase: TestModification (ChatDev Lite)
+Goal: Fix the code according to error_summary and test_reports ONLY.
+
+Actors (exactly two Agents):
+- instructor_agent: Software Test Engineer
+- assistant_agent: Programmer
+
+Graph-generation hard constraints (MUST):
+- The generated sub-graph MUST include EXACTLY ONE Loop and EXACTLY TWO Agents.
+- The two Agents MUST be named exactly: instructor_agent and assistant_agent.
+- The Loop max_iterations <= 1.
+- The workflow MUST contain EXACTLY TWO steps with IDs 1..2.
+- Step 1 role MUST be "Software Test Engineer" and agent_id MUST be "instructor_agent".
+- Step 2 role MUST be "Programmer" and agent_id MUST be "assistant_agent".
+- Final output MUST contain ONLY: codes (no other fields, no JSON).
+
+Topology requirement (to guarantee exactly one Loop + two Agents):
+[STEPS]
+1: [Software Test Engineer] Summarize the failing tests and required fixes.
+2: [Programmer] Fix the code and output the updated full code (include filenames).
+
+[GRAPH]
+START -> 1
+1 -> 2
+2 -> 1
+2 -> END
+
+Phase prompt (from ChatDev Lite config):
+Our developed source codes and corresponding test reports are listed below: 
+Programming Language: "{language}"
+Source Codes:
+"{codes}"
+Test Reports of Source Codes:
+"{test_reports}"
+Error Summary of Test Reports:
+"{error_summary}"
+At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.
+IMPORTANT (STRICT): You MUST NOT create any new files in this phase. You MUST ONLY update the content of files that already exist in the Source Codes above. Keep filenames exactly the same as in Source Codes.
+As the Programmer, to satisfy the new user's demand and make the software execute smoothly and robustly, you should modify the codes based on the error summary. Now, use the format exemplified above and modify the problematic codes based on the error summary. Output the codes that you fixed based on the test reported and corresponding explanations (strictly follow the format defined at the end of this message, including filename, language, docstring and code in field codes; incomplete "TODO" codes are strictly prohibited). If no bugs are reported, please write "Finished" in field "modification_conclusion" and write True in field "discussion_finished".
+
+Role prompt context (from ChatDev Lite config):
+Software Test Engineer:
+{chatdev_prompt}
+You are Software Test Engineer. we are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can use the software as intended to analyze its functional properties, design manual and automated test procedures to evaluate each software product, build and implement software evaluation test programs, and run test programs to ensure that testing protocols evaluate the software correctly.
+Here is a new customer's task: {task}.
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.
+
+Programmer:
+{chatdev_prompt}
+You are Programmer. we are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can write/create computer software or applications by providing a specific programming language to the computer. You have extensive computing and coding experience in many varieties of programming languages and platforms, such as Python, Java, C, C++, HTML, CSS, JavaScript, XML, SQL, PHP, etc,.
+Here is a new customer's task: {task}.
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.
+
+Input fields: task, language, codes, test_reports, error_summary, chatdev_prompt
+Output fields: codes
+
+Output requirement (STRICT):
+assistant_agent MUST output ONLY code files and nothing else.
+For each file, output exactly:
+<filename>
+```<language>
+<code>
+```
+Repeat the block for every file.

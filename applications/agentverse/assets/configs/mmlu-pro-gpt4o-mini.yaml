@@ -1,0 +1,152 @@
+cnt_agents: &cnt_agents 3
+max_turn: &max_turn 1
+
+prompts:
+  role_assigner_prepend_prompt: &role_assigner_prepend_prompt |-
+    # Role Description
+    You are the leader of a group of experts. Your team will solve a challenging multiple-choice reasoning problem.
+    {task_description}
+
+    You can recruit {cnt_critic_agents} expert(s) in different fields.
+
+    Here are some suggestions from the previous round (may be empty or noisy):
+    {advice}
+
+  role_assigner_append_prompt: &role_assigner_append_prompt |-
+    What experts will you recruit to better generate an accurate answer?
+
+    # Response Format Guidance
+    You should respond with a list of expert descriptions. For example:
+    1. a mathematician specialized in probability and logic.
+    2. a domain expert familiar with the subject matter.
+    ...
+
+    Only respond with the description of each role. Do not include your reason.
+
+  solver_prepend_prompt: &solver_prepend_prompt |-
+    Solve the following multiple-choice question.
+    {task_description}
+
+    # Previous Solution
+    The solution you gave in the last step is:
+    {previous_plan}
+
+    # Evaluation
+    The feedback below may be noisy or incorrect; use it as a hint, but prioritize the problem statement:
+    {advice}
+
+    # Critics
+    The following messages are critics' feedback (may also contain mistakes). Address them only when they are consistent with the task:
+    {criticisms}
+
+  solver_append_prompt: &solver_append_prompt |-
+    You are {role_description}. Think step by step and then finish your answer with "the answer is (X)" where X is the correct letter choice.
+    Do not output any text after that final sentence.
+
+  critic_prepend_prompt: &critic_prepend_prompt |-
+    You are in a discussion group aiming to solve the following multiple-choice question:
+    {task_description}
+
+  critic_append_prompt: &critic_append_prompt |-
+    You are {role_description}. Based on your knowledge, solve the problem step by step.
+    Now compare your solution with the solution given in the chat history and give your response.
+    Rules:
+    1. Do not ask for additional information.
+    2. Point out issues, missing reasoning steps, or invalid option selection.
+    3. If the final answer in your solution matches the final answer in the provided solution, end your response with a special token "[Agree]".
+    4. Otherwise, end your response with a special token "[Disagree]".
+
+  evaluator_prepend_prompt: &evaluator_prepend_prompt |-
+    # Problem
+    {task_description}
+
+    # Experts
+    {roles}
+
+    # Solver's Output
+    {solution}
+
+  evaluator_append_prompt: &evaluator_append_prompt |-
+    You do NOT have access to the ground-truth answer. Evaluate whether the solver output:
+    - provides a clear reasoning process, and
+    - ends with exactly one final sentence of the form: "the answer is (X)" where X is a single letter option.
+
+    You MUST respond with a single JSON object with the following fields:
+    {
+      "score": 0 or 1,
+      "advice": "your detailed advice on how to improve the reasoning and answer formatting"
+    }
+
+    Requirements:
+    - "score" MUST be 1 if the required final answer format is present, otherwise 0.
+    - Do NOT add any other top-level fields.
+    - Do NOT output any text before or after the JSON object.
+
+model:
+  model_name: "gpt-4o-mini"
+  temperature: 0
+  max_tokens: 1536
+
+environment:
+  env_type: task-basic
+  max_turn: *max_turn
+  rule:
+    role_assigner:
+      type: role_description
+      cnt_agents: *cnt_agents
+    decision_maker:
+      type: vertical-solver-first
+    executor:
+      type: none
+    evaluator:
+      type: basic
+
+agents:
+  - agent_type: role_assigner
+    name: role assigner
+    max_retry: 1000
+    prepend_prompt_template: *role_assigner_prepend_prompt
+    append_prompt_template: *role_assigner_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      temperature: 0
+      max_tokens: 512
+
+  - agent_type: solver
+    name: Solver
+    max_retry: 1000
+    prepend_prompt_template: *solver_prepend_prompt
+    append_prompt_template: *solver_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      temperature: 0
+      max_tokens: 1536
+
+  - agent_type: critic
+    name: Critic
+    max_retry: 1000
+    role_description: |-
+      Waiting to be assigned.
+    prepend_prompt_template: *critic_prepend_prompt
+    append_prompt_template: *critic_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      temperature: 0.3
+      max_tokens: 1024
+
+  - agent_type: evaluator
+    name: Evaluator
+    max_retry: 1000
+    role_description: |-
+      Evaluator
+    prepend_prompt_template: *evaluator_prepend_prompt
+    append_prompt_template: *evaluator_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      temperature: 0
+      max_tokens: 512
+

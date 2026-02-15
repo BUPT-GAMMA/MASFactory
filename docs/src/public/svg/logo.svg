@@ -1,0 +1,50 @@
+<svg width="1040" height="240" viewBox="0 0 1040 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mf-grad-mas" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00D1FF"/>
+      <stop offset="100%" stop-color="#7CF0FF"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    .mf-text-1 { fill: #0f172a; }
+    .mf-text-2 { fill: #334155; }
+
+    .mf-mark-1-stroke { stroke: #334155; }
+    .mf-mark-1-fill { fill: #334155; }
+    .mf-mark-2-stroke { stroke: #64748b; }
+    .mf-mark-2-fill { fill: #64748b; }
+    .mf-mark-accent-stroke { stroke: #1d4d8f; }
+    .mf-mark-accent-fill { fill: #1d4d8f; }
+  </style>
+
+  <!-- Mark (left) -->
+  <g transform="translate(16 38) scale(0.25)">
+    <path d="M392 132.01H232C189.565 132.01 148.869 148.867 118.863 178.873C88.8571 208.879 72 249.575 72 292.01V336.01" class="mf-mark-1-stroke" stroke="#334155" stroke-width="72" stroke-linejoin="round"/>
+    <path d="M72 408.01V452.01C72 494.444 88.8571 535.141 118.863 565.147C148.869 595.153 189.565 612.01 232 612.01H392" class="mf-mark-1-stroke" stroke="#334155" stroke-width="72" stroke-linejoin="round"/>
+    <path d="M392 132.01H552C594.435 132.01 635.131 148.867 665.137 178.873C695.143 208.879 712 249.575 712 292.01V336.01" class="mf-mark-2-stroke" stroke="#64748B" stroke-width="72" stroke-linejoin="round"/>
+    <path d="M712 408.01V452.01C712 494.444 695.143 535.141 665.137 565.147C635.131 595.153 594.435 612.01 552 612.01H392" class="mf-mark-2-stroke" stroke="#64748B" stroke-width="72" stroke-linejoin="round"/>
+    <path d="M72 372.01C91.8823 372.01 108 355.892 108 336.01C108 316.128 91.8823 300.01 72 300.01C52.1177 300.01 36 316.128 36 336.01C36 355.892 52.1177 372.01 72 372.01Z" class="mf-mark-1-fill" fill="#334155"/>
+    <path d="M72 444.01C91.8823 444.01 108 427.892 108 408.01C108 388.128 91.8823 372.01 72 372.01C52.1177 372.01 36 388.128 36 408.01C36 427.892 52.1177 444.01 72 444.01Z" class="mf-mark-1-fill" fill="#334155"/>
+    <path d="M712 372.01C731.882 372.01 748 355.892 748 336.01C748 316.128 731.882 300.01 712 300.01C692.118 300.01 676 316.128 676 336.01C676 355.892 692.118 372.01 712 372.01Z" class="mf-mark-2-fill" fill="#64748B"/>
+    <path d="M712 444.01C731.882 444.01 748 427.892 748 408.01C748 388.128 731.882 372.01 712 372.01C692.118 372.01 676 388.128 676 408.01C676 427.892 692.118 444.01 712 444.01Z" class="mf-mark-2-fill" fill="#64748B"/>
+    <path d="M280 132.01L244 36.0098" class="mf-mark-1-stroke" stroke="#334155" stroke-width="72" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M244 66.0098C260.569 66.0098 274 52.5783 274 36.0098C274 19.4412 260.569 6.00977 244 6.00977C227.431 6.00977 214 19.4412 214 36.0098C214 52.5783 227.431 66.0098 244 66.0098Z" class="mf-mark-1-fill" fill="#334155"/>
+    <path d="M504 132.01L540 36.0098" class="mf-mark-2-stroke" stroke="#64748B" stroke-width="72" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M540 66.0098C556.569 66.0098 570 52.5783 570 36.0098C570 19.4412 556.569 6.00977 540 6.00977C523.431 6.00977 510 19.4412 510 36.0098C510 52.5783 523.431 66.0098 540 66.0098Z" class="mf-mark-2-fill" fill="#64748B"/>
+    <path d="M32 372.01C100 372.01 152 292.01 224 292.01C296 292.01 320 372.01 392 372.01C464 372.01 488 292.01 560 292.01C632 292.01 684 372.01 752 372.01" class="mf-mark-accent-stroke" stroke="#1D4D8F" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M32 372.01C100 372.01 152 452.01 224 452.01C296 452.01 320 372.01 392 372.01C464 372.01 488 452.01 560 452.01C632 452.01 684 372.01 752 372.01" class="mf-mark-accent-stroke" stroke="#1D4D8F" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M32 404.01C49.6731 404.01 64 389.683 64 372.01C64 354.337 49.6731 340.01 32 340.01C14.3269 340.01 0 354.337 0 372.01C0 389.683 14.3269 404.01 32 404.01Z" class="mf-mark-accent-fill" fill="#1D4D8F"/>
+    <path d="M224 324.01C241.673 324.01 256 309.683 256 292.01C256 274.337 241.673 260.01 224 260.01C206.327 260.01 192 274.337 192 292.01C192 309.683 206.327 324.01 224 324.01Z" class="mf-mark-accent-fill" fill="#1D4D8F"/>
+    <path d="M224 484.01C241.673 484.01 256 469.683 256 452.01C256 434.337 241.673 420.01 224 420.01C206.327 420.01 192 434.337 192 452.01C192 469.683 206.327 484.01 224 484.01Z" class="mf-mark-accent-fill" fill="#1D4D8F"/>
+    <path d="M392 404.01C409.673 404.01 424 389.683 424 372.01C424 354.337 409.673 340.01 392 340.01C374.327 340.01 360 354.337 360 372.01C360 389.683 374.327 404.01 392 404.01Z" class="mf-mark-accent-fill" fill="#1D4D8F"/>
+    <path d="M560 324.01C577.673 324.01 592 309.683 592 292.01C592 274.337 577.673 260.01 560 260.01C542.327 260.01 528 274.337 528 292.01C528 309.683 542.327 324.01 560 324.01Z" class="mf-mark-accent-fill" fill="#1D4D8F"/>
+    <path d="M560 484.01C577.673 484.01 592 469.683 592 452.01C592 434.337 577.673 420.01 560 420.01C542.327 420.01 528 434.337 528 452.01C528 469.683 542.327 484.01 560 484.01Z" class="mf-mark-accent-fill" fill="#1D4D8F"/>
+    <path d="M752 404.01C769.673 404.01 784 389.683 784 372.01C784 354.337 769.673 340.01 752 340.01C734.327 340.01 720 354.337 720 372.01C720 389.683 734.327 404.01 752 404.01Z" class="mf-mark-accent-fill" fill="#1D4D8F"/>
+  </g>
+
+  <!-- Wordmark (right) -->
+  <text x="250" y="150" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="132" font-weight="800" letter-spacing="-0.02em">
+    <tspan fill="url(#mf-grad-mas)">MAS</tspan><tspan class="mf-text-1" fill="#0f172a">Factory</tspan>
+  </text>
+</svg>

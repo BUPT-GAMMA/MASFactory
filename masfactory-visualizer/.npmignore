@@ -1,0 +1,21 @@
+# Keep npm pack / vsce dependency detection from using .gitignore defaults.
+# We intentionally include compiled outputs under `out/` and built webview assets under `media/webview-ui/`.
+
+.vscode/**
+.vscode-test/**
+src/**
+webview-ui/**
+**/*.ts
+**/*.map
+**/tsconfig.json
+**/eslint.config.mjs
+
+# Local-only docs / notes
+REVIEW.md
+problem.md
+CLAUDEME.md
+
+# Local caches / artifacts
+.npm-cache/**
+.npm-cache-vsce/**
+*.vsix

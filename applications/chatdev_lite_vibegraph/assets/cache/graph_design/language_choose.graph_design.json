@@ -1,0 +1,71 @@
+{
+  "graph_design": {
+    "nodes": [
+      {
+        "name": "loop_1",
+        "type": "Loop",
+        "label": "LanguageChoose (ChatDev Lite): decide programming language",
+        "max_iterations": 1,
+        "push_keys": {
+          "language": ""
+        },
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "instructor_agent",
+              "type": "Action",
+              "label": "Chief Executive Officer: constraints/preferences",
+              "agent": "Chief Executive Officer",
+              "input_fields": [
+                "task",
+                "modality",
+                "chatdev_prompt"
+              ],
+              "output_fields": [
+                "language_discussion"
+              ],
+              "instructions": "You are the Chief Executive Officer. State constraints/preferences for the programming language given the task and modality. Focus ONLY on language selection. Output ONLY your discussion text in field language_discussion."
+            },
+            {
+              "name": "assistant_agent",
+              "type": "Action",
+              "label": "Chief Technology Officer: finalize language",
+              "agent": "Chief Technology Officer",
+              "input_fields": [
+                "language_discussion"
+              ],
+              "output_fields": [
+                "language"
+              ],
+              "instructions": "You are Chief Technology Officer at ChatDev.\n\nFor this workflow, ALWAYS choose Python so the generated project can be executed and tested automatically.\n\nOutput requirement (STRICT):\n- Output exactly: Python\n- Output plain text only: no JSON/YAML, no code fences, no explanations, no extra whitespace."
+            }
+          ],
+          "edges": [
+            {
+              "source": "CONTROLLER",
+              "target": "instructor_agent"
+            },
+            {
+              "source": "instructor_agent",
+              "target": "assistant_agent"
+            },
+            {
+              "source": "assistant_agent",
+              "target": "CONTROLLER"
+            }
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "ENTRY",
+        "target": "loop_1"
+      },
+      {
+        "source": "loop_1",
+        "target": "EXIT"
+      }
+    ]
+  }
+}

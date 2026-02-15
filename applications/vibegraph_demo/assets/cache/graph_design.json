@@ -1,0 +1,474 @@
+{
+  "graph_design": {
+    "edges": [
+      {
+        "source": "ENTRY",
+        "target": "demand_analysis_phase"
+      },
+      {
+        "source": "demand_analysis_phase",
+        "target": "language_choose_phase"
+      },
+      {
+        "source": "language_choose_phase",
+        "target": "coding_phase"
+      },
+      {
+        "source": "coding_phase",
+        "target": "test_loop"
+      },
+      {
+        "source": "test_loop",
+        "target": "EXIT"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "demand_analysis_phase",
+        "label": "Demand analysis phase",
+        "max_iterations": 1,
+        "sub_graph": {
+          "edges": [
+            {
+              "source": "CONTROLLER",
+              "target": "demand_analysis_assistant_step"
+            },
+            {
+              "source": "demand_analysis_assistant_step",
+              "target": "demand_analysis_instructor_step"
+            },
+            {
+              "source": "demand_analysis_instructor_step",
+              "target": "CONTROLLER"
+            }
+          ],
+          "nodes": [
+            {
+              "agent": "demand_analysis_assistant_agent",
+              "id": "demand_analysis_assistant_step",
+              "label": "Demand analysis assistant agent step",
+              "type": "Action",
+              "scope": "root/demand_analysis_phase",
+              "agent_id": "demand_analysis_assistant_agent_01",
+              "tools_allowed": [],
+              "input_fields": [
+                "task",
+                "description"
+              ],
+              "output_fields": [
+                "modality"
+              ],
+              "instructions": "ChatDev has made products in the following form before:\nImage: can present information in line chart, bar chart, flow chart, cloud chart, Gantt chart, etc.\nDocument: can present information via .docx files.\nPowerPoint: can present information via .pptx files.\nExcel: can present information via .xlsx files.\nPDF: can present information via .pdf files.\nWebsite: can present personal resume, tutorial, products, or ideas, via .html files.\nApplication: can implement visualized game, software, tool, etc, via python.\nDashboard: can display a panel visualizing real-time information.\nMind Map: can represent ideas, with related concepts arranged around a core concept.\nAs the {role_name}, to satisfy the new user's demand and the product should be realizable, you should keep discussing with me to decide which product modality do we want the product to be?\nNote that we must ONLY discuss the product modality and do not discuss anything else! Once we all have expressed our opinion(s) and agree with the results of the discussion unanimously, any of us must actively terminate the discussion with a concrete modality field and set discussion_finished to True. Before that, you can keep discussing and set the modality with empty str in your output, give your disscussion opinion in corresponding field, and set discussion_finished to False. At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields.\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Chief Product Officer. We are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYou are responsible for all product-related matters in ChatDev. Usually includes product design, product strategy, product vision, product innovation, project management and product marketing.\nHere is a new customer's task: {task}.\nTo complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs."
+            },
+            {
+              "agent": "demand_analysis_instructor_agent",
+              "id": "demand_analysis_instructor_step",
+              "label": "Demand analysis instructor agent step",
+              "type": "Action",
+              "scope": "root/demand_analysis_phase",
+              "agent_id": "demand_analysis_instructor_agent_01",
+              "tools_allowed": [],
+              "input_fields": [
+                "task",
+                "description",
+                "modality"
+              ],
+              "output_fields": [],
+              "instructions": "ChatDev has made products in the following form before:\nImage: can present information in line chart, bar chart, flow chart, cloud chart, Gantt chart, etc.\nDocument: can present information via .docx files.\nPowerPoint: can present information via .pptx files.\nExcel: can present information via .xlsx files.\nPDF: can present information via .pdf files.\nWebsite: can present personal resume, tutorial, products, or ideas, via .html files.\nApplication: can implement visualized game, software, tool, etc, via python.\nDashboard: can display a panel visualizing real-time information.\nMind Map: can represent ideas, with related concepts arranged around a core concept.\nAs the {role_name}, to satisfy the new user's demand and the product should be realizable, you should keep discussing with me to decide which product modality do we want the product to be?\nNote that we must ONLY discuss the product modality and do not discuss anything else! Once we all have expressed our opinion(s) and agree with the results of the discussion unanimously, any of us must actively terminate the discussion with a concrete modality field and set discussion_finished to True. Before that, you can keep discussing and set the modality with empty str in your output, give your disscussion opinion in corresponding field, and set discussion_finished to False. At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields.\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Chief Executive Officer. Now, we are both working at ChatDev and we share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYour main responsibilities include being an active decision-maker on users' demands and other key policy issues, leader, manager, and executor. Your decision-making role involves high-level decisions about policy and strategy; and your communicator role can involve speaking to the organization's management and employees.\nHere is a new customer's task: {task}.\nTo complete the task, I will give you one or more instructions, and you must help me to write a specific solution that appropriately solves the requested instruction based on your expertise and my needs."
+            }
+          ]
+        },
+        "terminate_condition": "Terminate after 1 iteration.",
+        "type": "Loop",
+        "scope": "root",
+        "input_fields": [
+          "task",
+          "description"
+        ],
+        "output_fields": [
+          "modality"
+        ]
+      },
+      {
+        "id": "language_choose_phase",
+        "label": "Language choose phase",
+        "max_iterations": 1,
+        "sub_graph": {
+          "edges": [
+            {
+              "source": "CONTROLLER",
+              "target": "language_choose_assistant_step"
+            },
+            {
+              "source": "language_choose_assistant_step",
+              "target": "language_choose_instructor_step"
+            },
+            {
+              "source": "language_choose_instructor_step",
+              "target": "CONTROLLER"
+            }
+          ],
+          "nodes": [
+            {
+              "agent": "language_choose_assistant_agent",
+              "id": "language_choose_assistant_step",
+              "label": "Language choose assistant agent step",
+              "type": "Action",
+              "scope": "root/language_choose_phase",
+              "agent_id": "language_choose_assistant_agent_01",
+              "tools_allowed": [],
+              "input_fields": [
+                "task",
+                "description",
+                "modality",
+                "ideas"
+              ],
+              "output_fields": [
+                "language"
+              ],
+              "instructions": "According to the new user's task and some creative brainstorm ideas listed below:\nTask: \"{task}\".\nModality: \"{modality}\".\nWe have decided to complete the task through a executable software implemented via a programming language.\nAs the Chief Technology Officer, to satisfy the new user's demand and make the software realizable, you should propose a concrete programming language. If python can complete this task via Python, please answer Python; otherwise, answer another programming language (e.g., Java, C++, etc,).\nNote that we must ONLY discuss the target programming language and do not discuss anything else! Once we all have expressed our opinion(s) and agree with the results of the discussion unanimously, any of us must actively terminate the discussion and conclude the best programming language we have discussed without any other words or reasons and set discussion_finished to True, Before that you can keep discussing and set the language with empty str in your output, give your disscussion opinion in corresponding field,and set discussion_finished to False. At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields.\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Chief Technology Officer. We are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYou are very familiar to information technology. You will make high-level decisions for the overarching technology infrastructure that closely align with the organization's goals, while you work alongside the organization's information technology (\"IT\") staff members to perform everyday operations.\nHere is a new customer's task: {task}.\nTo complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs."
+            },
+            {
+              "agent": "language_choose_instructor_agent",
+              "id": "language_choose_instructor_step",
+              "label": "Language choose instructor agent step",
+              "type": "Action",
+              "scope": "root/language_choose_phase",
+              "agent_id": "language_choose_instructor_agent_01",
+              "tools_allowed": [],
+              "input_fields": [
+                "task",
+                "description",
+                "modality",
+                "ideas",
+                "language"
+              ],
+              "output_fields": [],
+              "instructions": "According to the new user's task and some creative brainstorm ideas listed below:\nTask: \"{task}\".\nModality: \"{modality}\".\nWe have decided to complete the task through a executable software implemented via a programming language.\nAs the Chief Technology Officer, to satisfy the new user's demand and make the software realizable, you should propose a concrete programming language. If python can complete this task via Python, please answer Python; otherwise, answer another programming language (e.g., Java, C++, etc,).\nNote that we must ONLY discuss the target programming language and do not discuss anything else! Once we all have expressed our opinion(s) and agree with the results of the discussion unanimously, any of us must actively terminate the discussion and conclude the best programming language we have discussed without any other words or reasons and set discussion_finished to True, Before that you can keep discussing and set the language with empty str in your output, give your disscussion opinion in corresponding field,and set discussion_finished to False. At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields.\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Chief Executive Officer. Now, we are both working at ChatDev and we share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYour main responsibilities include being an active decision-maker on users' demands and other key policy issues, leader, manager, and executor. Your decision-making role involves high-level decisions about policy and strategy; and your communicator role can involve speaking to the organization's management and employees.\nHere is a new customer's task: {task}.\nTo complete the task, I will give you one or more instructions, and you must help me to write a specific solution that appropriately solves the requested instruction based on your expertise and my needs."
+            }
+          ]
+        },
+        "terminate_condition": "Terminate after 1 iteration.",
+        "type": "Loop",
+        "scope": "root",
+        "input_fields": [
+          "task",
+          "description",
+          "modality",
+          "ideas"
+        ],
+        "output_fields": [
+          "language"
+        ]
+      },
+      {
+        "id": "coding_phase",
+        "label": "Coding phase",
+        "max_iterations": 1,
+        "sub_graph": {
+          "edges": [
+            {
+              "source": "CONTROLLER",
+              "target": "coding_assistant_step"
+            },
+            {
+              "source": "coding_assistant_step",
+              "target": "coding_instructor_step"
+            },
+            {
+              "source": "coding_instructor_step",
+              "target": "CONTROLLER"
+            }
+          ],
+          "nodes": [
+            {
+              "agent": "coding_assistant_agent",
+              "id": "coding_assistant_step",
+              "label": "Coding assistant agent step",
+              "type": "Action",
+              "scope": "root/coding_phase",
+              "agent_id": "coding_assistant_agent_01",
+              "tools_allowed": [
+                "codes_check_and_processing_tool",
+                "check_code_completeness_tool"
+              ],
+              "input_fields": [
+                "task",
+                "description",
+                "modality",
+                "ideas",
+                "language",
+                "gui",
+                "unimplemented_file"
+              ],
+              "output_fields": [
+                "codes",
+                "unimplemented_file"
+              ],
+              "instructions": "[CRITICAL TOOL USAGE PROTOCOL]\n\nYou MUST follow this EXACT sequence after generating code:\n\nSTEP 1: Call codes_check_and_processing_tool\n- Parameter: codes (list of dicts with filename, language, docstring, code)\n- Example: codes_check_and_processing_tool(codes=[{\"filename\": \"main.py\", \"language\": \"Python\", \"docstring\": \"...\", \"code\": \"...\"}])\n\nSTEP 2: Call check_code_completeness_tool\n- No parameters needed\n- This checks if there are any unimplemented functions (containing 'pass' or 'NotImplementedError')\n- Returns JSON: {\"has_unimplemented\": bool, \"filename\": str or null}\n\nSTEP 3: Report the result\n- If has_unimplemented is False: Output \"All code is complete and functional.\"\n- If has_unimplemented is True: Output \"Warning: {unimplemented_file} contains unimplemented code that needs completion.\"\n\nDO NOT skip any step. DO NOT change the order.\n\n---\n\nAccording to the new user's task and below listed software designs:\nTask: \"{task}\".\nModality: \"{modality}\".\nProgramming Language: \"{language}\"\nWe have decided to complete the task through a executable software with multiple files implemented via {language}. As the Programmer, to satisfy the new user's demands, you should write one or multiple files and make sure that every detail of the architecture is, in the end, implemented as code.\nThink step by step and reason yourself to the right decisions to make sure we get it right.\nYou will first lay out the names of the core classes, functions, methods that will be necessary, as well as a quick comment on their purpose.\nThen you will output the content of each file including complete code.\nAt the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the output format. You can write multiple files according to the requirements, so you can extend the output list.\nYou will start with the \"main\" file, then go to the ones that are imported by that file, and so on.\nPlease note that the code should be fully functional. Ensure to implement all functions. No placeholders (such as 'pass' in Python).\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Programmer. We are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYou can write/create computer software or applications by providing a specific programming language to the computer. You have extensive computing and coding experience in many varieties of programming languages and platforms, such as Python, Java, C, C++, HTML, CSS, JavaScript, XML, SQL, PHP, etc,.\nHere is a new customer's task: {task}.\nTo complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs."
+            },
+            {
+              "agent": "coding_instructor_agent",
+              "id": "coding_instructor_step",
+              "label": "Coding instructor agent step",
+              "type": "Action",
+              "scope": "root/coding_phase",
+              "agent_id": "coding_instructor_agent_01",
+              "tools_allowed": [],
+              "input_fields": [
+                "task",
+                "description",
+                "modality",
+                "ideas",
+                "language",
+                "gui",
+                "codes",
+                "unimplemented_file"
+              ],
+              "output_fields": [],
+              "instructions": "According to the new user's task and our software designs listed below:\nTask: \"{task}\".\nModality: \"{modality}\".\nProgramming Language: \"{language}\"\nWe have decided to complete the task through a executable software with multiple files implemented via {language}. As the Programmer, to satisfy the new user's demands, you should write one or multiple files and make sure that every detail of the architecture is, in the end, implemented as code.\nThink step by step and reason yourself to the right decisions to make sure we get it right.\nYou will first lay out the names of the core classes, functions, methods that will be necessary, as well as a quick comment on their purpose.\nThen you will output the content of each file including complete code.\nAt the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.\nYou will start with the \"main\" file, then go to the ones that are imported by that file, and so on.\nPlease note that the code should be fully functional. Ensure to implement all functions. No placeholders (such as 'pass' in Python).\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Chief Technology Officer. We are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYou are very familiar to information technology. You will make high-level decisions for the overarching technology infrastructure that closely align with the organization's goals, while you work alongside the organization's information technology (\"IT\") staff members to perform everyday operations.\nHere is a new customer's task: {task}.\nTo complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs."
+            }
+          ]
+        },
+        "terminate_condition": "Terminate after 1 iteration.",
+        "type": "Loop",
+        "scope": "root",
+        "input_fields": [
+          "task",
+          "description",
+          "modality",
+          "ideas",
+          "language",
+          "gui",
+          "unimplemented_file"
+        ],
+        "output_fields": [
+          "codes",
+          "unimplemented_file"
+        ]
+      },
+      {
+        "id": "test_loop",
+        "label": "Test loop (iterate testing and fixing)",
+        "max_iterations": 3,
+        "sub_graph": {
+          "edges": [
+            {
+              "source": "CONTROLLER",
+              "target": "test_error_summary_phase"
+            },
+            {
+              "source": "test_error_summary_phase",
+              "target": "test_modification_phase"
+            },
+            {
+              "source": "test_modification_phase",
+              "target": "CONTROLLER"
+            }
+          ],
+          "nodes": [
+            {
+              "id": "test_error_summary_phase",
+              "label": "Test error summary phase",
+              "max_iterations": 1,
+              "sub_graph": {
+                "edges": [
+                  {
+                    "source": "CONTROLLER",
+                    "target": "test_error_summary_assistant_step"
+                  },
+                  {
+                    "source": "test_error_summary_assistant_step",
+                    "target": "test_error_summary_instructor_step"
+                  },
+                  {
+                    "source": "test_error_summary_instructor_step",
+                    "target": "CONTROLLER"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "agent": "test_error_summary_assistant_agent",
+                    "id": "test_error_summary_assistant_step",
+                    "label": "Test error summary assistant agent step",
+                    "type": "Action",
+                    "scope": "root/test_loop/test_error_summary_phase",
+                    "agent_id": "test_error_summary_assistant_agent_01",
+                    "tools_allowed": [
+                      "run_tests_tool"
+                    ],
+                    "input_fields": [
+                      "task",
+                      "modality",
+                      "ideas",
+                      "language",
+                      "codes",
+                      "test_reports",
+                      "directory",
+                      "incorporated_images",
+                      "proposed_images",
+                      "image_model",
+                      "exist_bugs_flag"
+                    ],
+                    "output_fields": [
+                      "error_summary",
+                      "test_reports",
+                      "exist_bugs_flag"
+                    ],
+                    "instructions": "[TOOL USAGE]\nYou MUST call the run_tests_tool after generating or modifying code files.\n- This tool will execute all available tests and return a test report and error summary.\n- After calling the tool, summarize the errors found (if any) and output both 'error_summary' and 'test_reports' fields as required by the output schema.\n- If all tests pass, set 'error_summary' to 'No errors found.'\n\nOur developed source codes and corresponding test reports are listed below:\nProgramming Language: \"{language}\"\nSource Codes:\n\"{codes}\"\nTest Reports of Source Codes:\n\"{test_reports}\"\nAccording to my test reports, please locate and summarize the bugs that cause the problem.\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Programmer. We are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYou can write/create computer software or applications by providing a specific programming language to the computer. You have extensive computing and coding experience in many varieties of programming languages and platforms, such as Python, Java, C, C++, HTML, CSS, JavaScript, XML, SQL, PHP, etc,.\nHere is a new customer's task: {task}.\nTo complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs."
+                  },
+                  {
+                    "agent": "test_error_summary_instructor_agent",
+                    "id": "test_error_summary_instructor_step",
+                    "label": "Test error summary instructor agent step",
+                    "type": "Action",
+                    "scope": "root/test_loop/test_error_summary_phase",
+                    "agent_id": "test_error_summary_instructor_agent_01",
+                    "tools_allowed": [],
+                    "input_fields": [
+                      "task",
+                      "language",
+                      "codes",
+                      "test_reports",
+                      "error_summary",
+                      "exist_bugs_flag"
+                    ],
+                    "output_fields": [],
+                    "instructions": "Our developed source codes and corresponding test reports are listed below:\nProgramming Language: \"{language}\"\nSource Codes:\n\"{codes}\"\nTest Reports of Source Codes:\n\"{test_reports}\"\nAccording to my test reports, please locate and summarize the bugs that cause the problem.\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Software Test Engineer. We are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYou can use the software as intended to analyze its functional properties, design manual and automated test procedures to evaluate each software product, build and implement software evaluation test programs, and run test programs to ensure that testing protocols evaluate the software correctly.\nHere is a new customer's task: {task}.\nTo complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs."
+                  }
+                ]
+              },
+              "terminate_condition": "Terminate after 1 iteration.",
+              "type": "Loop",
+              "scope": "root/test_loop",
+              "input_fields": [
+                "task",
+                "modality",
+                "ideas",
+                "language",
+                "codes",
+                "test_reports",
+                "directory",
+                "incorporated_images",
+                "proposed_images",
+                "image_model",
+                "exist_bugs_flag"
+              ],
+              "output_fields": [
+                "error_summary",
+                "test_reports",
+                "exist_bugs_flag"
+              ]
+            },
+            {
+              "id": "test_modification_phase",
+              "label": "Test modification phase",
+              "max_iterations": 1,
+              "sub_graph": {
+                "edges": [
+                  {
+                    "source": "CONTROLLER",
+                    "target": "test_modification_assistant_step"
+                  },
+                  {
+                    "source": "test_modification_assistant_step",
+                    "target": "test_modification_instructor_step"
+                  },
+                  {
+                    "source": "test_modification_instructor_step",
+                    "target": "CONTROLLER"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "agent": "test_modification_assistant_agent",
+                    "id": "test_modification_assistant_step",
+                    "label": "Test modification assistant agent step",
+                    "type": "Action",
+                    "scope": "root/test_loop/test_modification_phase",
+                    "agent_id": "test_modification_assistant_agent_01",
+                    "tools_allowed": [
+                      "codes_check_and_processing_tool"
+                    ],
+                    "input_fields": [
+                      "task",
+                      "modality",
+                      "ideas",
+                      "language",
+                      "test_reports",
+                      "error_summary",
+                      "codes"
+                    ],
+                    "output_fields": [
+                      "modification_conclusion",
+                      "codes"
+                    ],
+                    "instructions": "[TOOL USAGE]\nAfter analyzing the test reports and error summary, you MUST fix the code and then call codes_check_and_processing_tool to save the updated code files.\n- The parameter 'codes' should be a list of code file dicts (filename, language, docstring, code).\n- After saving, set 'modification_conclusion' to 'Finished!' if all issues are fixed, or 'Need improve' if further fixes are needed.\n\nOur developed source codes and corresponding test reports are listed below:\nProgramming Language: \"{language}\"\nSource Codes:\n\"{codes}\"\nTest Reports of Source Codes:\n\"{test_reports}\"\nError Summary of Test Reports:\n\"{error_summary}\"\nAt the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.\nAs the Programmer, to satisfy the new user's demand and make the software execute smoothly and robustly, you should modify the codes based on the error summary. Now, use the format exemplified above and modify the problematic codes based on the error summary. Output the codes that you fixed based on the test reported and corresponding explanations (strictly follow the format defined at the end of this message, including filename, language, docstring and code in field codes; incomplete \"TODO\" codes are strictly prohibited). If no bugs are reported, please write \"Finished\" in field \"modification_conclusion\" and write True in field \"discussion_finished\".\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Programmer. We are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYou can write/create computer software or applications by providing a specific programming language to the computer. You have extensive computing and coding experience in many varieties of programming languages and platforms, such as Python, Java, C, C++, HTML, CSS, JavaScript, XML, SQL, PHP, etc,.\nHere is a new customer's task: {task}.\nTo complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs."
+                  },
+                  {
+                    "agent": "test_modification_instructor_agent",
+                    "id": "test_modification_instructor_step",
+                    "label": "Test modification instructor agent step",
+                    "type": "Action",
+                    "scope": "root/test_loop/test_modification_phase",
+                    "agent_id": "test_modification_instructor_agent_01",
+                    "tools_allowed": [],
+                    "input_fields": [
+                      "task",
+                      "language",
+                      "codes",
+                      "test_reports",
+                      "error_summary",
+                      "modification_conclusion"
+                    ],
+                    "output_fields": [],
+                    "instructions": "Our developed source codes and corresponding test reports are listed below:\nProgramming Language: \"{language}\"\nSource Codes:\n\"{codes}\"\nTest Reports of Source Codes:\n\"{test_reports}\"\nError Summary of Test Reports:\n\"{error_summary}\"\nAt the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields. You must strictly follow the format for output. You can write multiple files according to the requirements, so you can extend the output list.\nAs the Programmer, to satisfy the new user's demand and make the software execute smoothly and robustly, you should modify the codes based on the error summary. Now, use the format exemplified above and modify the problematic codes based on the error summary. Output the codes that you fixed based on the test reported and corresponding explanations (strictly follow the format defined at the end of this message, including filename, language, docstring and code in field codes; incomplete \"TODO\" codes are strictly prohibited). If no bugs are reported, please write \"Finished\" in field \"modification_conclusion\" and write True in field \"discussion_finished\".\n\nChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.\nYou are Software Test Engineer. We are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.\nYou can use the software as intended to analyze its functional properties, design manual and automated test procedures to evaluate each software product, build and implement software evaluation test programs, and run test programs to ensure that testing protocols evaluate the software correctly.\nHere is a new customer's task: {task}.\nTo complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs."
+                  }
+                ]
+              },
+              "terminate_condition": "Terminate after 1 iteration.",
+              "type": "Loop",
+              "scope": "root/test_loop",
+              "input_fields": [
+                "task",
+                "modality",
+                "ideas",
+                "language",
+                "test_reports",
+                "error_summary",
+                "codes"
+              ],
+              "output_fields": [
+                "modification_conclusion",
+                "codes"
+              ]
+            }
+          ]
+        },
+        "terminate_condition": "Terminate the loop if ANY of the following is true: error_summary contains \"No errors found\" (case-insensitive), OR exist_bugs_flag is False, OR modification_conclusion equals \"Finished!\". Otherwise continue.",
+        "type": "Loop",
+        "scope": "root",
+        "input_fields": [
+          "task",
+          "modality",
+          "ideas",
+          "language",
+          "codes",
+          "test_reports",
+          "directory",
+          "incorporated_images",
+          "proposed_images",
+          "image_model",
+          "exist_bugs_flag"
+        ],
+        "output_fields": [
+          "codes",
+          "test_reports",
+          "error_summary",
+          "exist_bugs_flag",
+          "modification_conclusion"
+        ]
+      }
+    ]
+  }
+}

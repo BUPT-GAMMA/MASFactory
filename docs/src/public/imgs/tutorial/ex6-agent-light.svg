@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="360" viewBox="0 0 980 360">
+  <defs>
+    <style>
+      :root {
+        --c-title: #0f172a;
+        --c-box-fill: #ffffff;
+        --c-box-stroke: #5b7cfa;
+        --c-agent-fill: #ecfeff;
+        --c-agent-stroke: #22b8cf;
+        --c-txt: #0f172a;
+        --c-hint: #475569;
+        --c-arrow: #64748b;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .agent { fill: var(--c-agent-fill); stroke: var(--c-agent-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .txt { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); text-anchor: middle; }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">示例 6：双 Agent 工作流（planner → builder）</text>
+
+  <rect x="40" y="140" width="180" height="72" class="box"/>
+  <text x="130" y="176" class="txt">ENTRY</text>
+
+  <rect x="290" y="120" width="200" height="100" class="agent"/>
+  <text x="390" y="170" class="txt">planner (Agent)</text>
+  <text x="390" y="205" class="hint">根据 topic 生成 plan</text>
+
+  <rect x="540" y="120" width="200" height="100" class="agent"/>
+  <text x="640" y="170" class="txt">builder (Agent)</text>
+  <text x="640" y="205" class="hint">根据 topic + plan 生成 output</text>
+
+  <rect x="790" y="140" width="180" height="72" class="box"/>
+  <text x="880" y="176" class="txt">EXIT</text>
+
+  <path d="M220 176 L290 176" class="arrow"/>
+  <path d="M490 176 L540 176" class="arrow"/>
+  <path d="M740 176 L790 176" class="arrow"/>
+
+</svg>

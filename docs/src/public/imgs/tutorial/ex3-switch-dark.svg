@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="460" viewBox="0 0 980 460">
+  <defs>
+    <style>
+      :root {
+        --c-title: #e5e7eb;
+        --c-box-fill: #131b2e;
+        --c-box-stroke: #8ea2ff;
+        --c-switch-fill: #1d2340;
+        --c-switch-stroke: #9aa8ff;
+        --c-txt: #e2e8f0;
+        --c-hint: #9aa8c2;
+        --c-arrow: #8fa2bf;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .switch { fill: var(--c-switch-fill); stroke: var(--c-switch-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .txt { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); text-anchor: middle; }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">示例 3：LogicSwitch 条件分支</text>
+
+  <rect x="40" y="200" width="180" height="72" class="box"/>
+  <text x="130" y="236" class="txt">ENTRY</text>
+
+  <rect x="290" y="200" width="200" height="72" class="switch"/>
+  <text x="390" y="236" class="txt">router</text>
+
+  <rect x="580" y="100" width="260" height="72" class="box"/>
+  <text x="710" y="136" class="txt">small_handler</text>
+  <text x="710" y="196" class="hint">条件：n &lt; 10</text>
+
+  <rect x="580" y="290" width="260" height="72" class="box"/>
+  <text x="710" y="326" class="txt">large_handler</text>
+  <text x="710" y="386" class="hint">条件：n ≥ 10</text>
+
+  <rect x="850" y="200" width="120" height="72" class="box"/>
+  <text x="910" y="236" class="txt">EXIT</text>
+
+  <path d="M220 236 L290 236" class="arrow"/>
+  <path d="M490 236 C540 236,540 136,580 136" class="arrow"/>
+  <path d="M490 236 C540 236,540 326,580 326" class="arrow"/>
+  <path d="M840 136 C880 136,890 200,850 236" class="arrow"/>
+  <path d="M840 326 C880 326,890 272,850 236" class="arrow"/>
+</svg>

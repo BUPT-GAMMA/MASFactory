@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="520" viewBox="0 0 1020 520">
+  <defs>
+    <style>
+      :root {
+        --c-title: #0f172a;
+        --c-group-fill: #f8fafc;
+        --c-group-stroke: #cbd5e1;
+        --c-box-fill: #ffffff;
+        --c-box-stroke: #5b7cfa;
+        --c-controller-fill: #eef2ff;
+        --c-controller-stroke: #7c83ff;
+        --c-txt: #0f172a;
+        --c-hint: #475569;
+        --c-arrow: #64748b;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .group { fill: var(--c-group-fill); stroke: var(--c-group-stroke); stroke-width: 2; rx: 14; ry: 14; }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .controller { fill: var(--c-controller-fill); stroke: var(--c-controller-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .txt { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); text-anchor: middle; }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">示例 5：Loop（CONTROLLER ↔ step）</text>
+
+  <rect x="40" y="230" width="160" height="72" class="box"/>
+  <text x="120" y="266" class="txt">ENTRY</text>
+
+  <rect x="230" y="120" width="600" height="300" class="group"/>
+  <text x="530" y="150" class="hint">counter_loop (Loop)</text>
+
+  <rect x="320" y="240" width="200" height="72" class="controller"/>
+  <text x="420" y="276" class="txt">CONTROLLER</text>
+
+  <rect x="580" y="240" width="180" height="72" class="box"/>
+  <text x="670" y="276" class="txt">step</text>
+  <text x="670" y="348" class="hint">value += 1</text>
+
+  <path d="M520 276 L580 276" class="arrow"/>
+  <path d="M760 276 C820 276,820 190,670 190 C520 190,420 200,320 276" class="arrow"/>
+  <text x="650" y="172" class="hint">回环：step → CONTROLLER</text>
+
+  <rect x="860" y="230" width="140" height="72" class="box"/>
+  <text x="930" y="266" class="txt">EXIT</text>
+
+  <path d="M200 266 L230 266" class="arrow"/>
+  <path d="M830 266 L860 266" class="arrow"/>
+  <text x="860" y="206" class="hint">终止条件：value ≥ 3 或 max_iterations</text>
+</svg>

@@ -1,0 +1,8 @@
+node_modules/
+.npm-cache/
+.npm-cache-vsce/
+out/
+media/webview-ui/
+*.vsix
+problem.md
+CLAUDEME.md

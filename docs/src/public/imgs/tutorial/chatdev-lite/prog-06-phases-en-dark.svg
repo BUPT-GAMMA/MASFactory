@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="900" viewBox="0 0 980 900">
+  <defs>
+    <style>
+      :root {
+        --c-title: #e5e7eb;
+        --c-box-fill: #131b2e;
+        --c-box-stroke: #8ea2ff;
+        --c-phase-fill: #0f172a;
+        --c-phase-stroke: #8ea2ff;
+        --c-txt: #e2e8f0;
+        --c-hint: #9aa8c2;
+        --c-arrow: #8fa2bf;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .phase { fill: var(--c-phase-fill); stroke: var(--c-phase-stroke); stroke-width: 2.2; rx: 12; ry: 12; }
+      .txt { font: 700 18px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 500 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); text-anchor: middle; }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">Chaining 6 phases (simplified ChatDev Lite)</text>
+
+  <rect x="260" y="80" width="460" height="64" class="box"/>
+  <text x="490" y="112" class="txt">ENTRY</text>
+
+  <rect x="260" y="170" width="460" height="72" class="phase"/>
+  <text x="490" y="206" class="txt">demand_analysis</text>
+
+  <rect x="260" y="270" width="460" height="72" class="phase"/>
+  <text x="490" y="306" class="txt">language_choose</text>
+
+  <rect x="260" y="370" width="460" height="72" class="phase"/>
+  <text x="490" y="406" class="txt">coding</text>
+
+  <rect x="260" y="470" width="460" height="72" class="phase"/>
+  <text x="490" y="506" class="txt">code_complete</text>
+
+  <rect x="260" y="570" width="460" height="72" class="phase"/>
+  <text x="490" y="606" class="txt">coding_test</text>
+
+  <rect x="260" y="670" width="460" height="72" class="phase"/>
+  <text x="490" y="706" class="txt">manual</text>
+
+  <rect x="260" y="780" width="460" height="64" class="box"/>
+  <text x="490" y="812" class="txt">EXIT</text>
+
+  <!-- arrows -->
+  <path d="M490 144 L490 170" class="arrow"/>
+  <path d="M490 242 L490 270" class="arrow"/>
+  <path d="M490 342 L490 370" class="arrow"/>
+  <path d="M490 442 L490 470" class="arrow"/>
+  <path d="M490 542 L490 570" class="arrow"/>
+  <path d="M490 642 L490 670" class="arrow"/>
+  <path d="M490 742 L490 780" class="arrow"/>
+
+  <text x="650" y="230" class="hint">attributes / control flow</text>
+</svg>

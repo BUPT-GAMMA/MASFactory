@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520">
+  <defs>
+    <style>
+      :root {
+        --c-title: #e5e7eb;
+        --c-box-fill: #131b2e;
+        --c-box-stroke: #8ea2ff;
+        --c-switch-fill: #1b2550;
+        --c-switch-stroke: #93a6ff;
+        --c-txt: #e2e8f0;
+        --c-hint: #9aa8c2;
+        --c-arrow: #8fa2bf;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .switch { fill: var(--c-switch-fill); stroke: var(--c-switch-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .txt { font: 700 16.5px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="36" class="title">ChatDev Lite · Step 3：LogicSwitch 条件分支（code_complete 可选）</text>
+
+  <!-- Top chain -->
+  <rect x="80" y="92" width="220" height="56" class="box"/>
+  <text x="190" y="120" class="txt">ENTRY</text>
+
+  <rect x="340" y="92" width="240" height="56" class="box"/>
+  <text x="460" y="120" class="txt">coding_phase</text>
+
+  <rect x="640" y="86" width="260" height="68" class="switch"/>
+  <text x="770" y="112" class="txt">code_complete_switch</text>
+  <text x="770" y="138" class="hint" text-anchor="middle">LogicSwitch</text>
+
+  <path d="M300 120 L340 120" class="arrow"/>
+  <path d="M580 120 L640 120" class="arrow"/>
+
+  <!-- Branches -->
+  <rect x="300" y="230" width="260" height="56" class="box"/>
+  <text x="430" y="258" class="txt">code_complete_phase</text>
+
+  <rect x="640" y="230" width="260" height="56" class="box"/>
+  <text x="770" y="258" class="txt">code_review_phase</text>
+
+  <path d="M770 154 L770 230" class="arrow"/>
+  <path d="M770 154 C650 180,560 190,430 230" class="arrow"/>
+  <text x="620" y="182" class="hint">need_code_complete()</text>
+  <text x="792" y="198" class="hint">skip_code_complete()</text>
+
+  <!-- Join -->
+  <path d="M560 258 L640 258" class="arrow"/>
+  <text x="590" y="244" class="hint">then → review</text>
+
+  <!-- Exit -->
+  <rect x="640" y="360" width="260" height="56" class="box"/>
+  <text x="770" y="388" class="txt">EXIT</text>
+  <path d="M770 286 L770 360" class="arrow"/>
+
+  <text x="40" y="492" class="hint">说明：Switch 的条件通常读取 attributes（例如 unimplemented_file），边 keys 可以保持为 {}。</text>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="340" viewBox="0 0 980 340">
+  <defs>
+    <style>
+      :root {
+        --c-title: #e5e7eb;
+        --c-box-fill: #131b2e;
+        --c-box-stroke: #8ea2ff;
+        --c-agent-fill: #1b2550;
+        --c-agent-stroke: #93a6ff;
+        --c-txt: #e2e8f0;
+        --c-hint: #9aa8c2;
+        --c-arrow: #8fa2bf;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .agent { fill: var(--c-agent-fill); stroke: var(--c-agent-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .txt { font: 700 18px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 500 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); text-anchor: middle; }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">Step 2：引入一个 Agent（ENTRY → writer → EXIT）</text>
+
+  <rect x="60" y="120" width="200" height="72" class="box"/>
+  <text x="160" y="156" class="txt">ENTRY</text>
+
+  <rect x="330" y="112" width="320" height="88" class="agent"/>
+  <text x="490" y="156" class="txt">writer (Agent)</text>
+  <text x="490" y="220" class="hint">outputs: message</text>
+
+  <rect x="720" y="120" width="200" height="72" class="box"/>
+  <text x="820" y="156" class="txt">EXIT</text>
+
+  <path d="M260 156 L330 156" class="arrow"/>
+  <path d="M650 156 L720 156" class="arrow"/>
+
+</svg>

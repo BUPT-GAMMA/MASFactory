@@ -1,0 +1,35 @@
+# HuggingGPT2 config file
+# Derived from JARVIS `config.default.yaml`
+#
+# OpenAI settings (read from environment variables):
+# - OPENAI_API_KEY
+# - OPENAI_BASE_URL (default: https://api.csun.site/v1/)
+# - OPENAI_MODEL_NAME (default: gpt-4o-mini)
+#
+# HuggingFace settings:
+huggingface:
+  # Read from env var: HUGGINGFACE_ACCESS_TOKEN
+  token: ""
+
+# Inference mode
+inference_mode: hybrid  # local, huggingface, hybrid
+local_deployment: full  # minimal, standard, full
+local_inference_endpoint:
+  host: localhost
+  port: 8005
+
+# Model config
+num_candidate_models: 5
+max_description_length: 100
+
+# Data paths
+data_dir: data
+models_file: data/p0_models.jsonl
+demos_dir: demos
+
+# Logging
+debug: false
+log_file: logs/hugginggpt2.log
+
+# Proxy (optional)
+proxy: ""  # e.g. "http://ip:port"

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="460" viewBox="0 0 980 460">
+  <defs>
+    <style>
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .box { fill: #ffffff; stroke: #5b8def; stroke-width: 2; rx: 12; ry: 12; }
+      .store { fill: #eef2ff; stroke: #7c83ff; stroke-width: 2; rx: 12; ry: 12; }
+      .txt { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: #5a6b85; text-anchor: middle; }
+      .arrow { stroke: #7b8da8; stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .dash { stroke-dasharray: 6 5; }
+      .arrow-head { fill: #7b8da8; }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">Vertical Message Passing: pull/push read/write attributes</text>
+
+  <rect x="330" y="90" width="320" height="72" class="store"/>
+  <text x="490" y="126" class="txt">graph attributes: counter</text>
+
+  <rect x="230" y="300" width="200" height="72" class="box"/>
+  <text x="330" y="336" class="txt">n1</text>
+
+  <rect x="550" y="300" width="200" height="72" class="box"/>
+  <text x="650" y="336" class="txt">n2</text>
+
+  <path d="M430 336 L550 336" class="arrow"/>
+  <text x="490" y="318" class="hint">Horizontal: payload</text>
+
+  <path d="M455 162 C420 210,370 250,330 300" class="arrow dash"/>
+  <path d="M525 162 C560 210,610 250,650 300" class="arrow dash"/>
+  <text x="280" y="232" class="hint">pull counter</text>
+  <text x="700" y="232" class="hint">pull counter</text>
+
+  <path d="M330 372 C350 438,410 442,470 90" class="arrow dash"/>
+  <path d="M650 372 C630 438,570 442,510 90" class="arrow dash"/>
+  <text x="420" y="448" class="hint">push counter</text>
+  <text x="560" y="448" class="hint">push counter</text>
+</svg>

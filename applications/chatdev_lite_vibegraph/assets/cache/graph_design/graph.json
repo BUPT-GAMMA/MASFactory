@@ -1,0 +1,244 @@
+{
+  "graph_design": {
+    "nodes": [
+      {
+        "name": "demand_analysis_phase",
+        "type": "Subgraph",
+        "label": "DemandAnalysis phase (cached design)",
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "DA_loop",
+              "type": "Loop",
+              "label": "Decide modality (1 iteration)",
+              "max_iterations": 1,
+              "sub_graph": {
+                "nodes": [
+                  {
+                    "name": "DA_instructor_agent",
+                    "type": "Action",
+                    "label": "CEO: propose modality",
+                    "agent": "Chief Executive Officer",
+                    "input_fields": ["task", "chatdev_prompt"],
+                    "output_fields": ["modality_discussion"],
+                    "instructions": "Discuss and propose a feasible modality. Output modality_discussion only."
+                  },
+                  {
+                    "name": "DA_assistant_agent",
+                    "type": "Action",
+                    "label": "CPO: finalize modality",
+                    "agent": "Chief Product Officer",
+                    "input_fields": ["modality_discussion"],
+                    "output_fields": ["modality"],
+                    "instructions": "Output final modality as ONE lowercase word only."
+                  }
+                ],
+                "edges": [
+                  { "source": "CONTROLLER", "target": "DA_instructor_agent" },
+                  { "source": "DA_instructor_agent", "target": "DA_assistant_agent" },
+                  { "source": "DA_assistant_agent", "target": "CONTROLLER" }
+                ]
+              }
+            }
+          ],
+          "edges": [
+            { "source": "ENTRY", "target": "DA_loop" },
+            { "source": "DA_loop", "target": "EXIT" }
+          ]
+        }
+      },
+      {
+        "name": "language_choose_phase",
+        "type": "Subgraph",
+        "label": "LanguageChoose phase (cached design)",
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "LC_loop",
+              "type": "Loop",
+              "label": "Choose language (1 iteration)",
+              "max_iterations": 1,
+              "sub_graph": {
+                "nodes": [
+                  {
+                    "name": "LC_instructor_agent",
+                    "type": "Action",
+                    "label": "CEO: language constraints",
+                    "agent": "Chief Executive Officer",
+                    "input_fields": ["task", "modality", "chatdev_prompt"],
+                    "output_fields": ["language_discussion"],
+                    "instructions": "State constraints/preferences for the language. Output language_discussion only."
+                  },
+                  {
+                    "name": "LC_assistant_agent",
+                    "type": "Action",
+                    "label": "CTO: finalize language",
+                    "agent": "Chief Technology Officer",
+                    "input_fields": ["language_discussion"],
+                    "output_fields": ["language"],
+                    "instructions": "Output final language as ONE word only."
+                  }
+                ],
+                "edges": [
+                  { "source": "CONTROLLER", "target": "LC_instructor_agent" },
+                  { "source": "LC_instructor_agent", "target": "LC_assistant_agent" },
+                  { "source": "LC_assistant_agent", "target": "CONTROLLER" }
+                ]
+              }
+            }
+          ],
+          "edges": [
+            { "source": "ENTRY", "target": "LC_loop" },
+            { "source": "LC_loop", "target": "EXIT" }
+          ]
+        }
+      },
+      {
+        "name": "coding_phase",
+        "type": "Subgraph",
+        "label": "Coding phase (cached design)",
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "CD_loop",
+              "type": "Loop",
+              "label": "Generate runnable code (1 iteration)",
+              "max_iterations": 1,
+              "sub_graph": {
+                "nodes": [
+                  {
+                    "name": "CD_instructor_agent",
+                    "type": "Action",
+                    "label": "CTO: implementation guidance",
+                    "agent": "Chief Technology Officer",
+                    "input_fields": ["task", "modality", "language", "gui", "chatdev_prompt"],
+                    "output_fields": ["coding_guidance"],
+                    "instructions": "Provide implementation guidance and constraints. Output coding_guidance only."
+                  },
+                  {
+                    "name": "CD_assistant_agent",
+                    "type": "Action",
+                    "label": "Programmer: implement code",
+                    "agent": "Programmer",
+                    "input_fields": ["coding_guidance"],
+                    "output_fields": ["codes"],
+                    "instructions": "Output only the complete runnable code files."
+                  }
+                ],
+                "edges": [
+                  { "source": "CONTROLLER", "target": "CD_instructor_agent" },
+                  { "source": "CD_instructor_agent", "target": "CD_assistant_agent" },
+                  { "source": "CD_assistant_agent", "target": "CONTROLLER" }
+                ]
+              }
+            }
+          ],
+          "edges": [
+            { "source": "ENTRY", "target": "CD_loop" },
+            { "source": "CD_loop", "target": "EXIT" }
+          ]
+        }
+      },
+      {
+        "name": "test_error_summary_phase",
+        "type": "Subgraph",
+        "label": "TestErrorSummary phase (cached design)",
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "TES_loop",
+              "type": "Loop",
+              "label": "Summarize test failures (1 iteration)",
+              "max_iterations": 1,
+              "sub_graph": {
+                "nodes": [
+                  {
+                    "name": "TES_instructor_agent",
+                    "type": "Action",
+                    "label": "Test Engineer: analyze reports",
+                    "agent": "Software Test Engineer",
+                    "input_fields": ["task", "language", "codes", "test_reports", "exist_bugs_flag", "chatdev_prompt"],
+                    "output_fields": ["test_analysis"],
+                    "instructions": "Analyze test reports and draft an error summary. Output test_analysis only."
+                  },
+                  {
+                    "name": "TES_assistant_agent",
+                    "type": "Action",
+                    "label": "Programmer: output error summary only",
+                    "agent": "Programmer",
+                    "input_fields": ["test_analysis"],
+                    "output_fields": ["error_summary"],
+                    "instructions": "Output only the plain-text error summary."
+                  }
+                ],
+                "edges": [
+                  { "source": "CONTROLLER", "target": "TES_instructor_agent" },
+                  { "source": "TES_instructor_agent", "target": "TES_assistant_agent" },
+                  { "source": "TES_assistant_agent", "target": "CONTROLLER" }
+                ]
+              }
+            }
+          ],
+          "edges": [
+            { "source": "ENTRY", "target": "TES_loop" },
+            { "source": "TES_loop", "target": "EXIT" }
+          ]
+        }
+      },
+      {
+        "name": "test_modification_phase",
+        "type": "Subgraph",
+        "label": "TestModification phase (cached design)",
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "TM_loop",
+              "type": "Loop",
+              "label": "Fix code from errors (1 iteration)",
+              "max_iterations": 1,
+              "sub_graph": {
+                "nodes": [
+                  {
+                    "name": "TM_instructor_agent",
+                    "type": "Action",
+                    "label": "Test Engineer: summarize fixes",
+                    "agent": "Software Test Engineer",
+                    "input_fields": ["task", "language", "codes", "test_reports", "error_summary", "chatdev_prompt"],
+                    "output_fields": ["fix_plan"],
+                    "instructions": "Summarize required fixes and constraints. Output fix_plan only."
+                  },
+                  {
+                    "name": "TM_assistant_agent",
+                    "type": "Action",
+                    "label": "Programmer: update code only",
+                    "agent": "Programmer",
+                    "input_fields": ["fix_plan"],
+                    "output_fields": ["codes"],
+                    "instructions": "Output only updated code files; do not create new files."
+                  }
+                ],
+                "edges": [
+                  { "source": "CONTROLLER", "target": "TM_instructor_agent" },
+                  { "source": "TM_instructor_agent", "target": "TM_assistant_agent" },
+                  { "source": "TM_assistant_agent", "target": "CONTROLLER" }
+                ]
+              }
+            }
+          ],
+          "edges": [
+            { "source": "ENTRY", "target": "TM_loop" },
+            { "source": "TM_loop", "target": "EXIT" }
+          ]
+        }
+      }
+    ],
+    "edges": [
+      { "source": "ENTRY", "target": "demand_analysis_phase" },
+      { "source": "demand_analysis_phase", "target": "language_choose_phase" },
+      { "source": "language_choose_phase", "target": "coding_phase" },
+      { "source": "coding_phase", "target": "test_error_summary_phase" },
+      { "source": "test_error_summary_phase", "target": "test_modification_phase" },
+      { "source": "test_modification_phase", "target": "EXIT" }
+    ]
+  }
+}

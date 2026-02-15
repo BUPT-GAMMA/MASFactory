@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="480" viewBox="0 0 1080 480">
+  <defs>
+    <style>
+      :root {
+        --c-title: #111827;
+        --c-group-fill: #f8fafc;
+        --c-group-stroke: #cbd5e1;
+        --c-box-fill: #ffffff;
+        --c-box-stroke: #3b82f6;
+        --c-txt: #0f172a;
+        --c-hint: #334155;
+        --c-arrow: #475569;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --c-title: #e5e7eb;
+          --c-group-fill: #0b1220;
+          --c-group-stroke: #475569;
+          --c-box-fill: #0f172a;
+          --c-box-stroke: #60a5fa;
+          --c-txt: #e2e8f0;
+          --c-hint: #94a3b8;
+          --c-arrow: #94a3b8;
+        }
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .group { fill: var(--c-group-fill); stroke: var(--c-group-stroke); stroke-width: 2; rx: 14; ry: 14; }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .txt { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); text-anchor: middle; }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">示例 4：Subgraph 复用（normalize_1 / normalize_2 结构相同）</text>
+
+  <rect x="40" y="220" width="140" height="72" class="box"/>
+  <text x="110" y="256" class="txt">ENTRY</text>
+
+  <rect x="220" y="120" width="320" height="250" class="group"/>
+  <text x="380" y="150" class="hint">normalize_1 (Graph)</text>
+  <rect x="250" y="220" width="120" height="64" class="box"/>
+  <text x="310" y="252" class="txt">clean</text>
+  <rect x="410" y="220" width="120" height="64" class="box"/>
+  <text x="470" y="252" class="txt">upper</text>
+  <path d="M370 252 L410 252" class="arrow"/>
+  <text x="380" y="340" class="hint">ENTRY → clean → upper → EXIT</text>
+
+  <rect x="580" y="120" width="320" height="250" class="group"/>
+  <text x="740" y="150" class="hint">normalize_2 (Graph)</text>
+  <rect x="610" y="220" width="120" height="64" class="box"/>
+  <text x="670" y="252" class="txt">clean</text>
+  <rect x="770" y="220" width="120" height="64" class="box"/>
+  <text x="830" y="252" class="txt">upper</text>
+  <path d="M730 252 L770 252" class="arrow"/>
+  <text x="740" y="340" class="hint">ENTRY → clean → upper → EXIT</text>
+
+  <rect x="940" y="220" width="120" height="72" class="box"/>
+  <text x="1000" y="256" class="txt">EXIT</text>
+
+  <path d="M180 256 L220 256" class="arrow"/>
+  <path d="M540 256 L580 256" class="arrow"/>
+  <path d="M900 256 L940 256" class="arrow"/>
+</svg>

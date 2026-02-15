@@ -1,0 +1,78 @@
+{
+  "graph_design": {
+    "nodes": [
+      {
+        "name": "loop_1",
+        "type": "Loop",
+        "label": "Coding (ChatDev Lite): generate runnable code",
+        "max_iterations": 1,
+        "push_keys": {
+          "codes": ""
+        },
+        "sub_graph": {
+          "nodes": [
+            {
+              "name": "instructor_agent",
+              "type": "Action",
+              "label": "Chief Technology Officer: implementation guidance",
+              "agent": "Chief Technology Officer",
+              "input_fields": [
+                "task",
+                "modality",
+                "language",
+                "gui",
+                "chatdev_prompt"
+              ],
+              "output_fields": [
+                "coding_guidance"
+              ],
+              "instructions": "You are the Chief Technology Officer at ChatDev.\\n\\nGoal: Provide concise implementation guidance for the Programmer.\\n\\nRequirements:\\n- Use the given task/modality/language/gui/chatdev_prompt.\\n- Output ONLY guidance text (no code, no file dumps).\\n- Include: architecture overview, file list, key modules/classes/functions, how to run, and any dependencies."
+            },
+            {
+              "name": "assistant_agent",
+              "type": "Action",
+              "label": "Programmer: implement full code",
+              "agent": "Programmer",
+              "input_fields": [
+                "task",
+                "modality",
+                "language",
+                "gui",
+                "chatdev_prompt",
+                "coding_guidance"
+              ],
+              "output_fields": [
+                "codes"
+              ],
+              "instructions": "You are the Programmer at ChatDev.\\n\\nGoal: Implement the complete runnable code for the task.\\n\\nRequirements:\\n- Output ONLY code files and nothing else.\\n- Use the specified language.\\n- No placeholders or TODOs; implement everything.\\n- Include an entry script (e.g., main.py) that can be run directly.\\n\\nOutput format (STRICT):\\nFor each file, output exactly:\\n<filename>\\n```<language>\\n<code>\\n```\\nRepeat the block for every file."
+            }
+          ],
+          "edges": [
+            {
+              "source": "CONTROLLER",
+              "target": "instructor_agent"
+            },
+            {
+              "source": "instructor_agent",
+              "target": "assistant_agent"
+            },
+            {
+              "source": "assistant_agent",
+              "target": "CONTROLLER"
+            }
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "ENTRY",
+        "target": "loop_1"
+      },
+      {
+        "source": "loop_1",
+        "target": "EXIT"
+      }
+    ]
+  }
+}

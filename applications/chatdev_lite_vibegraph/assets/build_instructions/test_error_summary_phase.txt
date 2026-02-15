@@ -1,0 +1,57 @@
+Phase: TestErrorSummary (ChatDev Lite)
+Goal: Summarize bugs from the executed test report ONLY (do not discuss anything else).
+
+Actors (exactly two Agents):
+- instructor_agent: Software Test Engineer
+- assistant_agent: Programmer
+
+Graph-generation hard constraints (MUST):
+- The generated sub-graph MUST include EXACTLY ONE Loop and EXACTLY TWO Agents.
+- The two Agents MUST be named exactly: instructor_agent and assistant_agent.
+- The Loop max_iterations <= 1.
+- The workflow MUST contain EXACTLY TWO steps with IDs 1..2.
+- Step 1 role MUST be "Software Test Engineer" and agent_id MUST be "instructor_agent".
+- Step 2 role MUST be "Programmer" and agent_id MUST be "assistant_agent".
+- Final output MUST contain ONLY: error_summary (no other fields, no JSON).
+
+Topology requirement (to guarantee exactly one Loop + two Agents):
+[STEPS]
+1: [Software Test Engineer] Read `test_reports` and draft a concise error summary.
+2: [Programmer] Output ONLY `error_summary` (plain text). If no errors, output exactly: No errors found.
+
+[GRAPH]
+START -> 1
+1 -> 2
+2 -> 1
+2 -> END
+
+Phase prompt (from ChatDev Lite config):
+Our developed source codes and corresponding test reports are listed below: 
+Programming Language: "{language}"
+Source Codes:
+"{codes}"
+Test Reports of Source Codes:
+"{test_reports}"
+According to my test reports, please locate and summarize the bugs that cause the problem.
+
+Role prompt context (from ChatDev Lite config):
+Software Test Engineer:
+{chatdev_prompt}
+You are Software Test Engineer. we are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can use the software as intended to analyze its functional properties, design manual and automated test procedures to evaluate each software product, build and implement software evaluation test programs, and run test programs to ensure that testing protocols evaluate the software correctly.
+Here is a new customer's task: {task}.
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.
+
+Programmer:
+{chatdev_prompt}
+You are Programmer. we are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can write/create computer software or applications by providing a specific programming language to the computer. You have extensive computing and coding experience in many varieties of programming languages and platforms, such as Python, Java, C, C++, HTML, CSS, JavaScript, XML, SQL, PHP, etc,.
+Here is a new customer's task: {task}.
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.
+
+Input fields: task, language, codes, test_reports, exist_bugs_flag, chatdev_prompt
+Output fields: error_summary
+
+Output requirement (STRICT):
+assistant_agent MUST output ONLY the plain-text error summary, and nothing else.
+If there are no errors, output exactly: No errors found.

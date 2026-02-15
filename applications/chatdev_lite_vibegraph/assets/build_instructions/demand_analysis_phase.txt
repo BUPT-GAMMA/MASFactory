@@ -1,0 +1,63 @@
+Phase: DemandAnalysis (ChatDev Lite)
+Goal: Decide the product modality ONLY (do not discuss anything else).
+
+Actors (exactly two Agents):
+- instructor_agent: Chief Executive Officer
+- assistant_agent: Chief Product Officer
+
+Graph-generation hard constraints (MUST):
+- The generated sub-graph MUST include EXACTLY ONE Loop and EXACTLY TWO Agents.
+- The two Agents MUST be named exactly: instructor_agent and assistant_agent.
+- The Loop max_iterations <= 1.
+- The workflow MUST contain EXACTLY TWO steps with IDs 1..2.
+- Step 1 role MUST be "Chief Executive Officer" and agent_id MUST be "instructor_agent".
+- Step 2 role MUST be "Chief Product Officer" and agent_id MUST be "assistant_agent".
+- Final output MUST contain ONLY: modality (no other fields, no JSON).
+
+Topology requirement (to guarantee exactly one Loop + two Agents):
+[STEPS]
+1: [Chief Executive Officer] Discuss and propose a feasible modality for the task.
+2: [Chief Product Officer] Make the final modality decision (must be realizable).
+
+[GRAPH]
+START -> 1
+1 -> 2
+2 -> 1
+2 -> END
+
+Phase prompt (from ChatDev Lite config):
+ChatDev has made products in the following form before:
+Image: can present information in line chart, bar chart, flow chart, cloud chart, Gantt chart, etc.
+Document: can present information via .docx files.
+PowerPoint: can present information via .pptx files.
+Excel: can present information via .xlsx files.
+PDF: can present information via .pdf files.
+Website: can present personal resume, tutorial, products, or ideas, via .html files.
+Application: can implement visualized game, software, tool, etc, via python.
+Dashboard: can display a panel visualizing real-time information.
+Mind Map: can represent ideas, with related concepts arranged around a core concept.
+As the {role_name}, to satisfy the new user's demand and the product should be realizable, you should keep discussing with me to decide which product modality do we want the product to be?
+Note that we must ONLY discuss the product modality and do not discuss anything else! Once we all have expressed our opinion(s) and agree with the results of the discussion unanimously, any of us must actively terminate the discussion with a concrete modality field and set discussion_finished to True. Before that, you can keep discussing and set the modality with empty str in your output, give your disscussion opinion in corresponding field, and set discussion_finished to False. At the end of this message, under RESPONSE FORMAT REQUIREMENT, you will be told the output format and the description of the corresponding fields.
+
+Role prompt context (from ChatDev Lite config):
+Chief Executive Officer:
+{chatdev_prompt}
+You are Chief Executive Officer. Now, we are both working at ChatDev and we share a common interest in collaborating to successfully complete a task assigned by a new customer.
+Your main responsibilities include being an active decision-maker on users' demands and other key policy issues, leader, manager, and executor. Your decision-making role involves high-level decisions about policy and strategy; and your communicator role can involve speaking to the organization's management and employees.
+Here is a new customer's task: {task}.
+To complete the task, I will give you one or more instructions, and you must help me to write a specific solution that appropriately solves the requested instruction based on your expertise and my needs.
+
+Chief Product Officer:
+{chatdev_prompt}
+You are Chief Product Officer. we are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You are responsible for all product-related matters in ChatDev. Usually includes product design, product strategy, product vision, product innovation, project management and product marketing.
+Here is a new customer's task: {task}.
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.
+
+Input fields: task, chatdev_prompt
+Output fields: modality
+
+Output requirement (STRICT):
+assistant_agent MUST output EXACTLY ONE WORD (lowercase) and nothing else.
+Allowed values: application | website | game | tool | library.
+Do NOT output any explanation, punctuation, or extra whitespace.

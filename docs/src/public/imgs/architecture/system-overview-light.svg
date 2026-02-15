@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="680" viewBox="0 0 1040 680">
+  <defs>
+    <style>
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .group { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; rx: 14; ry: 14; }
+      .gtitle { font: 700 18px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .box { fill: #ffffff; stroke: #5b8def; stroke-width: 2; rx: 12; ry: 12; }
+      .artifact { fill: #eef2ff; stroke: #7c83ff; stroke-width: 2; rx: 12; ry: 12; }
+      .ext { fill: #fff7ed; stroke: #fb923c; stroke-width: 2; rx: 12; ry: 12; }
+      .viz { fill: #ecfeff; stroke: #06b6d4; stroke-width: 2; rx: 12; ry: 12; }
+      .txt { font: 600 16.5px 'Segoe UI', Arial, sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 500 15px 'Segoe UI', Arial, sans-serif; fill: #475569; text-anchor: middle; }
+      .arrow { stroke: #64748b; stroke-width: 2.5; stroke-linecap: round; marker-end: url(#m); fill: none; }
+      .dash { stroke-dasharray: 6 5; }
+      .arrow-head { fill: #64748b; }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">MASFactory 系统架构概览</text>
+
+  <!-- Group: Authoring -->
+  <rect x="40" y="80" width="300" height="340" class="group"/>
+  <text x="60" y="110" class="gtitle">工作流定义（应用层）</text>
+
+  <rect x="60" y="140" width="260" height="80" class="box"/>
+  <text x="190" y="175" class="txt">应用 / 工作流（Python）</text>
+  <text x="190" y="200" class="hint">声明式 / 命令式</text>
+
+  <rect x="60" y="245" width="260" height="80" class="artifact"/>
+  <text x="190" y="280" class="txt">VibeGraphing 设计</text>
+
+  <text x="190" y="395" class="hint">从意图到结构</text>
+
+  <!-- Group: Core -->
+  <rect x="360" y="80" width="360" height="340" class="group"/>
+  <text x="380" y="110" class="gtitle">MASFactory 核心</text>
+
+  <rect x="380" y="140" width="320" height="80" class="box"/>
+  <text x="540" y="175" class="txt">构建与编译</text>
+  <text x="540" y="200" class="hint">build / compile</text>
+
+  <rect x="380" y="240" width="320" height="115" class="box"/>
+  <text x="540" y="275" class="txt">运行时</text>
+  <text x="540" y="300" class="hint">invoke / schedule</text>
+  <text x="540" y="325" class="hint">Node / Edge / Attributes</text>
+
+  <rect x="380" y="365" width="320" height="55" class="box"/>
+  <text x="540" y="392" class="txt">组件：Graph / Loop / Switch / Agent …</text>
+
+  <!-- Group: Integrations -->
+  <rect x="740" y="80" width="260" height="340" class="group"/>
+  <text x="760" y="110" class="gtitle">集成与上下文</text>
+
+  <rect x="760" y="140" width="220" height="70" class="ext"/>
+  <text x="870" y="175" class="txt">模型（LLM Provider）</text>
+
+  <rect x="760" y="225" width="220" height="70" class="ext"/>
+  <text x="870" y="260" class="txt">工具与集成（Tools/MCP）</text>
+
+  <rect x="760" y="310" width="220" height="100" class="ext"/>
+  <text x="870" y="340" class="txt">上下文协议</text>
+  <text x="870" y="368" class="hint">记忆 / 检索 / 外部来源</text>
+
+  <!-- Group: Tooling -->
+  <rect x="40" y="450" width="960" height="200" class="group"/>
+  <text x="60" y="480" class="gtitle">可视化工具</text>
+
+  <rect x="60" y="500" width="330" height="120" class="viz"/>
+  <text x="225" y="540" class="txt">MASFactory Visualizer（VS Code）</text>
+  <text x="225" y="565" class="hint">预览 / 运行 / 调试 / Human</text>
+
+  <rect x="420" y="500" width="560" height="120" class="box"/>
+  <text x="700" y="540" class="txt">Visualizer Bridge</text>
+  <text x="700" y="565" class="hint">预览数据 / 运行事件 / 交互请求</text>
+
+  <!-- Arrows -->
+  <path d="M320 180 L380 180" class="arrow"/>
+  <path d="M320 285 L380 285" class="arrow dash"/>
+  <path d="M540 220 L540 240" class="arrow"/>
+
+  <path d="M700 175 L760 175" class="arrow"/>
+  <path d="M700 260 L760 260" class="arrow"/>
+  <path d="M700 330 L760 340" class="arrow"/>
+
+  <!-- <path d="M540 355 C540 430,620 440,700 500" class="arrow"/> -->
+
+  <path d="M390 540 L420 540" class="arrow"/>
+  <path d="M420 580 L390 580" class="arrow"/>
+
+  <!-- <path d="M190 220 C190 360,180 440,225 500" class="arrow dash"/> -->
+  <!-- <path d="M190 325 C190 410,180 450,225 500" class="arrow dash"/> -->
+</svg>

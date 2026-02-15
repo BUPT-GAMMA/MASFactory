@@ -1,0 +1,49 @@
+[project]
+name = "masfactory"
+version = "1.0.0.post7"
+description = "MASFactory is a framework for building agentic systems."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.58.2",
+    "beautifulsoup4>=4.12.3",
+    "colorama>=0.4.6",
+    "docstring-parser>=0.17.0",
+    "flask>=3.0.0",
+    "google-genai>=1.26.0",
+    "numpy>=2.2.6",
+    "openai>=1.97.0",
+    "pyyaml>=6.0.2",
+    "tenacity>=8.0.0",
+    "tiktoken>=0.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ipykernel>=6.29.5",
+]
+embeddings = [
+    "sentence-transformers>=2.7.0",
+    "scikit-learn>=1.4.0",
+    "transformers>=4.40.0",
+    "tiktoken>=0.7.0",
+]
+[tool.setuptools.packages.find]
+where = ["."] 
+include = ["masfactory*"]
+exclude = [
+    "applications*",
+    "docs*",
+    "masfactory-visualizer*",
+    "testfile*",
+    "tests*",
+    "dist*",
+    "build*",
+    "vibe_test*",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+markers = [
+  "live: opt-in integration tests requiring network+credentials",
+]

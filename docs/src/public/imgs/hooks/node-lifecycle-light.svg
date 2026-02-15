@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="680" viewBox="0 0 1040 680">
+  <defs>
+    <style>
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .sub { font: 600 16px 'Segoe UI', Arial, sans-serif; fill: #5a6b85; }
+      .container { fill: #f8fafc; stroke: #7b8da8; stroke-width: 2; rx: 14; ry: 14; }
+      .box { fill: #ffffff; stroke: #5b8def; stroke-width: 2; rx: 12; ry: 12; }
+      .box-muted { fill: #ffffff; stroke: #c3cfdf; stroke-width: 2; rx: 12; ry: 12; }
+      .edgebox { fill: #eef2ff; stroke: #7c83ff; stroke-width: 2; rx: 12; ry: 12; }
+      .txt { font: 650 18px 'Segoe UI', Arial, sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 14px 'Segoe UI', Arial, sans-serif; fill: #5a6b85; text-anchor: middle; }
+      .tag { font: 700 13px 'Segoe UI', Arial, sans-serif; fill: #1d4ed8; }
+      .tag-muted { font: 700 13px 'Segoe UI', Arial, sans-serif; fill: #64748b; }
+      .arrow { stroke: #7b8da8; stroke-width: 2.5; stroke-linecap: round; marker-end: url(#m); fill: none; }
+      .dash { stroke-dasharray: 7 6; }
+      .arrow-head { fill: #7b8da8; }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="44" class="title">Node lifecycle &amp; hook stages</text>
+  <text x="40" y="72" class="sub">HookStage: BEFORE / AFTER / ERROR（Edge: SEND / RECEIVE）</text>
+
+  <!-- build() -->
+  <rect x="160" y="100" width="720" height="74" class="box"/>
+  <text x="520" y="137" class="txt">build()</text>
+  <text x="200" y="117" class="tag">Hook: BUILD</text>
+
+  <path d="M520 174 L520 210" class="arrow"/>
+
+  <!-- execute() container -->
+  <rect x="160" y="210" width="720" height="410" class="container"/>
+  <text x="520" y="236" class="txt">execute(outer_env)</text>
+  <text x="200" y="226" class="tag">Hook: EXECUTE</text>
+
+  <!-- steps inside execute -->
+  <rect x="210" y="270" width="620" height="56" class="box-muted"/>
+  <text x="520" y="298" class="txt">pull attributes</text>
+  <text x="230" y="288" class="tag-muted">no hook</text>
+
+  <path d="M520 326 L520 344" class="arrow"/>
+
+  <rect x="210" y="344" width="620" height="56" class="box"/>
+  <text x="520" y="372" class="txt">_message_aggregate_in()</text>
+  <text x="230" y="362" class="tag">Hook: MESSAGE_AGGREGATE_IN</text>
+
+  <path d="M520 400 L520 418" class="arrow"/>
+
+  <rect x="210" y="418" width="620" height="56" class="box"/>
+  <text x="520" y="446" class="txt">_forward(input)</text>
+  <text x="230" y="436" class="tag">Hook: FORWARD</text>
+
+  <path d="M520 474 L520 492" class="arrow"/>
+
+  <rect x="210" y="492" width="620" height="56" class="box-muted"/>
+  <text x="520" y="520" class="txt">push attributes</text>
+  <text x="230" y="510" class="tag-muted">no hook</text>
+
+  <path d="M520 548 L520 566" class="arrow"/>
+
+  <rect x="210" y="566" width="620" height="56" class="box"/>
+  <text x="520" y="594" class="txt">_message_dispatch_out(output)</text>
+  <text x="230" y="584" class="tag">Hook: MESSAGE_DISPATCH_OUT</text>
+
+  <!-- Edge events on the right -->
+  <path d="M830 594 C900 594,900 472,900 472" class="arrow dash"/>
+  <rect x="905" y="452" width="120" height="54" class="edgebox"/>
+  <text x="965" y="479" class="txt">Edge.send</text>
+  <text x="965" y="506" class="hint">Hook: SEND</text>
+
+  <path d="M965 452 L965 420" class="arrow dash"/>
+  <rect x="905" y="350" width="120" height="54" class="edgebox"/>
+  <text x="965" y="377" class="txt">Edge.recv</text>
+  <text x="965" y="404" class="hint">Hook: RECEIVE</text>
+
+  <path d="M905 377 C860 377,850 372,830 372" class="arrow dash"/>
+  <text x="920" y="334" class="hint">message flow</text>
+</svg>
+

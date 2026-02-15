@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="340" viewBox="0 0 980 340">
+  <defs>
+    <style>
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .box { fill: #ffffff; stroke: #5b8def; stroke-width: 2; rx: 12; ry: 12; }
+      .txt { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: #5a6b85; text-anchor: middle; }
+      .arrow { stroke: #7b8da8; stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: #7b8da8; }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">Horizontal Message Passing: fields flow along Edges</text>
+
+  <rect x="40" y="120" width="180" height="72" class="box"/>
+  <text x="130" y="156" class="txt">ENTRY</text>
+
+  <rect x="290" y="120" width="180" height="72" class="box"/>
+  <text x="380" y="156" class="txt">extract</text>
+
+  <rect x="540" y="120" width="180" height="72" class="box"/>
+  <text x="630" y="156" class="txt">render</text>
+
+  <rect x="790" y="120" width="180" height="72" class="box"/>
+  <text x="880" y="156" class="txt">EXIT</text>
+
+  <path d="M220 156 L290 156" class="arrow"/>
+  <path d="M470 156 L540 156" class="arrow"/>
+  <path d="M720 156 L790 156" class="arrow"/>
+
+  <text x="255" y="140" class="hint">raw</text>
+  <text x="505" y="140" class="hint">title, len</text>
+  <text x="755" y="140" class="hint">result</text>
+</svg>

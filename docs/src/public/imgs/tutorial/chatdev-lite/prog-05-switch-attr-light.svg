@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="640" viewBox="0 0 980 640">
+  <defs>
+    <style>
+      :root {
+        --c-title: #0f172a;
+        --c-group-fill: #f8fafc;
+        --c-group-stroke: #cbd5e1;
+        --c-box-fill: #ffffff;
+        --c-box-stroke: #5b7cfa;
+        --c-controller-fill: #eef2ff;
+        --c-controller-stroke: #7c83ff;
+        --c-switch-fill: #eef2ff;
+        --c-switch-stroke: #7c83ff;
+        --c-agent-fill: #ffffff;
+        --c-agent-stroke: #5b7cfa;
+        --c-attr-fill: #0b1220;
+        --c-attr-stroke: #1e293b;
+        --c-attr-txt: #e2e8f0;
+        --c-txt: #0f172a;
+        --c-hint: #475569;
+        --c-arrow: #64748b;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .group { fill: var(--c-group-fill); stroke: var(--c-group-stroke); stroke-width: 2; rx: 14; ry: 14; }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .controller { fill: var(--c-controller-fill); stroke: var(--c-controller-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .switch { fill: var(--c-switch-fill); stroke: var(--c-switch-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .agent { fill: var(--c-agent-fill); stroke: var(--c-agent-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .attr { fill: var(--c-attr-fill); stroke: var(--c-attr-stroke); stroke-width: 2; rx: 14; ry: 14; }
+      .txt { font: 700 18px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 500 16px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); text-anchor: middle; }
+      .attrTxt { font: 600 16px 'Segoe UI', Arial, sans-serif; fill: var(--c-attr-txt); }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .dash { stroke-dasharray: 6 6; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="40" class="title">Switch + pull/push（InstructorAssistantGraph 结构）</text>
+
+  <!-- Root ports -->
+  <rect x="40" y="210" width="180" height="72" class="box"/>
+  <text x="130" y="246" class="txt">ENTRY</text>
+
+  <rect x="780" y="210" width="180" height="72" class="box"/>
+  <text x="870" y="246" class="txt">EXIT</text>
+
+  <!-- Loop group -->
+  <rect x="240" y="70" width="500" height="320" class="group"/>
+  <text x="260" y="98" class="hint" text-anchor="start">phase (Loop)</text>
+
+  <rect x="270" y="210" width="170" height="72" class="controller"/>
+  <text x="355" y="246" class="txt">CONTROLLER</text>
+
+  <rect x="470" y="210" width="160" height="72" class="switch"/>
+  <text x="550" y="246" class="txt">switch</text>
+  <text x="550" y="298" class="hint">LogicSwitch</text>
+
+  <rect x="510" y="110" width="220" height="72" class="agent"/>
+  <text x="620" y="146" class="txt">instructor (Agent)</text>
+
+  <rect x="510" y="310" width="220" height="72" class="agent"/>
+  <text x="620" y="346" class="txt">assistant (Agent)</text>
+
+  <!-- Root edges -->
+  <path d="M220 246 L240 246" class="arrow"/>
+  <path d="M740 246 L780 246" class="arrow"/>
+
+  <!-- Internal edges (control flow, keys = {}) -->
+  <path d="M440 246 L470 246" class="arrow"/>
+  <path d="M550 210 C550 185,620 200,620 182" class="arrow"/>
+  <path d="M550 282 C550 305,620 295,620 310" class="arrow"/>
+  <path d="M510 146 C430 146,390 170,355 210" class="arrow"/>
+  <path d="M510 346 C430 346,390 322,355 282" class="arrow"/>
+
+  <text x="550" y="196" class="hint">route by current_iteration</text>
+
+  <!-- Attributes panel -->
+  <rect x="240" y="440" width="700" height="150" class="attr"/>
+  <text x="260" y="472" class="attrTxt">attributes</text>
+  <text x="260" y="506" class="attrTxt">- task</text>
+  <text x="260" y="532" class="attrTxt">- draft</text>
+  <text x="260" y="558" class="attrTxt">- plan</text>
+
+  <!-- pull/push (vertical sync) -->
+  <path d="M600 440 L600 390" class="arrow dash"/>
+  <path d="M740 390 L740 440" class="arrow dash"/>
+  <text x="588" y="426" class="hint" text-anchor="end">pull_keys</text>
+  <text x="752" y="426" class="hint" text-anchor="start">push_keys</text>
+</svg>

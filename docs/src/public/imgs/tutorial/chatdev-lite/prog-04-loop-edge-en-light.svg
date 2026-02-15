@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520">
+  <defs>
+    <style>
+      :root {
+        --c-title: #0f172a;
+        --c-group-fill: #f8fafc;
+        --c-group-stroke: #cbd5e1;
+        --c-box-fill: #ffffff;
+        --c-box-stroke: #5b7cfa;
+        --c-controller-fill: #eef2ff;
+        --c-controller-stroke: #7c83ff;
+        --c-agent-fill: #eef2ff;
+        --c-agent-stroke: #7c83ff;
+        --c-txt: #0f172a;
+        --c-hint: #475569;
+        --c-arrow: #64748b;
+      }
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: var(--c-title); }
+      .group { fill: var(--c-group-fill); stroke: var(--c-group-stroke); stroke-width: 2; rx: 14; ry: 14; }
+      .box { fill: var(--c-box-fill); stroke: var(--c-box-stroke); stroke-width: 2; rx: 12; ry: 12; }
+      .controller { fill: var(--c-controller-fill); stroke: var(--c-controller-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .agent { fill: var(--c-agent-fill); stroke: var(--c-agent-stroke); stroke-width: 2.5; rx: 12; ry: 12; }
+      .txt { font: 700 17px 'Segoe UI', Arial, sans-serif; fill: var(--c-txt); text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 500 15px 'Segoe UI', Arial, sans-serif; fill: var(--c-hint); text-anchor: middle; }
+      .arrow { stroke: var(--c-arrow); stroke-width: 2.5; marker-end: url(#m); fill: none; }
+      .arrow-head { fill: var(--c-arrow); }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">Loop (alternating with edge messages)</text>
+
+  <!-- Root ports -->
+  <rect x="40" y="260" width="180" height="72" class="box"/>
+  <text x="130" y="296" class="txt">ENTRY</text>
+
+  <rect x="780" y="260" width="180" height="72" class="box"/>
+  <text x="870" y="296" class="txt">EXIT</text>
+
+  <!-- Loop group -->
+  <rect x="240" y="100" width="520" height="320" class="group"/>
+  <text x="260" y="128" class="hint" text-anchor="start">dialog (Loop)</text>
+
+  <rect x="300" y="260" width="190" height="72" class="controller"/>
+  <text x="395" y="296" class="txt">CONTROLLER</text>
+
+  <rect x="530" y="160" width="220" height="72" class="agent"/>
+  <text x="640" y="196" class="txt">instructor (Agent)</text>
+
+  <rect x="530" y="340" width="220" height="72" class="agent"/>
+  <text x="640" y="376" class="txt">assistant (Agent)</text>
+
+  <!-- Root edges -->
+  <path d="M220 296 L240 296" class="arrow"/>
+  <path d="M760 296 L780 296" class="arrow"/>
+
+  <!-- Internal edges -->
+  <path d="M490 296 L530 196" class="arrow"/>
+  <path d="M640 232 L640 340" class="arrow"/>
+  <path d="M530 376 C450 410,430 410,395 332" class="arrow"/>
+
+</svg>

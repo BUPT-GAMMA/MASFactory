@@ -1,0 +1,150 @@
+/**
+ * .vitepress/theme/custom.css
+ */
+
+:root {
+  /* Brand (light) */
+  --vp-c-brand-1: #4f6ef7;
+  --vp-c-brand-2: #3d5cf1;
+  --vp-c-brand-3: #2f4de6;
+  --vp-c-brand-soft: rgba(79, 110, 247, 0.14);
+
+  /* Larger navbar logo */
+  --vp-nav-logo-height: 40px;
+
+  /* Background / text (light) */
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-soft: #f6f8ff;
+  --vp-c-bg-mute: #eef2ff;
+  --vp-c-text-1: #0f172a;
+  --vp-c-text-2: #334155;
+  --vp-c-text-3: #475569;
+  --vp-c-divider: rgba(15, 23, 42, 0.12);
+  --vp-c-gutter: rgba(15, 23, 42, 0.08);
+
+  /* Code blocks */
+  --vp-code-block-white-space: pre-wrap;
+}
+
+html.dark {
+  /* Brand (dark) */
+  --vp-c-brand-1: #8ea2ff;
+  --vp-c-brand-2: #a3b3ff;
+  --vp-c-brand-3: #bac5ff;
+  --vp-c-brand-soft: rgba(142, 162, 255, 0.16);
+
+  /* Background / text (dark) */
+  --vp-c-bg: #0b1020;
+  --vp-c-bg-soft: #101a33;
+  --vp-c-bg-mute: #16224a;
+  --vp-c-text-1: #e5e7eb;
+  --vp-c-text-2: #cbd5e1;
+  --vp-c-text-3: #94a3b8;
+  --vp-c-divider: rgba(148, 163, 184, 0.18);
+  --vp-c-gutter: rgba(148, 163, 184, 0.12);
+}
+
+/* Sidebar scrollbar: keep it subtle and avoid visual collision with the navbar title/logo */
+:root {
+  --mf-scrollbar-thumb: rgba(15, 23, 42, 0.22);
+  --mf-scrollbar-thumb-hover: rgba(15, 23, 42, 0.32);
+}
+
+html.dark {
+  --mf-scrollbar-thumb: rgba(148, 163, 184, 0.28);
+  --mf-scrollbar-thumb-hover: rgba(148, 163, 184, 0.42);
+}
+
+/* VitePress default theme makes the navbar transparent on desktop when there is a sidebar,
+   which can visually reveal the sidebar scrollbar behind the logo/title. */
+@media (min-width: 960px) {
+  .VPNavBar.has-sidebar:not(.home) {
+    background-color: var(--vp-nav-bg-color);
+  }
+}
+
+.VPSidebar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mf-scrollbar-thumb) transparent;
+}
+
+.VPSidebar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.VPSidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.VPSidebar::-webkit-scrollbar-thumb {
+  background-color: var(--mf-scrollbar-thumb);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.VPSidebar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--mf-scrollbar-thumb-hover);
+}
+
+/* Navbar: larger brand title (match logo height) */
+.VPNavBarTitle .title {
+  font-size: var(--vp-nav-logo-height);
+  font-weight: 800;
+  line-height: 1;
+  gap: 10px;
+}
+
+.mf-site-title {
+  display: inline-flex;
+  align-items: center;
+  height: var(--vp-nav-logo-height);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.mf-site-title .mf-mas {
+  background: linear-gradient(90deg, #00d1ff 0%, #7cf0ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.mf-site-title .mf-factory {
+  color: var(--vp-c-text-1);
+}
+
+/* Home hero: make the secondary line smaller */
+.VPHero .heading .text {
+  line-height: 32px;
+  font-size: 26px;
+}
+
+@media (min-width: 640px) {
+  .VPHero .heading .text {
+    line-height: 44px;
+    font-size: 38px;
+  }
+}
+
+@media (min-width: 960px) {
+  .VPHero .heading .text {
+    line-height: 46px;
+    font-size: 40px;
+  }
+}
+
+/* 或者使用更强的 CSS 选择器直接覆盖，如果上面的变量无效 */
+div[class*='language-'] > pre,
+div[class*='language-'] > pre > code {
+  white-space: pre-wrap;      /* 允许在保留空白符的同时进行换行 */
+  word-wrap: break-word;      /* 在长单词或 URL 内部进行换行 */
+  overflow-wrap: break-word;  /* word-wrap 的别名 */
+}
+
+.VPDoc img {
+  border-radius: 12px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+}

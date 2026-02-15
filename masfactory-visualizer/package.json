@@ -1,0 +1,123 @@
+{
+  "name": "masfactory-visualizer",
+  "displayName": "MASFactory Visualizer",
+  "publisher": "masfactory",
+  "description": "MASFactory Visualizer: Realtime Graph Preview for Python",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BUPT-GAMMA/MASFactory.git"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onWebviewPanel:masfactoryVisualizerEditor",
+    "onView:masfactoryVisualizerView",
+    "onCommand:masfactory-visualizer.start",
+    "onCommand:masfactory-visualizer.openInEditor"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "masfactory-visualizer.start",
+        "title": "MASFactory Visualizer: Start Graph Preview",
+        "icon": "$(symbol-misc)"
+      },
+      {
+        "command": "masfactory-visualizer.openInEditor",
+        "title": "MASFactory Visualizer: Open Graph in Editor Tab",
+        "icon": "$(circuit-board)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "masfactory-visualizer.openInEditor",
+          "when": "resourceLangId == python || resourceLangId == json || resourceLangId == jsonc",
+          "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "masfactoryVisualizer",
+          "title": "MASFactory Visualizer",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "masfactoryVisualizer": [
+        {
+          "id": "masfactoryVisualizerView",
+          "name": "Graph Preview",
+          "type": "webview",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "MASFactory Visualizer",
+      "properties": {
+        "masfactory-visualizer.nodeBackgroundColor": {
+          "type": "string",
+          "default": "",
+          "description": "Background color for nodes. Leave empty to use theme default."
+        },
+        "masfactory-visualizer.nodeTextColor": {
+          "type": "string",
+          "default": "",
+          "description": "Text color for nodes. Leave empty to use theme default."
+        },
+        "masfactory-visualizer.nodeBorderColor": {
+          "type": "string",
+          "default": "",
+          "description": "Border color for nodes. Leave empty to use theme default."
+        },
+        "masfactory-visualizer.edgeColor": {
+          "type": "string",
+          "default": "",
+          "description": "Color for edges (arrows). Leave empty to use theme default."
+        },
+        "masfactory-visualizer.useCustomColors": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable custom colors for nodes and edges"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build:webview-ui && npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build:webview-ui": "npm --prefix webview-ui run build",
+    "dev:webview-ui": "npm --prefix webview-ui run dev",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test:unit": "mocha \"out/test/**/*.test.js\"",
+    "test:vscode": "vscode-test",
+    "test": "npm run test:unit"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.75.1",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.32.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "web-tree-sitter": "^0.25.10"
+  }
+}

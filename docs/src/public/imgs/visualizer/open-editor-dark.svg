@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680">
+  <defs>
+    <style>
+      :root {
+        --bg: #0b1224;
+        --panel: #0f172a;
+        --stroke: #334155;
+        --title: #e5e7eb;
+        --text: #cbd5e1;
+        --accent: #8ea2ff;
+      }
+      .bg { fill: var(--bg); }
+      .panel { fill: var(--panel); stroke: var(--stroke); stroke-width: 2; rx: 18; ry: 18; }
+      .dash { fill: none; stroke: var(--stroke); stroke-width: 2.5; stroke-dasharray: 10 10; rx: 18; ry: 18; }
+      .h1 { font: 800 34px 'Segoe UI', Arial, sans-serif; fill: var(--title); }
+      .p { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: var(--text); }
+      .mono { font: 700 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; fill: var(--accent); }
+      .badge { fill: rgba(142, 162, 255, 0.14); stroke: var(--accent); stroke-width: 2; rx: 12; ry: 12; }
+      .badgeText { font: 700 16px 'Segoe UI', Arial, sans-serif; fill: var(--accent); }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="680" class="bg"/>
+
+  <rect x="80" y="84" width="1040" height="512" class="panel"/>
+  <rect x="120" y="140" width="960" height="400" class="dash"/>
+
+  <text x="120" y="64" class="h1">占位图：在编辑器标签页打开 Visualizer</text>
+  <text x="120" y="620" class="p">后续请用真实截图替换：通过命令面板在 Editor Tab 中打开 MASFactory Visualizer。</text>
+
+  <rect x="120" y="160" width="210" height="40" class="badge"/>
+  <text x="140" y="186" class="badgeText">Editor Tab</text>
+
+  <text x="120" y="252" class="p">可用命令：</text>
+  <text x="120" y="290" class="mono">MASFactory Visualizer: Start Graph Preview</text>
+  <text x="120" y="324" class="mono">MASFactory Visualizer: Open Graph in Editor Tab</text>
+
+  <text x="120" y="394" class="p">建议截图包含：</text>
+  <text x="120" y="426" class="p">- Editor Tab 标题栏（Graph Preview）</text>
+  <text x="120" y="458" class="p">- 顶部选项卡（Preview / Debug / Run / Vibe）</text>
+</svg>
+

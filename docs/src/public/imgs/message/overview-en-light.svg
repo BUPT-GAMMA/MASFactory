@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="420" viewBox="0 0 1040 420">
+  <defs>
+    <style>
+      .title { font: 700 24px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .box { fill: #ffffff; stroke: #5b8def; stroke-width: 2; rx: 12; ry: 12; }
+      .store { fill: #eef2ff; stroke: #7c83ff; stroke-width: 2; rx: 12; ry: 12; }
+      .txt { font: 600 18px 'Segoe UI', Arial, sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .hint { font: 600 15px 'Segoe UI', Arial, sans-serif; fill: #5a6b85; text-anchor: middle; }
+      .arrow { stroke: #7b8da8; stroke-width: 2.5; stroke-linecap: round; marker-end: url(#m); fill: none; }
+      .dash { stroke-dasharray: 6 5; }
+      .arrow-head { fill: #7b8da8; }
+    </style>
+    <marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" class="arrow-head"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">Message Overview: Horizontal (Edge) + Vertical (attributes)</text>
+
+  <rect x="360" y="90" width="320" height="72" class="store"/>
+  <text x="520" y="126" class="txt">graph attributes</text>
+
+  <rect x="140" y="260" width="180" height="72" class="box"/>
+  <text x="230" y="296" class="txt">ENTRY</text>
+
+  <rect x="430" y="260" width="180" height="72" class="box"/>
+  <text x="520" y="296" class="txt">worker</text>
+
+  <rect x="720" y="260" width="180" height="72" class="box"/>
+  <text x="810" y="296" class="txt">EXIT</text>
+
+  <path d="M320 296 L430 296" class="arrow"/>
+  <path d="M610 296 L720 296" class="arrow"/>
+  <text x="375" y="278" class="hint">Horizontal: item / score</text>
+  <text x="665" y="278" class="hint">Horizontal: item / level</text>
+
+  <path d="M500 162 C500 200,510 230,520 260" class="arrow dash"/>
+  <path d="M520 332 C530 392,540 396,540 90" class="arrow dash"/>
+  <text x="410" y="232" class="hint">Vertical: pull seen</text>
+  <text x="470" y="408" class="hint">Vertical: push seen</text>
+</svg>
