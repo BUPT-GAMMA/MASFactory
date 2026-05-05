@@ -5,7 +5,10 @@ from masfactory.checkpoint.restorer import CheckpointRestorer
 
 class CheckpointManager:
 
-    def __init__(self,root_graph,storage):
+    def __init__(self,root_graph,storage,save_granularity="node"):
+        if save_granularity not in {"node","graph"}:
+            raise ValueError("save_granularity must be 'node' or 'graph'")
+        self.save_granularity=save_granularity
         self.collector=CheckpointCollector()
         self.restorer=CheckpointRestorer()
         self.root_graph=root_graph
@@ -31,12 +34,28 @@ class CheckpointManager:
         return self.load(path_str)
 
     def attach_hooks(self):
-        self.root_graph.hook_register(
+        if self.save_granularity=="node": 
+            self.root_graph.hook_register(
+                Node.Hook.EXECUTE.AFTER,
+                self._save_after_execute,
+                recursion=True
+            )
+
+        elif self.save_granularity=="graph": 
+            self._attach_graph_hooks(self.root_graph)
+
+        else:
+            raise ValueError("save_granularity must be 'node' or 'graph'")
+
+    def _attach_graph_hooks(self,graph):
+        graph.hook_register(
             Node.Hook.EXECUTE.AFTER,
             self._save_after_execute,
-            recursion=True
         )
-    
+        for node in graph._nodes.values():
+            if hasattr(node,"_nodes") and hasattr(node,"_edges"):
+                self._attach_graph_hooks(node)
+
     def _save_after_execute(self,node,result,outer_env=None):
         self.save(trigger=node)
 
@@ -74,5 +93,4 @@ class CheckpointManager:
             
             if not executed_any:
                 break
-
-        
+                 
