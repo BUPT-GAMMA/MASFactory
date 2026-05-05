@@ -41,7 +41,14 @@ class CheckpointManager:
         self.save(trigger=node)
 
     def resume(self):
-        graph=self.root_graph
+        self._resume_graph(self.root_graph)
+
+        if self.root_graph._exit.is_ready:
+            self.root_graph._exit.execute(self.root_graph.attributes)
+
+        return self.root_graph._exit.output.copy(),self.root_graph.attributes.copy()
+    
+    def _resume_graph(self,graph):
         max_iterations=10000
         for _ in range(max_iterations):
             if graph._exit.is_ready or graph._gate !=Gate.OPEN:
@@ -49,6 +56,17 @@ class CheckpointManager:
             
             executed_any = False
             for node in graph._nodes.values():
+                if hasattr(node,"_nodes") and hasattr(node,"_edges"):
+                    before_exit_ready=node._exit.is_ready
+                    self._resume_graph(node)
+                    if node._exit.is_ready and not before_exit_ready:
+                        node._exit.execute(node.attributes)
+
+                    if node._exit.output:
+                        node._message_dispatch_out(node._exit.output)
+                        executed_any=True
+                        break
+
                 if node.is_ready and graph._gate==Gate.OPEN:
                     node.execute(graph.attributes)
                     executed_any=True
@@ -56,6 +74,5 @@ class CheckpointManager:
             
             if not executed_any:
                 break
-        if graph._exit.is_ready:
-            graph._exit.execute(graph.attributes)
-        return graph._exit.output.copy(),graph.attributes.copy()
+
+        
