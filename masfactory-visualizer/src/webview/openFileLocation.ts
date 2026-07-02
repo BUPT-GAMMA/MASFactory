@@ -1,8 +1,18 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-export function openFileLocation(filePath?: unknown, line?: unknown, column?: unknown): void {
-  if (typeof filePath !== 'string' || !filePath.trim()) return;
+export type OpenFileLocationOptions = {
+  preserveFocus?: boolean;
+  onOpened?: (document: vscode.TextDocument) => void;
+};
+
+export function openFileLocation(
+  filePath?: unknown,
+  line?: unknown,
+  column?: unknown,
+  opts: OpenFileLocationOptions = {}
+): void {
+  if (typeof filePath !== 'string' || !filePath.trim()) {return;}
   const raw = filePath.trim();
   if (raw.startsWith('<') && raw.endsWith('>')) {
     void vscode.window.showWarningMessage(`MASFactory Visualizer: cannot open source location ${raw}`);
@@ -31,8 +41,9 @@ export function openFileLocation(filePath?: unknown, line?: unknown, column?: un
 
   void vscode.workspace.openTextDocument(uri).then(
     (doc) =>
-      vscode.window.showTextDocument(doc, { preview: false }).then((editor) => {
-        if (lineNumber === undefined) return;
+      vscode.window.showTextDocument(doc, { preview: false, preserveFocus: !!opts.preserveFocus }).then((editor) => {
+        opts.onOpened?.(doc);
+        if (lineNumber === undefined) {return;}
         const pos = new vscode.Position(
           Math.max(0, lineNumber - 1),
           Math.max(0, (columnNumber ?? 1) - 1)
@@ -47,4 +58,3 @@ export function openFileLocation(filePath?: unknown, line?: unknown, column?: un
     }
   );
 }
-

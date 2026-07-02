@@ -52,7 +52,7 @@ export function findBuildMethodAndBaseType(node: TSNode): BuildMethodInfo {
                 if (body) {
                     let initMethod: TSNode | null = null;
                     for (const child of body.children) {
-                        if (!child) continue;
+                        if (!child) {continue;}
                         if (child.type === 'decorated_definition' || child.type === 'function_definition') {
                             const funcDef = child.type === 'decorated_definition' 
                                 ? child.children.find((c): c is TSNode => !!c && c.type === 'function_definition')
@@ -82,7 +82,7 @@ export function findBuildMethodAndBaseType(node: TSNode): BuildMethodInfo {
             }
         }
         
-        if (buildMethod) break;
+        if (buildMethod) {break;}
     }
 
     return { buildMethod, baseType, className };
@@ -110,7 +110,7 @@ export function parseBuildMethod(
     controlFlowCtx?: ControlFlowContext
 ): ControlFlowInfo {
     const body = buildMethod.childForFieldName('body');
-    if (!body) return {};
+    if (!body) {return {};}
 
     // Parse statements
     parseStatements(body, code, nodeCtx, edgeCtx, subgraphs, 0, controlFlowCtx);
@@ -132,7 +132,7 @@ function parseStatements(
     loopIteration?: number  // Current iteration index when inside a loop
 ): void {
     for (const child of blockNode.children) {
-        if (!child) continue;
+        if (!child) {continue;}
         // Skip nested function definitions
         if (child.type === 'function_definition' && depth > 0) {
             continue;
@@ -194,7 +194,7 @@ function parseForStatement(
     controlFlowCtx?: ControlFlowContext
 ): void {
     const bodyNode = forNode.childForFieldName('body');
-    if (!bodyNode) return;
+    if (!bodyNode) {return;}
     
     const lineNumber = forNode.startPosition.row + 1;
     
@@ -292,7 +292,7 @@ function parseWithStatement(
     loopIteration?: number
 ): void {
     const bodyNode = withNode.childForFieldName('body');
-    if (!bodyNode) return;
+    if (!bodyNode) {return;}
     parseStatements(bodyNode, code, nodeCtx, edgeCtx, subgraphs, depth + 1, controlFlowCtx, loopIteration);
 }
 
@@ -312,7 +312,7 @@ function parseTryStatement(
     }
 
     for (const clause of tryNode.namedChildren) {
-        if (!clause) continue;
+        if (!clause) {continue;}
         if (clause.type !== 'except_clause' && clause.type !== 'else_clause' && clause.type !== 'finally_clause') {
             continue;
         }
@@ -337,7 +337,7 @@ function parseExpressionStatement(
     loopIteration?: number
 ): void {
     const firstChild = node.namedChildren[0];
-    if (!firstChild) return;
+    if (!firstChild) {return;}
 
     // Check if it's an assignment
     if (firstChild.type === 'assignment' || firstChild.type === 'typed_assignment') {
@@ -346,7 +346,7 @@ function parseExpressionStatement(
     }
 
     // Check if it's a call expression
-    if (firstChild.type !== 'call') return;
+    if (firstChild.type !== 'call') {return;}
 
     // Try to find edge creation call (handles chained calls like .hooks.register())
     const edgeCall = findEdgeCreationCall(firstChild);
@@ -361,7 +361,7 @@ function parseExpressionStatement(
 
     // Fallback: direct edge creation method
     const functionNode = firstChild.childForFieldName('function');
-    if (!functionNode) return;
+    if (!functionNode) {return;}
 
     const functionText = getNodeText(functionNode, code);
     
@@ -382,13 +382,13 @@ function parseAssignment(
     subgraphs: { [parent: string]: string[] },
     loopIteration?: number
 ): void {
-    if (!nodeCtx.templates) nodeCtx.templates = {};
-    if (!nodeCtx.literalValues) nodeCtx.literalValues = {};
+    if (!nodeCtx.templates) {nodeCtx.templates = {};}
+    if (!nodeCtx.literalValues) {nodeCtx.literalValues = {};}
 
     const leftSide = node.childForFieldName('left');
     const rightSide = node.childForFieldName('right');
     
-    if (!leftSide || !rightSide) return;
+    if (!leftSide || !rightSide) {return;}
 
     // Handle simple variable aliasing: node_b = node_a (or self._node_b = node_a)
     // This is common in complex workflows and should preserve variable->node resolution for edges.
@@ -400,15 +400,15 @@ function parseAssignment(
             (rightSide.type === 'list' || rightSide.type === 'tuple' || rightSide.type === 'dictionary')
         ) {
             const store = (key: string) => {
-                if (!key) return;
+                if (!key) {return;}
                 nodeCtx.literalValues![key] = rightSide;
             };
             store(leftTextRaw);
-            if (leftTextRaw.startsWith('self._')) store(leftTextRaw.replace('self._', ''));
-            if (leftTextRaw.startsWith('self.')) store(leftTextRaw.replace('self.', ''));
+            if (leftTextRaw.startsWith('self._')) {store(leftTextRaw.replace('self._', ''));}
+            if (leftTextRaw.startsWith('self.')) {store(leftTextRaw.replace('self.', ''));}
             const last = leftTextRaw.split('.').pop();
-            if (last) store(last);
-            if (last && last.startsWith('_')) store(last.slice(1));
+            if (last) {store(last);}
+            if (last && last.startsWith('_')) {store(last.slice(1));}
         }
 
         const isSimpleRef = (n: TSNode): boolean =>
@@ -439,7 +439,7 @@ function parseAssignment(
 
     // Check if right side is a call
     const functionNode = rightSide.childForFieldName('function');
-    if (!functionNode) return;
+    if (!functionNode) {return;}
 
     const functionText = getNodeText(functionNode, code);
 

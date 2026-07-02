@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia';
 import { postMessage } from '../bridge/vscode';
+import {
+  AML_ROOT_ATTRIBUTES_XML_KEY,
+  parseAmlGraphDesign,
+  serializeAmlExternalGraphEdits,
+  serializeAmlGraphDesign
+} from '../utils/amlGraphDesign';
 import type {
   VibeDocState,
   VibeEdgeSpec,
@@ -27,6 +33,135 @@ import {
 
 const COALESCE_UNTIL_BY_URI = new Map<string, number>();
 const APPLYING_HISTORY = new Set<string>();
+const PENDING_SAVE_BASELINES = new Map<
+  string,
+  {
+    sourceText: string;
+    graph: VibeGraphDesign;
+    extraWrites: Array<{ filePath?: string; documentUri?: string; text: string }>;
+  }
+>();
+
+function isAmlDocument(payload: { fileName: string; languageId?: string; text: string }): boolean {
+  const languageId = String(payload.languageId || '').toLowerCase();
+  if (languageId === 'aml') return true;
+  if (payload.fileName.toLowerCase().endsWith('.aml')) return true;
+  return /^\s*<aml(?:\s|>)/.test(payload.text);
+}
+
+function isAmlDerivedNode(node: VibeNodeSpec | null | undefined): boolean {
+  return !!node && !!(node as any).__aml_from_implementation;
+}
+
+function isAmlDerivedEdge(edge: VibeEdgeSpec | null | undefined): boolean {
+  return !!edge && !!(edge as any).__aml_from_implementation;
+}
+
+function amlDerivedRoot(endpoint: string): string {
+  const value = String(endpoint || '').trim();
+  const base = value.includes('.') ? value.slice(0, value.indexOf('.')) : value;
+  const marker = base.indexOf('__');
+  return marker === -1 ? base : base.slice(0, marker);
+}
+
+function mergeAmlImplementationPreview(
+  dirtyGraph: VibeGraphDesign,
+  parsedGraph: VibeGraphDesign
+): VibeGraphDesign {
+  const parsedSourceByName = new Map<string, VibeNodeSpec>();
+  const parsedDerivedNodes: VibeNodeSpec[] = [];
+  for (const node of Array.isArray(parsedGraph.Nodes) ? parsedGraph.Nodes : []) {
+    if (!node || typeof node !== 'object') continue;
+    if (isAmlDerivedNode(node)) {
+      parsedDerivedNodes.push(node);
+      continue;
+    }
+    const name = String((node as any).name || '').trim();
+    if (name) parsedSourceByName.set(name, node);
+  }
+
+  const nextNodes: VibeNodeSpec[] = [];
+  const dirtySourceNames = new Set<string>();
+  for (const node of Array.isArray(dirtyGraph.Nodes) ? dirtyGraph.Nodes : []) {
+    if (!node || typeof node !== 'object' || isAmlDerivedNode(node)) continue;
+    const name = String((node as any).name || '').trim();
+    if (name) dirtySourceNames.add(name);
+    const parsedSource = name ? parsedSourceByName.get(name) : null;
+    if (parsedSource) {
+      nextNodes.push({
+        ...node,
+        __aml_implementation_expanded: (parsedSource as any).__aml_implementation_expanded,
+        __aml_opaque: (parsedSource as any).__aml_opaque
+      });
+    } else {
+      nextNodes.push(node);
+    }
+  }
+  nextNodes.push(
+    ...parsedDerivedNodes.filter((node) => {
+      const parent = String((node as any).parent || '');
+      const root = amlDerivedRoot(parent || String((node as any).name || ''));
+      return !!root && dirtySourceNames.has(root);
+    })
+  );
+
+  const nextEdges = [
+    ...(Array.isArray(dirtyGraph.Edges) ? dirtyGraph.Edges.filter((edge) => !isAmlDerivedEdge(edge)) : []),
+    ...(Array.isArray(parsedGraph.Edges)
+      ? parsedGraph.Edges.filter((edge) => {
+          if (!isAmlDerivedEdge(edge)) return false;
+          const fromRoot = amlDerivedRoot(String(edge.from || ''));
+          const toRoot = amlDerivedRoot(String(edge.to || ''));
+          return !!fromRoot && fromRoot === toRoot && dirtySourceNames.has(fromRoot);
+        })
+      : [])
+  ];
+
+  const nextGraph: VibeGraphDesign = {
+    ...dirtyGraph,
+    Nodes: nextNodes,
+    Edges: nextEdges
+  };
+  for (const [key, value] of Object.entries(parsedGraph)) {
+    if (key === 'Nodes' || key === 'Edges') continue;
+    if (key.startsWith('__aml_')) {
+      nextGraph[key] = value;
+    }
+  }
+  return nextGraph;
+}
+
+function updateImportedDocumentTexts(
+  importedDocuments: Record<string, unknown> | undefined,
+  extraWrites: Array<{ filePath?: string; documentUri?: string; text: string }>
+): Record<string, unknown> | undefined {
+  if (!importedDocuments || extraWrites.length === 0) return importedDocuments;
+  const byFilePath = new Map<string, string>();
+  for (const write of extraWrites) {
+    const filePath = String(write.filePath || '').trim();
+    if (filePath) byFilePath.set(filePath, write.text);
+  }
+  if (byFilePath.size === 0) return importedDocuments;
+
+  let changed = false;
+  const next: Record<string, unknown> = {};
+  for (const [alias, raw] of Object.entries(importedDocuments)) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      next[alias] = raw;
+      continue;
+    }
+    const record = raw as Record<string, unknown>;
+    const filePath = typeof record.filePath === 'string' ? record.filePath.trim() : '';
+    const text = filePath ? byFilePath.get(filePath) : undefined;
+    if (text === undefined) {
+      next[alias] = raw;
+      continue;
+    }
+    next[alias] = { ...record, text };
+    changed = true;
+  }
+  return changed ? next : importedDocuments;
+}
 
 export const useVibeStore = defineStore('vibe', {
   state: () => ({
@@ -212,14 +347,76 @@ export const useVibeStore = defineStore('vibe', {
       COALESCE_UNTIL_BY_URI.delete(uri);
     },
 
-    ingestDocument(payload: { uri: string; fileName: string; text: string }): boolean {
+    ingestDocument(payload: {
+      uri: string;
+      fileName: string;
+      text: string;
+      languageId?: string;
+      amlGraphId?: string;
+      implementationGraphs?: Record<string, unknown>;
+      implementationTargets?: Record<string, unknown>;
+      importedDocuments?: Record<string, unknown>;
+    }): boolean {
       const uri = String(payload.uri || '');
       if (!uri) return false;
       const fileName = String(payload.fileName || '');
       const text = String(payload.text ?? '');
+      const languageId = payload.languageId ? String(payload.languageId) : undefined;
 
       const prev = this.docs[uri];
       const wasDirty = !!prev?.dirty;
+
+      if (isAmlDocument({ fileName, languageId, text })) {
+        const sourceTextChanged = prev?.sourceText !== text;
+        if (prev?.graph && sourceTextChanged) this.clearHistory(uri);
+        let graph: VibeGraphDesign | null = null;
+        let parseError: string | null = null;
+        const amlImportedDocuments = payload.importedDocuments ?? prev?.amlImportedDocuments;
+        const amlImplementationGraphs = payload.implementationGraphs ?? prev?.amlImplementationGraphs;
+        const amlImplementationTargets = payload.implementationTargets ?? prev?.amlImplementationTargets;
+        try {
+          graph = parseAmlGraphDesign(text, {
+            graphId: payload.amlGraphId,
+            implementationGraphs: amlImplementationGraphs,
+            implementationTargets: amlImplementationTargets,
+            importedDocuments: amlImportedDocuments
+          }).graph;
+        } catch (err) {
+          parseError = err instanceof Error ? err.message : String(err);
+        }
+        const baseGraphSig = graph ? graphSignature(graph) : null;
+        const preserveDirty = wasDirty && !sourceTextChanged && !!prev?.dirtyGraph && !!graph && !parseError;
+        const dirtyGraph = preserveDirty ? mergeAmlImplementationPreview(prev!.dirtyGraph!, graph!) : null;
+        this.docs = {
+          ...this.docs,
+          [uri]: {
+            uri,
+            fileName,
+            languageId,
+            documentKind: 'aml',
+            sourceText: text,
+            amlImportedDocuments,
+            amlImplementationGraphs,
+            amlImplementationTargets,
+            graph,
+            graphLocator: null,
+            baseGraphSig,
+            parseError,
+            dirtyGraph,
+            dirty: preserveDirty,
+            saving: false,
+            saveError: null
+          }
+        };
+        this.activeUri = uri;
+        if (!this.layouts[uri]) {
+          this.layouts = { ...this.layouts, [uri]: {} };
+        }
+        if (!this.layoutMeta[uri]) {
+          this.layoutMeta = { ...this.layoutMeta, [uri]: { autoSig: null, userTouched: false } };
+        }
+        return true;
+      }
 
       const parsed = safeJsonParse(text);
       if (parsed.error) {
@@ -229,7 +426,12 @@ export const useVibeStore = defineStore('vibe', {
           [uri]: {
             uri,
             fileName,
+            languageId,
+            documentKind: 'unknown',
             sourceText: text,
+            amlImportedDocuments: undefined,
+            amlImplementationGraphs: undefined,
+            amlImplementationTargets: undefined,
             graph: null,
             graphLocator: null,
             baseGraphSig: prev?.baseGraphSig ?? null,
@@ -251,7 +453,12 @@ export const useVibeStore = defineStore('vibe', {
           [uri]: {
             uri,
             fileName,
+            languageId,
+            documentKind: 'unknown',
             sourceText: text,
+            amlImportedDocuments: undefined,
+            amlImplementationGraphs: undefined,
+            amlImplementationTargets: undefined,
             graph: null,
             graphLocator: null,
             baseGraphSig: null,
@@ -279,7 +486,12 @@ export const useVibeStore = defineStore('vibe', {
         [uri]: {
           uri,
           fileName,
+          languageId,
+          documentKind: 'graph_design',
           sourceText: text,
+          amlImportedDocuments: undefined,
+          amlImplementationGraphs: undefined,
+          amlImplementationTargets: undefined,
           graph: normalized,
           graphLocator: extracted.locator,
           baseGraphSig,
@@ -393,6 +605,30 @@ export const useVibeStore = defineStore('vibe', {
         ...this.docs,
         [uri]: { ...doc, saving: true, saveError: null }
       };
+      if (doc.documentKind === 'aml') {
+        let text = '';
+        let extraWrites: Array<{ filePath?: string; documentUri?: string; text: string }> = [];
+        try {
+          text = serializeAmlGraphDesign(doc.sourceText || '', graph);
+          extraWrites = serializeAmlExternalGraphEdits(graph, doc.amlImportedDocuments).map((write) => ({
+            filePath: write.filePath,
+            text: write.text
+          }));
+        } catch (err) {
+          this.docs = {
+            ...this.docs,
+            [uri]: {
+              ...doc,
+              saving: false,
+              saveError: err instanceof Error ? err.message : String(err)
+            }
+          };
+          return;
+        }
+        PENDING_SAVE_BASELINES.set(uri, { sourceText: text, graph: deepClone(graph), extraWrites });
+        postMessage({ type: 'vibeSave', documentUri: uri, text, extraWrites });
+        return;
+      }
       const locator = doc.graphLocator;
       const v4 = toV4GraphDesign(graph);
       let text = JSON.stringify(v4, null, 2);
@@ -435,6 +671,7 @@ export const useVibeStore = defineStore('vibe', {
           }
         }
       }
+      PENDING_SAVE_BASELINES.delete(uri);
       postMessage({ type: 'vibeSave', documentUri: uri, text });
     },
 
@@ -465,9 +702,32 @@ export const useVibeStore = defineStore('vibe', {
       const doc = this.docs[uri];
       if (!doc) return;
       if (!payload.ok) {
+        PENDING_SAVE_BASELINES.delete(uri);
         this.docs = {
           ...this.docs,
           [uri]: { ...doc, saving: false, saveError: payload.error || 'Save failed' }
+        };
+        return;
+      }
+      const pending = PENDING_SAVE_BASELINES.get(uri);
+      PENDING_SAVE_BASELINES.delete(uri);
+      if (pending && doc.documentKind === 'aml') {
+        const graph = deepClone(pending.graph);
+        this.docs = {
+          ...this.docs,
+          [uri]: {
+            ...doc,
+            sourceText: pending.sourceText,
+            amlImportedDocuments: updateImportedDocumentTexts(doc.amlImportedDocuments, pending.extraWrites),
+            amlImplementationGraphs: doc.amlImplementationGraphs,
+            amlImplementationTargets: doc.amlImplementationTargets,
+            graph,
+            baseGraphSig: graphSignature(graph),
+            saving: false,
+            saveError: null,
+            dirty: false,
+            dirtyGraph: null
+          }
         };
         return;
       }
@@ -569,9 +829,14 @@ export const useVibeStore = defineStore('vibe', {
       nodes.splice(idx, 1);
       graph.Nodes = nodes;
 
-      // Remove edges connected to this node.
+      // Remove edges connected to this node or any of its scoped endpoints.
       const edges = Array.isArray(graph.Edges) ? graph.Edges : [];
-      graph.Edges = edges.filter((e: any) => String(e?.from || '') !== nodeName && String(e?.to || '') !== nodeName);
+      graph.Edges = edges.filter((e: any) => {
+        const from = String(e?.from || '');
+        const to = String(e?.to || '');
+        const touches = (endpoint: string) => endpoint === nodeName || endpoint.startsWith(`${nodeName}.`);
+        return !touches(from) && !touches(to);
+      });
 
       // Remove layout entries for node + endpoints.
       const curLayout = this.layouts[uri] || {};
@@ -596,7 +861,17 @@ export const useVibeStore = defineStore('vibe', {
       if (idx === -1) return false;
       if (nodes.some((n: any) => String(n?.name || '') === nextName)) return false;
       const prevNode: any = nodes[idx];
-      nodes[idx] = { ...prevNode, name: nextName };
+      const nextNode: any = { ...prevNode, name: nextName };
+      if (nextNode.__aml_from_ref) {
+        const owner = String(nextNode.__aml_external_parent || '').trim();
+        const prefix = owner ? `${owner}__` : '';
+        nextNode.__aml_external_local_name =
+          prefix && nextName.startsWith(prefix) ? nextName.slice(prefix.length) : nextName;
+        if (typeof nextNode.label === 'string' && nextNode.label === String(prevNode.__aml_external_local_name || prevName)) {
+          nextNode.label = nextNode.__aml_external_local_name;
+        }
+      }
+      nodes[idx] = nextNode;
       graph.Nodes = nodes;
 
       // Update edges referencing the node or its internal endpoints.
@@ -653,7 +928,14 @@ export const useVibeStore = defineStore('vibe', {
       const prev: any = nodes[idx];
       const normalized = typeof nextParent === 'string' && nextParent.trim() ? nextParent.trim() : undefined;
       if (prev.parent === normalized || (!prev.parent && !normalized)) return;
-      nodes[idx] = { ...prev, parent: normalized };
+      const nextNode: any = { ...prev, parent: normalized };
+      if (nextNode.__aml_from_ref) {
+        const owner = String(nextNode.__aml_external_parent || '').trim();
+        if (owner && (!normalized || normalized === 'root')) {
+          nextNode.parent = owner;
+        }
+      }
+      nodes[idx] = nextNode;
       graph.Nodes = nodes;
 
       // When moving nodes into/out of subgraphs, any edges crossing scope are invalid in Vibe.
@@ -664,6 +946,19 @@ export const useVibeStore = defineStore('vibe', {
         const parent = typeof (n as any)?.parent === 'string' && (n as any).parent.trim() ? (n as any).parent.trim() : undefined;
         parentByName[name] = parent;
       }
+      const externalOwnerByName: Record<string, string | undefined> = {};
+      for (const n of nodes) {
+        const name = String((n as any)?.name || '');
+        if (!name) continue;
+        if ((n as any).__aml_from_ref) {
+          const owner = String((n as any).__aml_external_parent || '').trim();
+          if (owner) externalOwnerByName[name] = owner;
+        }
+      }
+      const ownerOfEndpoint = (endpoint: string): string | undefined => {
+        const base = endpoint.includes('.') ? endpoint.slice(0, endpoint.indexOf('.')) : endpoint;
+        return externalOwnerByName[base];
+      };
 
       const edges = Array.isArray(graph.Edges) ? graph.Edges.slice() : [];
       graph.Edges = edges.filter((e: any) => {
@@ -672,6 +967,17 @@ export const useVibeStore = defineStore('vibe', {
         const fromParent = parentOfEndpoint(from, parentByName);
         const toParent = parentOfEndpoint(to, parentByName);
         if (fromParent !== toParent) return false;
+        const fromOwner = ownerOfEndpoint(from);
+        const toOwner = ownerOfEndpoint(to);
+        if (fromOwner || toOwner) {
+          if (!fromOwner || !toOwner || fromOwner !== toOwner) return false;
+          e.__aml_from_ref = true;
+          e.__aml_ref = prev.__aml_ref;
+          e.__aml_ref_graphId = prev.__aml_ref_graphId;
+          e.__aml_ref_filePath = prev.__aml_ref_filePath;
+          e.__aml_ref_line = prev.__aml_ref_line;
+          e.__aml_external_parent = fromOwner;
+        }
         return true;
       });
 
@@ -697,6 +1003,15 @@ export const useVibeStore = defineStore('vibe', {
 
     updateNodeAttributes(uri: string, nodeName: string, attrs: Record<string, unknown> | null): void {
       this.updateNodeField(uri, nodeName, 'attributes', attrs);
+    },
+
+    updateRootAttributesXml(uri: string, xml: string): void {
+      if (!uri) return;
+      this.recordUndoPoint(uri);
+      const graph = this.ensureMutableGraph(uri);
+      if (!graph) return;
+      (graph as any)[AML_ROOT_ATTRIBUTES_XML_KEY] = String(xml ?? '').trim();
+      this.setDirtyGraph(uri, graph);
     },
 
     updateNodeKeys(uri: string, nodeName: string, kind: 'pull_keys' | 'push_keys', keys: Record<string, string> | null | undefined): void {

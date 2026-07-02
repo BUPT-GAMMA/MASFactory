@@ -34,7 +34,7 @@ ProfileDesignerHumanGraph = NodeTemplate(
             {
                 "user_demand": "User demand",
                 "role_list": "Role list",
-                "graph_design": "Graph design (topology from planner)",
+                "aml": "AML workflow topology from planner",
                 "user_advice": "User advice",
                 "system_advice": "System advice",
             },
@@ -42,13 +42,13 @@ ProfileDesignerHumanGraph = NodeTemplate(
         (
             "profile_designer_agent",
             "profile_human",
-            {"graph_design": "Graph design JSON to review/edit."},
+            {"aml": "AML workflow to review/edit."},
         ),
         (
             "profile_human",
             "CONTROLLER",
             {
-                "graph_design": "Edited graph design JSON",
+                "aml": "Edited AML workflow",
                 "user_advice": "Enter AGREE to accept, or write comments to revise.",
             },
         )
@@ -57,4 +57,3 @@ ProfileDesignerHumanGraph = NodeTemplate(
 
 
 __all__ = ["ProfileDesignerHumanGraph"]
-

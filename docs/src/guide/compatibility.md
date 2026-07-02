@@ -101,20 +101,20 @@ Langflow imports are most useful for chat-style flows built from ChatInput, Prom
 
 ---
 
-## Preview The Imported Topology
+## Export AML Or Legacy Topology Previews
 
-Every loader can also write a `graph_design.json` preview:
+Every loader can also write an AML document for Visualizer preview, editing, and migration review:
 
 ```python
 from masfactory.compatibility import load_graph_from_langflow_json
 
 graph = load_graph_from_langflow_json(
     "flow.json",
-    graph_design_path=True,
+    aml_path=True,
 )
 ```
 
-When `graph_design_path=True`, MASFactory writes the preview under:
+When `aml_path=True`, MASFactory writes the AML document under:
 
 ```text
 masfactory/compatibility/out/
@@ -125,13 +125,15 @@ You can also choose the output name:
 ```python
 graph = load_graph_from_dify_yaml(
     "workflow.yml",
-    graph_design_path="my_dify_preview.json",
+    aml_path="my_dify_preview.aml",
 )
 ```
 
 Relative paths are resolved under `masfactory/compatibility/out/`; absolute paths are used as-is.
 
-The exported file is for Visualizer topology preview and inspection. Treat the imported graph itself as the executable artifact.
+The exported AML is for Visualizer topology preview and source-level inspection. Treat the imported graph itself as the executable artifact.
+
+If you still need the old Visualizer graph-design preview format, pass `graph_design_path=True` or a `.json` path. That export remains available for legacy tooling, but AML is the primary interchange format.
 
 ---
 
@@ -194,4 +196,5 @@ For new MASFactory-native projects, prefer building directly with MASFactory com
 - Compatibility imports are best-effort. Imported graphs may not behave exactly like the original product runtime.
 - Dify coverage focuses on common workflow nodes. External services such as tools, HTTP, and knowledge retrieval need runtime hooks when real behavior is required.
 - ChatDev and Langflow complex components may run as passthrough nodes or stub model calls.
-- `graph_design.json` export is for structure preview; it is not the execution source of truth.
+- `aml_path` export is for source-level preview and migration review; the imported graph remains the execution source of truth.
+- `graph_design_path` export is a legacy structure preview and should not be treated as the main authoring format for new MASFactory workflows.

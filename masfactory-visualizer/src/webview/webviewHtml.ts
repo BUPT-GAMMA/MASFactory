@@ -40,7 +40,7 @@ function getExtensionVersion(extensionPath: string): string | null {
     const pkgPath = path.join(extensionPath, 'package.json');
     const raw = fs.readFileSync(pkgPath, 'utf-8');
     const pkg = JSON.parse(raw);
-    if (pkg && typeof pkg.version === 'string' && pkg.version.trim()) return pkg.version.trim();
+    if (pkg && typeof pkg.version === 'string' && pkg.version.trim()) {return pkg.version.trim();}
   } catch {
     // ignore
   }

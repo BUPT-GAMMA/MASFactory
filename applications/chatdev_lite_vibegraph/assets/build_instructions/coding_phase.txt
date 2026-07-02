@@ -9,7 +9,7 @@ Graph-generation hard constraints (MUST):
 - The generated sub-graph MUST include EXACTLY ONE Loop and EXACTLY TWO Agents.
 - The two Agents MUST be named exactly: instructor_agent and assistant_agent.
 - The Loop max_iterations <= 1.
-- The workflow MUST contain EXACTLY TWO steps with IDs 1..2.
+- The workflow MUST contain EXACTLY TWO agent steps.
 - Step 1 role MUST be "Chief Technology Officer" and agent_id MUST be "instructor_agent".
 - Step 2 role MUST be "Programmer" and agent_id MUST be "assistant_agent".
 - Final output MUST contain ONLY: codes (no other fields, no JSON).
@@ -19,11 +19,14 @@ Topology requirement (to guarantee exactly one Loop + two Agents):
 1: [Chief Technology Officer] Provide implementation guidance and constraints for the codebase.
 2: [Programmer] Implement the full runnable code and output the complete sources.
 
-[GRAPH]
-START -> 1
-1 -> 2
-2 -> 1
-2 -> END
+[ROOT GRAPH]
+entry -> phase_loop
+phase_loop -> exit
+
+[LOOP BODY]
+controller -> instructor_agent
+instructor_agent -> assistant_agent
+assistant_agent -> controller
 
 Phase prompt (from ChatDev Lite config):
 According to the new user's task and our software designs listed below: 

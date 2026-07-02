@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import ast
+import inspect
+import importlib
 import json
 import re
 from pathlib import Path
@@ -9,11 +11,22 @@ from typing import Any, Callable
 from masfactory import (
     Agent,
     AgentSwitch,
+    CustomNode,
     Graph,
+    LogicSwitch,
     Loop,
     Model,
     ParagraphMessageFormatter,
     TwinsFieldTextFormatter,
+)
+from masfactory.aml import (
+    AmlDocument,
+    AmlGraph,
+    AmlNode,
+    aml_to_graph_design,
+    graph_design_to_aml_document,
+    parse_aml_document,
+    validate_aml_document,
 )
 
 
@@ -28,13 +41,28 @@ _ACTION = "Action"
 _SWITCH = "Switch"
 _LOOP = "Loop"
 _SUBGRAPH = "Subgraph"
-_ALLOWED_TYPES = {_ACTION, _SWITCH, _LOOP, _SUBGRAPH}
+_CUSTOM_NODE = "CustomNode"
+_ALLOWED_TYPES = {_ACTION, _SWITCH, _LOOP, _SUBGRAPH, _CUSTOM_NODE}
 
 _NODE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 _THINKING_BLOCK_PATTERN = re.compile(
     r"<\s*(think|thinking)\s*>.*?<\s*/\s*\1\s*>",
     flags=re.IGNORECASE | re.DOTALL,
 )
+_SAFE_EXPR_GLOBALS: dict[str, Any] = {
+    "__builtins__": {
+        "all": all,
+        "any": any,
+        "bool": bool,
+        "float": float,
+        "int": int,
+        "len": len,
+        "max": max,
+        "min": min,
+        "str": str,
+        "sum": sum,
+    }
+}
 
 
 def _is_non_empty_str(value: Any) -> bool:
@@ -87,6 +115,64 @@ def _tool_map(tools: list[Callable] | None) -> dict[str, Callable]:
         if isinstance(name, str) and name.strip():
             by_name[name.strip()] = tool
     return by_name
+
+
+def _resolve_python_binding(binding: Any) -> Callable | None:
+    if not isinstance(binding, str) or not binding.strip():
+        return None
+    spec = binding.strip()
+    if spec.startswith("python:"):
+        spec = spec[len("python:") :]
+    if ":" in spec:
+        module_name, attr_name = spec.split(":", 1)
+    else:
+        module_name, _, attr_name = spec.rpartition(".")
+    if not module_name or not attr_name:
+        raise ValueError(f"Invalid Python binding '{binding}'")
+    module = importlib.import_module(module_name)
+    target: Any = module
+    for part in attr_name.split("."):
+        target = getattr(target, part)
+    if not callable(target):
+        raise TypeError(f"Python binding '{binding}' resolved to non-callable {type(target).__name__}")
+    return target
+
+
+def _call_predicate(fn: Callable, message: dict[str, object], attributes: dict[str, object]) -> bool:
+    param_count = len(inspect.signature(fn).parameters)
+    if param_count <= 0:
+        return bool(fn())
+    if param_count == 1:
+        return bool(fn(message))
+    return bool(fn(message, attributes))
+
+
+def _logic_condition_predicate(condition: str) -> Callable[[dict, dict[str, object]], bool]:
+    text = str(condition or "").strip()
+    if not text:
+        raise ValueError("LogicSwitch condition must be non-empty")
+
+    if text.startswith("python:"):
+        fn = _resolve_python_binding(text)
+        if fn is None:
+            raise ValueError(f"Invalid LogicSwitch Python condition binding '{text}'")
+
+        def python_predicate(message: dict, attributes: dict[str, object]) -> bool:
+            return _call_predicate(fn, message, attributes)
+
+        return python_predicate
+
+    code = compile(text, "<aml logic condition>", "eval")
+
+    def expression_predicate(message: dict, attributes: dict[str, object]) -> bool:
+        locals_dict = {
+            "attributes": attributes,
+            "input": message,
+            "message": message,
+        }
+        return bool(eval(code, _SAFE_EXPR_GLOBALS, locals_dict))
+
+    return expression_predicate
 
 
 def _parse_jsonish_object(text: str) -> dict[str, Any]:
@@ -232,7 +318,12 @@ def _normalize_scope(graph_obj: Any, *, in_loop_subgraph: bool, path: str) -> di
 
         if node_type == _ACTION:
             if not _is_non_empty_str(node.get("agent")):
-                raise ValueError(f"{path}.nodes[{i}].agent: required for Action")
+                raise ValueError(f"{path}.nodes[{i}].agent: required for legacy Action type")
+
+        if node_type == _CUSTOM_NODE:
+            forward = node.get("forward", node.get("binding"))
+            if forward is not None and not isinstance(forward, str):
+                raise ValueError(f"{path}.nodes[{i}].forward: must be string when provided")
 
         if "tools" not in node and "tools_allowed" in node:
             node["tools"] = node.get("tools_allowed")
@@ -246,7 +337,13 @@ def _normalize_scope(graph_obj: Any, *, in_loop_subgraph: bool, path: str) -> di
         if node_type in {_LOOP, _SUBGRAPH}:
             sub_raw = node.get("sub_graph")
             if not isinstance(sub_raw, dict):
-                raise ValueError(f"{path}.nodes[{i}].sub_graph: required object")
+                if node_type == _SUBGRAPH and (
+                    _is_non_empty_str(node.get("ref")) or _is_non_empty_str(node.get("implementation"))
+                ):
+                    sub_raw = {"nodes": [], "edges": []}
+                    node["sub_graph"] = sub_raw
+                else:
+                    raise ValueError(f"{path}.nodes[{i}].sub_graph: required object")
 
             # Legacy alias for loop termination.
             if node_type == _LOOP and "terminate_condition_prompt" not in node and "terminate_condition" in node:
@@ -397,6 +494,10 @@ def _normalize_scope(graph_obj: Any, *, in_loop_subgraph: bool, path: str) -> di
             if n not in can_reach:
                 raise ValueError(f"{path}: node '{n}' cannot reach CONTROLLER/TERMINATE")
     else:
+        if len(nodes) == 0:
+            if len(edges) == 0 and path.endswith(".sub_graph"):
+                return {"nodes": nodes, "edges": edges}
+            raise ValueError(f"{path}: graph must contain at least one node")
         if not any(e.get("source") == _BUILTIN_ENTRY and str(e.get("target")) in node_configs for e in edges):
             raise ValueError(f"{path}: graph must contain at least one ENTRY -> <node> edge")
         if not any(e.get("target") == _BUILTIN_EXIT and str(e.get("source")) in node_configs for e in edges):
@@ -522,13 +623,319 @@ def _build_action_kwargs(node_config: dict[str, Any], model: Model, tools_by_nam
     return kwargs
 
 
+def _build_custom_node_kwargs(node_config: dict[str, Any], tools_by_name: dict[str, Callable]) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {
+        "forward": _resolve_python_binding(node_config.get("forward", node_config.get("binding"))),
+    }
+
+    tools = _str_list(node_config.get("tools")) if "tools" in node_config else []
+    if tools:
+        unknown = [name for name in tools if name not in tools_by_name]
+        if unknown:
+            raise ValueError(f"Unknown tools in custom node '{node_config.get('name', '')}': {unknown}")
+        kwargs["tools"] = [tools_by_name[name] for name in tools]
+
+    for key in ("pull_keys", "push_keys", "attributes"):
+        value = node_config.get(key)
+        if value is not None:
+            if not isinstance(value, dict):
+                raise ValueError(f"Node '{node_config.get('name', '')}' field '{key}' must be dict")
+            kwargs[key] = value
+
+    return kwargs
+
+
 def _bind_switch_conditions(bindings: dict[str, list[tuple[Any, str]]], created: dict[str, Any]) -> None:
     for switch_name, items in bindings.items():
         switch_node = created.get(switch_name)
+        if isinstance(switch_node, LogicSwitch):
+            for edge_obj, condition in items:
+                switch_node.condition_binding(_logic_condition_predicate(condition), edge_obj)
+            continue
         if not isinstance(switch_node, AgentSwitch):
-            raise ValueError(f"Node '{switch_name}' is not an AgentSwitch")
+            raise ValueError(f"Node '{switch_name}' is not a supported switch")
         for edge_obj, condition in items:
             switch_node.condition_binding(condition, edge_obj)
+
+
+def _aml_node_config(node: AmlNode) -> dict[str, Any]:
+    config: dict[str, Any] = {
+        "name": node.id,
+        "label": node.label or node.id,
+    }
+    if node.pull_keys is not None:
+        config["pull_keys"] = dict(node.pull_keys)
+    if node.push_keys is not None:
+        config["push_keys"] = dict(node.push_keys)
+    if node.attributes is not None:
+        config["attributes"] = dict(node.attributes)
+
+    if node.kind == "agent":
+        config.update(
+            {
+                "type": _ACTION,
+                "agent": node.agent_ref or node.id,
+                "instructions": node.instructions or f"Execute AML agent node '{node.id}'.",
+            }
+        )
+        if node.prompt_template:
+            config["prompt_template"] = node.prompt_template
+        return config
+
+    if node.kind == "custom_node":
+        config["type"] = _CUSTOM_NODE
+        if node.forward:
+            config["forward"] = node.forward
+        return config
+
+    if node.kind in {"logic_switch", "agent_switch"}:
+        config["type"] = _SWITCH
+        config["switch_kind"] = node.kind
+        return config
+
+    if node.kind == "loop":
+        config.update(
+            {
+                "type": _LOOP,
+                "max_iterations": node.max_iterations or 3,
+            }
+        )
+        if node.terminate_condition_prompt:
+            config["terminate_condition_prompt"] = node.terminate_condition_prompt
+        if node.terminate_condition_expr:
+            config["terminate_condition_expr"] = node.terminate_condition_expr
+        return config
+
+    if node.kind == "graph":
+        config["type"] = _SUBGRAPH
+        if node.ref:
+            config["ref"] = node.ref
+        if node.implementation:
+            config["implementation"] = node.implementation
+        return config
+
+    raise ValueError(f"Unsupported AML node kind '{node.kind}' for node '{node.id}'")
+
+
+def _compile_aml_graph(graph: Graph, aml_graph: AmlGraph, model: Model, tools: list[Callable] | None) -> None:
+    node_configs = {node.id: _aml_node_config(node) for node in aml_graph.nodes}
+    nodes_by_id = {node.id: node for node in aml_graph.nodes}
+    tools_by_name = _tool_map(tools)
+    created: dict[str, Any] = {}
+
+    for node in aml_graph.nodes:
+        name = node.id
+        node_config = node_configs[name]
+        node_type = str(node_config.get("type", "")).strip()
+        if node_type == _ACTION:
+            created[name] = graph.create_node(
+                Agent,
+                name=name,
+                **_build_action_kwargs(node_config, model, tools_by_name),
+            )
+        elif node_type == _CUSTOM_NODE:
+            created[name] = graph.create_node(
+                CustomNode,
+                name=name,
+                **_build_custom_node_kwargs(node_config, tools_by_name),
+            )
+        elif node_type == _SWITCH:
+            if str(node_config.get("switch_kind") or "").strip() == "logic_switch":
+                created[name] = graph.create_node(
+                    LogicSwitch,
+                    name=name,
+                    pull_keys=node_config.get("pull_keys"),
+                    push_keys=node_config.get("push_keys"),
+                    attributes=node_config.get("attributes"),
+                )
+            else:
+                created[name] = graph.create_node(
+                    AgentSwitch,
+                    name=name,
+                    model=model,
+                    pull_keys=node_config.get("pull_keys"),
+                    push_keys=node_config.get("push_keys"),
+                    attributes=node_config.get("attributes"),
+                )
+        elif node_type == _SUBGRAPH:
+            sub = graph.create_node(
+                Graph,
+                name=name,
+                pull_keys=node_config.get("pull_keys"),
+                push_keys=node_config.get("push_keys"),
+                attributes=node_config.get("attributes"),
+            )
+            created[name] = sub
+            if node.sub_graph is not None:
+                _compile_aml_graph(sub, node.sub_graph, model, tools)
+        elif node_type == _LOOP:
+            max_it = node_config.get("max_iterations") if isinstance(node_config.get("max_iterations"), int) else 3
+            term = node_config.get("terminate_condition_prompt")
+            term_prompt = term.strip() if isinstance(term, str) else ""
+            term_expr = node_config.get("terminate_condition_expr")
+            term_function = (
+                _logic_condition_predicate(term_expr)
+                if isinstance(term_expr, str) and term_expr.strip()
+                else None
+            )
+            loop = graph.create_node(
+                Loop,
+                name=name,
+                max_iterations=max_it if max_it and max_it > 0 else 3,
+                model=model if term_prompt else None,
+                terminate_condition_prompt=term_prompt or None,
+                terminate_condition_function=term_function,
+                pull_keys=node_config.get("pull_keys"),
+                push_keys=node_config.get("push_keys"),
+                attributes=node_config.get("attributes"),
+            )
+            created[name] = loop
+            if node.sub_graph is None:
+                raise ValueError(f"AML loop node '{name}' is missing a sub_graph")
+            _compile_aml_loop(loop, node.sub_graph, model, tools)
+        else:
+            raise ValueError(f"Unsupported AML node type '{node_type}' for node '{name}'")
+
+    bindings: dict[str, list[tuple[Any, str]]] = {}
+    for edge in aml_graph.edges:
+        src = edge.source.strip()
+        dst = edge.target.strip()
+        keys = edge.keys or {}
+        if not isinstance(keys, dict):
+            raise ValueError(f"AML edge '{src}->{dst}' field 'keys' must be dict")
+
+        if src == _BUILTIN_ENTRY:
+            receiver = graph._exit if dst == _BUILTIN_EXIT else created[dst]
+            edge_obj = graph.edge_from_entry(receiver, keys=keys)
+        elif dst == _BUILTIN_EXIT:
+            sender = graph._entry if src == _BUILTIN_ENTRY else created[src]
+            edge_obj = graph.edge_to_exit(sender, keys=keys)
+        else:
+            edge_obj = graph.create_edge(created[src], created[dst], keys=keys)
+
+        source_node = nodes_by_id.get(src)
+        if source_node is not None and source_node.kind in {"logic_switch", "agent_switch"}:
+            bindings.setdefault(src, []).append((edge_obj, str(edge.condition or "").strip()))
+
+    _bind_switch_conditions(bindings, created)
+
+
+def _compile_aml_loop(loop: Loop, aml_graph: AmlGraph, model: Model, tools: list[Callable] | None) -> None:
+    node_configs = {node.id: _aml_node_config(node) for node in aml_graph.nodes}
+    nodes_by_id = {node.id: node for node in aml_graph.nodes}
+    tools_by_name = _tool_map(tools)
+    created: dict[str, Any] = {}
+
+    for node in aml_graph.nodes:
+        name = node.id
+        node_config = node_configs[name]
+        node_type = str(node_config.get("type", "")).strip()
+        if node_type == _ACTION:
+            created[name] = loop.create_node(
+                Agent,
+                name=name,
+                **_build_action_kwargs(node_config, model, tools_by_name),
+            )
+        elif node_type == _CUSTOM_NODE:
+            created[name] = loop.create_node(
+                CustomNode,
+                name=name,
+                **_build_custom_node_kwargs(node_config, tools_by_name),
+            )
+        elif node_type == _SWITCH:
+            if str(node_config.get("switch_kind") or "").strip() == "logic_switch":
+                created[name] = loop.create_node(
+                    LogicSwitch,
+                    name=name,
+                    pull_keys=node_config.get("pull_keys"),
+                    push_keys=node_config.get("push_keys"),
+                    attributes=node_config.get("attributes"),
+                )
+            else:
+                created[name] = loop.create_node(
+                    AgentSwitch,
+                    name=name,
+                    model=model,
+                    pull_keys=node_config.get("pull_keys"),
+                    push_keys=node_config.get("push_keys"),
+                    attributes=node_config.get("attributes"),
+                )
+        elif node_type == _SUBGRAPH:
+            sub = loop.create_node(
+                Graph,
+                name=name,
+                pull_keys=node_config.get("pull_keys"),
+                push_keys=node_config.get("push_keys"),
+                attributes=node_config.get("attributes"),
+            )
+            created[name] = sub
+            if node.sub_graph is not None:
+                _compile_aml_graph(sub, node.sub_graph, model, tools)
+        elif node_type == _LOOP:
+            max_it = node_config.get("max_iterations") if isinstance(node_config.get("max_iterations"), int) else 3
+            term = node_config.get("terminate_condition_prompt")
+            term_prompt = term.strip() if isinstance(term, str) else ""
+            term_expr = node_config.get("terminate_condition_expr")
+            term_function = (
+                _logic_condition_predicate(term_expr)
+                if isinstance(term_expr, str) and term_expr.strip()
+                else None
+            )
+            nested_loop = loop.create_node(
+                Loop,
+                name=name,
+                max_iterations=max_it if max_it and max_it > 0 else 3,
+                model=model if term_prompt else None,
+                terminate_condition_prompt=term_prompt or None,
+                terminate_condition_function=term_function,
+                pull_keys=node_config.get("pull_keys"),
+                push_keys=node_config.get("push_keys"),
+                attributes=node_config.get("attributes"),
+            )
+            created[name] = nested_loop
+            if node.sub_graph is None:
+                raise ValueError(f"AML loop node '{name}' is missing a sub_graph")
+            _compile_aml_loop(nested_loop, node.sub_graph, model, tools)
+        else:
+            raise ValueError(f"Unsupported AML node type '{node_type}' inside loop for node '{name}'")
+
+    bindings: dict[str, list[tuple[Any, str]]] = {}
+    for edge in aml_graph.edges:
+        src = edge.source.strip()
+        dst = edge.target.strip()
+        keys = edge.keys or {}
+        if not isinstance(keys, dict):
+            raise ValueError(f"AML edge '{src}->{dst}' field 'keys' must be dict")
+
+        if src == _BUILTIN_CONTROLLER:
+            if dst == _BUILTIN_CONTROLLER:
+                raise ValueError("Loop edge CONTROLLER -> CONTROLLER is not allowed")
+            if dst == _BUILTIN_TERMINATE:
+                edge_obj = loop.edge_to_terminate_node(loop._controller, keys=keys)  # type: ignore[attr-defined]
+            else:
+                edge_obj = loop.edge_from_controller(created[dst], keys=keys)
+        elif dst == _BUILTIN_CONTROLLER:
+            edge_obj = loop.edge_to_controller(created[src], keys=keys)
+        elif dst == _BUILTIN_TERMINATE:
+            edge_obj = loop.edge_to_terminate_node(created[src], keys=keys)
+        else:
+            edge_obj = loop.create_edge(created[src], created[dst], keys=keys)
+
+        source_node = nodes_by_id.get(src)
+        if source_node is not None and source_node.kind in {"logic_switch", "agent_switch"}:
+            bindings.setdefault(src, []).append((edge_obj, str(edge.condition or "").strip()))
+
+    _bind_switch_conditions(bindings, created)
+
+
+def _compile_aml_document(
+    target_graph: Graph,
+    document: AmlDocument,
+    model: Model,
+    tools: list[Callable] | None,
+) -> None:
+    validate_aml_document(document)
+    _compile_aml_graph(target_graph, document.root_graph, model, tools)
 
 
 def _compile_graph(graph: Graph, graph_obj: dict[str, Any], model: Model, tools: list[Callable] | None) -> None:
@@ -540,18 +947,30 @@ def _compile_graph(graph: Graph, graph_obj: dict[str, Any], model: Model, tools:
         node_type = str(node_config.get("type", "")).strip()
         if node_type == _ACTION:
             if not _is_non_empty_str(node_config.get("instructions")):
-                raise ValueError(f"Node '{name}' is Action but missing non-empty 'instructions'")
+                raise ValueError(f"Node '{name}' uses the legacy Action type but is missing non-empty 'instructions'")
             created[name] = graph.create_node(
                 Agent, name=name, **_build_action_kwargs(node_config, model, tools_by_name)
             )
-        elif node_type == _SWITCH:
+        elif node_type == _CUSTOM_NODE:
             created[name] = graph.create_node(
-                AgentSwitch,
-                name=name,
-                model=model,
-                pull_keys=node_config.get("pull_keys"),
-                push_keys=node_config.get("push_keys"),
+                CustomNode, name=name, **_build_custom_node_kwargs(node_config, tools_by_name)
             )
+        elif node_type == _SWITCH:
+            if str(node_config.get("switch_kind") or "").strip() == "logic_switch":
+                created[name] = graph.create_node(
+                    LogicSwitch,
+                    name=name,
+                    pull_keys=node_config.get("pull_keys"),
+                    push_keys=node_config.get("push_keys"),
+                )
+            else:
+                created[name] = graph.create_node(
+                    AgentSwitch,
+                    name=name,
+                    model=model,
+                    pull_keys=node_config.get("pull_keys"),
+                    push_keys=node_config.get("push_keys"),
+                )
         elif node_type == _SUBGRAPH:
             sub = graph.create_node(
                 Graph,
@@ -624,18 +1043,30 @@ def _compile_loop(loop: Loop, sub_graph_obj: dict[str, Any], model: Model, tools
         node_type = str(node_config.get("type", "")).strip()
         if node_type == _ACTION:
             if not _is_non_empty_str(node_config.get("instructions")):
-                raise ValueError(f"Node '{name}' is Action but missing non-empty 'instructions'")
+                raise ValueError(f"Node '{name}' uses the legacy Action type but is missing non-empty 'instructions'")
             created[name] = loop.create_node(
                 Agent, name=name, **_build_action_kwargs(node_config, model, tools_by_name)
             )
-        elif node_type == _SWITCH:
+        elif node_type == _CUSTOM_NODE:
             created[name] = loop.create_node(
-                AgentSwitch,
-                name=name,
-                model=model,
-                pull_keys=node_config.get("pull_keys"),
-                push_keys=node_config.get("push_keys"),
+                CustomNode, name=name, **_build_custom_node_kwargs(node_config, tools_by_name)
             )
+        elif node_type == _SWITCH:
+            if str(node_config.get("switch_kind") or "").strip() == "logic_switch":
+                created[name] = loop.create_node(
+                    LogicSwitch,
+                    name=name,
+                    pull_keys=node_config.get("pull_keys"),
+                    push_keys=node_config.get("push_keys"),
+                )
+            else:
+                created[name] = loop.create_node(
+                    AgentSwitch,
+                    name=name,
+                    model=model,
+                    pull_keys=node_config.get("pull_keys"),
+                    push_keys=node_config.get("push_keys"),
+                )
         elif node_type == _SUBGRAPH:
             sub = loop.create_node(
                 Graph,
@@ -715,7 +1146,7 @@ def compile_graph_design(
 
     The compiler:
     - Validates and normalizes the input `graph_design`
-    - Creates nodes (Action/Switch/Loop/Subgraph) on `target_graph`
+    - Creates nodes from legacy Action/Switch/Loop/Subgraph records on `target_graph`
     - Creates edges based on `edges` specifications
 
     Built-in endpoints:
@@ -730,8 +1161,8 @@ def compile_graph_design(
             - `{ "graph": { "nodes": [...], "edges": [...] } }` (legacy wrapper)
             - `{ "nodes": [...], "edges": [...] }` (inner object)
             Use `load_cached_graph_design()` to load from a file path.
-        model: Model adapter injected into Action nodes.
-        tools: Optional tool registry. When provided, Action node `tools` names are resolved
+        model: Model adapter injected into legacy Action records.
+        tools: Optional tool registry. When provided, legacy Action `tools` names are resolved
             against this list by `__name__`.
 
     Raises:
@@ -746,11 +1177,23 @@ def compile_graph_design(
     _compile_graph(target_graph, graph_obj, model, tools)
 
 
+def compile_aml(
+    *,
+    target_graph: Graph,
+    aml: str | Path,
+    model: Model,
+    tools: list[Callable] | None = None,
+) -> None:
+    """Compile AML directly into an in-memory MASFactory ``Graph``."""
+    document = parse_aml_document(aml, strict=True)
+    _compile_aml_document(target_graph, document, model, tools)
+
+
 def load_cached_graph_design(cache_path: str | Path) -> dict[str, Any]:
-    """Load a cached graph_design.json file.
+    """Load a cached graph_design JSON or AML file.
 
     Accepts either:
-    - file path to JSON
+    - file path to JSON / AML
     - directory path containing graph_design.json
     """
     path = Path(cache_path)
@@ -759,12 +1202,41 @@ def load_cached_graph_design(cache_path: str | Path) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(str(path))
 
+    if path.suffix.lower() == ".aml":
+        return normalize_graph_design(aml_to_graph_design(path, strict=True))
+
     obj = _parse_jsonish_object(path.read_text(encoding="utf-8"))
     return normalize_graph_design(obj)
 
 
+def load_cached_aml(cache_path: str | Path) -> str | Path:
+    """Load a cached AML file, migrating legacy graph_design JSON at the boundary."""
+    path = Path(cache_path)
+    if path.is_dir():
+        aml_path = path / "graph.aml"
+        if aml_path.exists():
+            return aml_path
+        path = path / "graph_design.json"
+    if not path.exists():
+        raise FileNotFoundError(str(path))
+
+    if path.suffix.lower() == ".aml":
+        return path
+
+    obj = _parse_jsonish_object(path.read_text(encoding="utf-8"))
+    graph_obj = normalize_graph_design(obj)
+    return graph_design_to_aml_document(
+        graph_obj,
+        document_id=f"{path.stem}.legacy_cache",
+        root_graph_id=path.stem.replace(".", "_") or "root",
+        source="legacy_graph_design_cache",
+    )
+
+
 __all__ = [
     "compile_graph_design",
+    "compile_aml",
+    "load_cached_aml",
     "load_cached_graph_design",
     "normalize_graph_design",
     "validate_graph_design_strict",

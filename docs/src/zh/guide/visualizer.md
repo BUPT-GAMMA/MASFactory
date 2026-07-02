@@ -105,23 +105,24 @@ Visualizer 的整体布局可以概括为四个区域：
 - *底部信息栏（下方）*：按类别查看运行细节（节点、日志、消息、人机交互请求、系统事件与结构快照等）。
 
 
-### 4) Vibe：graph_design 预览与编辑
+### 4) Vibe：AML 工作流预览与编辑
 
 **适用场景**
-- 使用 VibeGraphing 生成 `graph_design.json` 后进行人工校对与收敛；
+- 使用 VibeGraphing 生成 `.aml` 后进行人工校对与收敛；
 - 在进入“完整字段生成阶段”前，对结构设计进行快速调整；
-- 将结构迭代沉淀为可版本化的中间表示（IR）。
+- 将结构迭代沉淀为可版本化的 AML 源文件。
 
 **主要功能**
-- 读取并渲染 `graph_design.json`；
-- 支持在可视化界面中编辑结构并保存（用于后续编译/运行验证）。
+- 读取并渲染 `.aml`；
+- 支持在可视化界面中编辑结构并保存（用于后续编译/运行验证）；
+- 派生出的实现图预览保持只读，避免把展开后的运行结构误写回源 AML。
 
 ![vibe-tab](/imgs/visualizer/vibe-tab.png)
 
 **页面布局**
 - *组件面板（左侧）*：提供常用组件入口（Agent / Graph / Loop / Switch …），支持拖拽到画布以新增节点。
-- *编辑画布（中间）*：展示并编辑 `graph_design.json` 的拓扑结构；支持 Fit / Relayout、缩放、拖拽、右键菜单等操作。
-- *详情面板（右侧）*：展示并编辑选中节点/边的属性（如类型、标签、agent、tools、attributes 等），并可保存回 JSON 文件。
+- *编辑画布（中间）*：展示并编辑 AML 拓扑结构；支持 Fit / Relayout、缩放、拖拽、右键菜单等操作。
+- *详情面板（右侧）*：展示并编辑选中节点/边的属性（如类型、标签、agent、tools、attributes 等），并可保存回 AML 文件。
 
 ---
 
@@ -130,6 +131,6 @@ Visualizer 的整体布局可以概括为四个区域：
 当工作流运行中触发 Human 交互节点时，Visualizer 会接收来自进程的交互请求并提示用户处理。典型交互包括：
 
 - **对话输入**：以会话为单位归档消息（Agent ↔ Human），并将用户回复回传给运行中的工作流；
-- **文件预览/编辑**：将指定文件在 VS Code 中打开，并在 Visualizer 中提供对应的预览视图（例如在 Vibe 视图编辑 `graph_design.json`）。
+- **文件预览/编辑**：将指定文件在 VS Code 中打开，并在 Visualizer 中提供对应的预览视图（例如在 Vibe 视图编辑 `.aml` 工作流）。
 
 ![human](/imgs/visualizer/human.png)

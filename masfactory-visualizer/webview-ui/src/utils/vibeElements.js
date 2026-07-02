@@ -43,13 +43,15 @@ function isInternalId(id, type) {
  * @param {string} type
  * @returns {string}
  */
-function labelForNode(id, type) {
+function labelForNode(id, type, spec) {
   if (type === 'entry' || id === 'entry' || id.endsWith('.entry')) return 'entry';
   if (type === 'exit' || id === 'exit' || id.endsWith('.exit')) return 'exit';
   if (type === 'Controller' || id.endsWith('.controller')) return 'controller';
   if (type === 'TerminateNode' || id.endsWith('.terminate')) return 'terminate';
-  if (type && type !== 'Node') return `${id} (${type})`;
-  return id;
+  const specLabel = typeof spec?.label === 'string' ? spec.label.trim() : '';
+  const base = specLabel || id;
+  if (type && type !== 'Node') return `${base} (${type})`;
+  return base;
 }
 
 /**
@@ -58,14 +60,15 @@ function labelForNode(id, type) {
  *
  * @param {string} label
  * @param {string} type
+ * @param {boolean} isParent
  * @returns {{ w: number; h: number }}
  */
-function estimateNodeSize(label, type) {
+function estimateNodeSize(label, type, isParent = false) {
   const t = String(type || '');
   if (t === 'entry' || t === 'exit' || t === 'Controller' || t === 'TerminateNode') {
     return { w: 70, h: 35 };
   }
-  if (t === 'Graph' || t === 'Loop') {
+  if (isParent && (t === 'Graph' || t === 'Loop')) {
     return { w: 240, h: 180 };
   }
 
@@ -111,6 +114,10 @@ export function buildVibeElements(graph, positions, invalidNodes, invalidEdges) 
   const nodeTypes = {};
   /** @type {Record<string, string | undefined>} */
   const nodeParents = {};
+  /** @type {Record<string, any>} */
+  const nodeSpecs = {};
+  /** @type {Record<string, boolean>} */
+  const nodeOpaque = {};
   /** @type {Set<string>} */
   const nodeNames = new Set();
 
@@ -126,7 +133,9 @@ export function buildVibeElements(graph, positions, invalidNodes, invalidEdges) 
     const name = String(n.name || '');
     if (!name) continue;
     nodeNames.add(name);
+    nodeSpecs[name] = n;
     nodeTypes[name] = normalizeType(n.type);
+    nodeOpaque[name] = !!(n.__aml_opaque || n.__vibe_opaque_container);
     const parent = typeof n.parent === 'string' && n.parent.trim() ? String(n.parent) : undefined;
     if (parent) nodeParents[name] = parent;
   }
@@ -172,6 +181,7 @@ export function buildVibeElements(graph, positions, invalidNodes, invalidEdges) 
   // Add internal boundary endpoints for Graph/Loop nodes.
   for (const name of Array.from(nodeNames)) {
     const t = nodeTypes[name];
+    if (nodeOpaque[name]) continue;
     if (t === 'Graph') {
       const entryId = `${name}.entry`;
       const exitId = `${name}.exit`;
@@ -231,7 +241,7 @@ export function buildVibeElements(graph, positions, invalidNodes, invalidEdges) 
   const subgraphParents = new Set();
   for (const id of nodeNames) {
     const t = nodeTypes[id] || 'Node';
-    if (t === 'Graph' || t === 'Loop') {
+    if (!nodeOpaque[id] && (t === 'Graph' || t === 'Loop')) {
       subgraphParents.add(id);
     }
   }
@@ -254,8 +264,8 @@ export function buildVibeElements(graph, positions, invalidNodes, invalidEdges) 
     const parent = nodeParents[id];
     const isParent = subgraphParents.has(id);
     const invalid = invalidNodeSet.has(id);
-    const label = labelForNode(id, type);
-    const size = estimateNodeSize(label, type);
+    const label = labelForNode(id, type, nodeSpecs[id]);
+    const size = estimateNodeSize(label, type, isParent);
     const candidate = positions ? positions[id] : undefined;
     const pos = isValidPos(candidate) ? candidate : fallbackPos[id];
     elements.push({
@@ -265,6 +275,8 @@ export function buildVibeElements(graph, positions, invalidNodes, invalidEdges) 
         label,
         type,
         parent: parent || undefined,
+        derived: nodeSpecs[id]?.__aml_from_implementation ? '1' : '0',
+        external: nodeSpecs[id]?.__aml_from_ref ? '1' : '0',
         internal: isInternalId(id, type) ? '1' : '0',
         w: size.w,
         h: size.h

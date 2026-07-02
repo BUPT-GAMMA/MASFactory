@@ -37,7 +37,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 resolveDebugConfiguration(_folder, config) {
                     const port = runtimeHub.getPort();
                     const env = { ...(config.env || {}) } as Record<string, string>;
-                    if (port) env.MASFACTORY_VISUALIZER_PORT = String(port);
+                    if (port) {env.MASFACTORY_VISUALIZER_PORT = String(port);}
                     env.MASFACTORY_VISUALIZER_MODE = 'debug';
                     return { ...config, env };
                 }
@@ -50,7 +50,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Create parser and webview provider
     const parser = new GraphParser();
-    const webviewProvider = new WebviewProvider(context, parser, runtimeHub);
+    const webviewProvider = new WebviewProvider(context, parser, runtimeHub, {
+        ensureParserReady: () => treeSitterInitPromise
+    });
 
     // Visualizer UI commands from Python processes (best-effort UX helpers).
     const onVisualizerUiCommand = (cmd: VisualizerUiCommand) => {
@@ -99,6 +101,8 @@ export async function activate(context: vscode.ExtensionContext) {
             const doc = vscode.window.activeTextEditor?.document;
             if (doc?.languageId === 'python') {
                 webviewProvider.updateGraph(doc);
+            } else if (doc && (doc.languageId === 'aml' || doc.uri.fsPath.toLowerCase().endsWith('.aml'))) {
+                webviewProvider.updateVibeDocument(doc);
             }
         })
         .catch((err) => {

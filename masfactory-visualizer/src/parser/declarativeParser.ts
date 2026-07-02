@@ -26,13 +26,13 @@ function stripStringQuotes(raw: string): string {
 }
 
 function parseStringLiteral(node: TSNode, code: string): string | null {
-    if (node.type !== 'string') return null;
+    if (node.type !== 'string') {return null;}
     return stripStringQuotes(getNodeText(node, code).trim());
 }
 
 function normalizeTypeName(raw: string): string {
     const text = String(raw || '').trim();
-    if (!text) return 'Node';
+    if (!text) {return 'Node';}
     return text.includes('.') ? text.split('.').pop()! : text;
 }
 
@@ -66,7 +66,7 @@ function parseNodeTypeExpression(
                 funcNode.childForFieldName('object') ||
                 funcNode.namedChildren.find((n): n is TSNode => !!n) ||
                 null;
-            if (baseNode) return parseNodeTypeExpression(baseNode, code, templates);
+            if (baseNode) {return parseNodeTypeExpression(baseNode, code, templates);}
         }
         // Template instantiation: BaseAgent(...) => display "BaseAgent" (without args).
         return { typeText: funcText || 'Node', typeIsCall: true };
@@ -85,31 +85,31 @@ function resolveLiteralNode(
     code: string,
     literalValues?: LiteralValues
 ): TSNode {
-    if (!literalValues) return node;
-    if (node.type !== 'identifier' && node.type !== 'attribute') return node;
+    if (!literalValues) {return node;}
+    if (node.type !== 'identifier' && node.type !== 'attribute') {return node;}
     const raw = getNodeText(node, code).trim();
-    if (literalValues[raw]) return literalValues[raw];
-    if (raw.startsWith('self._') && literalValues[raw.replace('self._', '')]) return literalValues[raw.replace('self._', '')];
-    if (raw.startsWith('self.') && literalValues[raw.replace('self.', '')]) return literalValues[raw.replace('self.', '')];
+    if (literalValues[raw]) {return literalValues[raw];}
+    if (raw.startsWith('self._') && literalValues[raw.replace('self._', '')]) {return literalValues[raw.replace('self._', '')];}
+    if (raw.startsWith('self.') && literalValues[raw.replace('self.', '')]) {return literalValues[raw.replace('self.', '')];}
     const last = raw.split('.').pop();
-    if (last && literalValues[last]) return literalValues[last];
-    if (last && last.startsWith('_') && literalValues[last.slice(1)]) return literalValues[last.slice(1)];
+    if (last && literalValues[last]) {return literalValues[last];}
+    if (last && last.startsWith('_') && literalValues[last.slice(1)]) {return literalValues[last.slice(1)];}
     return node;
 }
 
 function getCallArgs(callNode: TSNode): TSNode[] {
     const argsNode = callNode.childForFieldName('arguments');
-    if (!argsNode) return [];
+    if (!argsNode) {return [];}
     return argsNode.namedChildren.filter((n): n is TSNode => !!n && n.type !== 'comment');
 }
 
 function getKeywordArgMap(args: TSNode[], code: string): Map<string, TSNode> {
     const map = new Map<string, TSNode>();
     for (const arg of args) {
-        if (arg.type !== 'keyword_argument') continue;
+        if (arg.type !== 'keyword_argument') {continue;}
         const nameNode = arg.childForFieldName('name');
         const valueNode = arg.childForFieldName('value');
-        if (!nameNode || !valueNode) continue;
+        if (!nameNode || !valueNode) {continue;}
         map.set(getNodeText(nameNode, code).trim(), valueNode);
     }
     return map;
@@ -123,9 +123,9 @@ function resolveTemplateBaseKind(
     rawTypeText: string,
     templates?: { [name: string]: ParsedNodeTemplate }
 ): 'Graph' | 'Loop' | 'Node' | null {
-    if (!templates) return null;
+    if (!templates) {return null;}
     const direct = templates[rawTypeText];
-    if (direct) return direct.baseKind;
+    if (direct) {return direct.baseKind;}
     const normalized = rawTypeText.includes('.') ? rawTypeText.split('.').pop()! : rawTypeText;
     const byLast = templates[normalized];
     return byLast ? byLast.baseKind : null;
@@ -136,12 +136,12 @@ function inferContainerKind(
     templates?: { [name: string]: ParsedNodeTemplate }
 ): 'Graph' | 'Loop' | null {
     const templateKind = resolveTemplateBaseKind(rawTypeText, templates);
-    if (templateKind === 'Graph' || templateKind === 'Loop') return templateKind;
+    if (templateKind === 'Graph' || templateKind === 'Loop') {return templateKind;}
 
     const normalized = rawTypeText.includes('.') ? rawTypeText.split('.').pop()! : rawTypeText;
-    if (normalized === 'Loop' || normalized.endsWith('Loop')) return 'Loop';
-    if (normalized === 'Graph' || normalized === 'RootGraph') return 'Graph';
-    if (normalized.endsWith('Graph') || normalized.endsWith('Workflow')) return 'Graph';
+    if (normalized === 'Loop' || normalized.endsWith('Loop')) {return 'Loop';}
+    if (normalized === 'Graph' || normalized === 'RootGraph') {return 'Graph';}
+    if (normalized.endsWith('Graph') || normalized.endsWith('Workflow')) {return 'Graph';}
     return null;
 }
 
@@ -151,8 +151,8 @@ function ensureSubgraphMembership(
     subgraphs: { [parent: string]: string[] },
     subgraphParents: { [child: string]: string }
 ): void {
-    if (!subgraphs[parent]) subgraphs[parent] = [];
-    if (!subgraphs[parent].includes(child)) subgraphs[parent].push(child);
+    if (!subgraphs[parent]) {subgraphs[parent] = [];}
+    if (!subgraphs[parent].includes(child)) {subgraphs[parent].push(child);}
     subgraphParents[child] = parent;
 }
 
@@ -195,15 +195,15 @@ function parseNodesListLiteral(
     templates?: { [name: string]: ParsedNodeTemplate }
 ): Array<{ name: string; typeText: string; typeIsCall: boolean; args: TSNode[]; lineNumber: number }> {
     node = resolveLiteralNode(node, code, literalValues);
-    if (node.type !== 'list') return [];
+    if (node.type !== 'list') {return [];}
     const out: Array<{ name: string; typeText: string; typeIsCall: boolean; args: TSNode[]; lineNumber: number }> = [];
     for (const item of node.namedChildren) {
-        if (!item) continue;
-        if (item.type !== 'tuple') continue;
+        if (!item) {continue;}
+        if (item.type !== 'tuple') {continue;}
         const elems = item.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
-        if (elems.length < 2) continue;
+        if (elems.length < 2) {continue;}
         const name = parseStringLiteral(elems[0], code);
-        if (!name) continue;
+        if (!name) {continue;}
         const typeSpec = parseNodeTypeExpression(elems[1], code, templates);
         const args = elems.slice(2);
         out.push({ name, typeText: typeSpec.typeText, typeIsCall: typeSpec.typeIsCall, args, lineNumber: item.startPosition.row + 1 });
@@ -217,16 +217,16 @@ function parseEdgesListLiteral(
     literalValues?: LiteralValues
 ): Array<{ from: string; to: string; keysNode?: TSNode; lineNumber: number }> {
     node = resolveLiteralNode(node, code, literalValues);
-    if (node.type !== 'list') return [];
+    if (node.type !== 'list') {return [];}
     const out: Array<{ from: string; to: string; keysNode?: TSNode; lineNumber: number }> = [];
     for (const item of node.namedChildren) {
-        if (!item) continue;
-        if (item.type !== 'tuple') continue;
+        if (!item) {continue;}
+        if (item.type !== 'tuple') {continue;}
         const elems = item.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
-        if (elems.length < 2) continue;
+        if (elems.length < 2) {continue;}
         const from = parseStringLiteral(elems[0], code);
         const to = parseStringLiteral(elems[1], code);
-        if (!from || !to) continue;
+        if (!from || !to) {continue;}
         const keysNode = elems.length >= 3 ? elems[2] : undefined;
         out.push({ from, to, keysNode, lineNumber: item.startPosition.row + 1 });
     }
@@ -234,15 +234,15 @@ function parseEdgesListLiteral(
 }
 
 function normalizeContainerEndpoint(name: string, kind: 'Graph' | 'Loop'): string {
-    if (!name) return name;
+    if (!name) {return name;}
     const lowered = name.trim().toLowerCase();
     if (kind === 'Loop') {
-        if (lowered === 'controller') return 'controller';
-        if (lowered === 'terminate' || lowered === 'terminate_node') return 'terminate';
+        if (lowered === 'controller') {return 'controller';}
+        if (lowered === 'terminate' || lowered === 'terminate_node') {return 'terminate';}
         return name;
     }
-    if (lowered === 'entry') return 'entry';
-    if (lowered === 'exit') return 'exit';
+    if (lowered === 'entry') {return 'entry';}
+    if (lowered === 'exit') {return 'exit';}
     return name;
 }
 
@@ -253,21 +253,21 @@ export function isDeclarativeGraphCall(functionText: string): boolean {
 
 function looksLikeEdgeTupleList(node: TSNode, code: string, literalValues?: LiteralValues): boolean {
     const resolved = resolveLiteralNode(node, code, literalValues);
-    if (resolved.type !== 'list') return false;
+    if (resolved.type !== 'list') {return false;}
     const firstTuple = resolved.namedChildren.find((c): c is TSNode => !!c && c.type === 'tuple');
-    if (!firstTuple) return false;
+    if (!firstTuple) {return false;}
     const elems = firstTuple.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
-    if (elems.length < 2) return false;
+    if (elems.length < 2) {return false;}
     return elems[0].type === 'string' && elems[1].type === 'string';
 }
 
 function looksLikeNodeTupleList(node: TSNode, code: string, literalValues?: LiteralValues): boolean {
     const resolved = resolveLiteralNode(node, code, literalValues);
-    if (resolved.type !== 'list') return false;
+    if (resolved.type !== 'list') {return false;}
     const firstTuple = resolved.namedChildren.find((c): c is TSNode => !!c && c.type === 'tuple');
-    if (!firstTuple) return false;
+    if (!firstTuple) {return false;}
     const elems = firstTuple.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
-    if (elems.length < 2) return false;
+    if (elems.length < 2) {return false;}
     // Nodes list: (name:str, type:identifier/template, ...)
     return elems[0].type === 'string' && elems[1].type !== 'string';
 }
@@ -280,7 +280,7 @@ function extractContainerListsFromArgs(
     const listCandidates: TSNode[] = [];
     for (const arg of args) {
         const resolved = resolveLiteralNode(arg, code, literalValues);
-        if (resolved.type === 'list') listCandidates.push(arg);
+        if (resolved.type === 'list') {listCandidates.push(arg);}
     }
     let nodesNode: TSNode | undefined;
     let edgesNode: TSNode | undefined;
@@ -298,8 +298,8 @@ function extractContainerListsFromArgs(
     if (!nodesNode || !edgesNode) {
         const reversed = [...listCandidates].reverse();
         for (const candidate of reversed) {
-            if (!edgesNode && looksLikeEdgeTupleList(candidate, code, literalValues)) edgesNode = candidate;
-            if (!nodesNode && looksLikeNodeTupleList(candidate, code, literalValues)) nodesNode = candidate;
+            if (!edgesNode && looksLikeEdgeTupleList(candidate, code, literalValues)) {edgesNode = candidate;}
+            if (!nodesNode && looksLikeNodeTupleList(candidate, code, literalValues)) {nodesNode = candidate;}
         }
     }
     return { nodesNode, edgesNode };
@@ -337,9 +337,9 @@ function ensureNodeDefaults(
         templates?.[typeText] ||
         templates?.[normalized];
     if (templateInfo) {
-        if (templateInfo.pullKeys !== undefined) nodeCtx.nodePullKeys[nodeName] = templateInfo.pullKeys;
-        if (templateInfo.pushKeys !== undefined) nodeCtx.nodePushKeys[nodeName] = templateInfo.pushKeys;
-        if (templateInfo.attributes !== undefined) nodeCtx.nodeAttributes[nodeName] = templateInfo.attributes;
+        if (templateInfo.pullKeys !== undefined) {nodeCtx.nodePullKeys[nodeName] = templateInfo.pullKeys;}
+        if (templateInfo.pushKeys !== undefined) {nodeCtx.nodePushKeys[nodeName] = templateInfo.pushKeys;}
+        if (templateInfo.attributes !== undefined) {nodeCtx.nodeAttributes[nodeName] = templateInfo.attributes;}
     }
     return templateInfo;
 }
@@ -397,9 +397,9 @@ function expandContainerFromDeclarativeLists(
     literalValues?: LiteralValues,
     visited?: Set<string>
 ): void {
-    if (!nodesNode && !edgesNode) return;
-    if (!visited) visited = new Set<string>();
-    if (visited.has(containerName)) return;
+    if (!nodesNode && !edgesNode) {return;}
+    if (!visited) {visited = new Set<string>();}
+    if (visited.has(containerName)) {return;}
     visited.add(containerName);
 
     // Ensure container has its internal nodes recorded.
@@ -469,7 +469,7 @@ function expandContainerFromDeclarativeLists(
 
             // If this node comes from a template that defines build_func, record it (best-effort).
             if (templateInfo?.buildFunc) {
-                if (!nodeCtx.nodeBuildFuncs) nodeCtx.nodeBuildFuncs = {};
+                if (!nodeCtx.nodeBuildFuncs) {nodeCtx.nodeBuildFuncs = {};}
                 nodeCtx.nodeBuildFuncs[fullName] = templateInfo.buildFunc as any;
             }
         }
@@ -528,8 +528,8 @@ export function parseDeclarativeGraphCallIntoContexts(
         nodeCtx.nodes.splice(0, nodeCtx.nodes.length, ...retainedNodes);
         delete nodeCtx.nodeTypes.entry;
         delete nodeCtx.nodeTypes.exit;
-        if (!nodeCtx.nodes.includes('controller')) nodeCtx.nodes.unshift('controller');
-        if (!nodeCtx.nodes.includes('terminate')) nodeCtx.nodes.push('terminate');
+        if (!nodeCtx.nodes.includes('controller')) {nodeCtx.nodes.unshift('controller');}
+        if (!nodeCtx.nodes.includes('terminate')) {nodeCtx.nodes.push('terminate');}
         nodeCtx.nodeTypes.controller = 'Controller';
         nodeCtx.nodeTypes.terminate = 'TerminateNode';
     }
@@ -586,7 +586,7 @@ export function parseDeclarativeGraphCallIntoContexts(
 
             // If this node comes from a template that defines build_func, record it for async expansion (best-effort).
             if (templateInfo?.buildFunc) {
-                if (!nodeCtx.nodeBuildFuncs) nodeCtx.nodeBuildFuncs = {};
+                if (!nodeCtx.nodeBuildFuncs) {nodeCtx.nodeBuildFuncs = {};}
                 nodeCtx.nodeBuildFuncs[spec.name] = templateInfo.buildFunc;
             }
 
@@ -627,18 +627,18 @@ export function collectLocalTemplates(
     templates: { [name: string]: ParsedNodeTemplate }
 ): void {
     for (const child of blockNode.children) {
-        if (!child) continue;
-        if (child.type === 'function_definition' || child.type === 'class_definition') continue;
-        if (child.type !== 'expression_statement') continue;
+        if (!child) {continue;}
+        if (child.type === 'function_definition' || child.type === 'class_definition') {continue;}
+        if (child.type !== 'expression_statement') {continue;}
         const first = child.namedChildren[0];
-        if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) continue;
+        if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) {continue;}
         const left = first.childForFieldName('left');
         const right = first.childForFieldName('right');
-        if (!left || !right || right.type !== 'call') continue;
+        if (!left || !right || right.type !== 'call') {continue;}
         const funcNode = right.childForFieldName('function');
-        if (!funcNode) continue;
+        if (!funcNode) {continue;}
         const funcText = getNodeText(funcNode, code).trim();
-        if (funcText !== 'NodeTemplate' && !funcText.endsWith('.NodeTemplate')) continue;
+        if (funcText !== 'NodeTemplate' && !funcText.endsWith('.NodeTemplate')) {continue;}
         const leftText = getNodeText(left, code).trim();
         const parsed = tryParseNodeTemplateAssignment(leftText, right, code);
         if (parsed) {

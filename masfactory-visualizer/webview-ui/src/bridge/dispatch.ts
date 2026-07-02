@@ -19,7 +19,16 @@ export type DispatchRuntime = {
 };
 
 export type DispatchVibe = {
-  ingestDocument: (payload: { uri: string; fileName: string; text: string }) => boolean;
+  ingestDocument: (payload: {
+    uri: string;
+    fileName: string;
+    text: string;
+    languageId?: string;
+    amlGraphId?: string;
+    implementationGraphs?: Record<string, unknown>;
+    implementationTargets?: Record<string, unknown>;
+    importedDocuments?: Record<string, unknown>;
+  }) => boolean;
   applySaveResult: (payload: { uri: string; ok: boolean; error: string | null }) => void;
 };
 
@@ -77,7 +86,12 @@ export function dispatchVsCodeMessage(
       const ok = ctx.vibe.ingestDocument({
         uri: msg.documentUri,
         fileName: msg.fileName,
-        text: msg.text
+        text: msg.text,
+        languageId: msg.languageId,
+        amlGraphId: msg.amlGraphId,
+        implementationGraphs: msg.implementationGraphs,
+        implementationTargets: msg.implementationTargets,
+        importedDocuments: msg.importedDocuments
       });
       if (ok) {
         ctx.ui.setActiveTab('drag');

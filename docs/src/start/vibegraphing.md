@@ -1,15 +1,15 @@
 # VibeGraphing Quickstart
 
-`VibeGraphing` is an **intent-driven** workflow authoring mode in MASFactory. Instead of assembling every node/edge by hand, you describe the target system (goals, phases, constraints, inputs/outputs) in natural language, then iterate on the generated **graph design** with visual preview/editing until it converges.
+`VibeGraphing` is an **intent-driven** workflow authoring mode in MASFactory. Instead of assembling every node/edge by hand, you describe the target system (goals, phases, constraints, inputs/outputs) in natural language, then iterate on the generated **AML workflow** with visual preview/editing until it converges.
 
 - Describe the desired system shape in natural language (goal, stages, constraints, I/O, etc.).
 - MASFactory runs a build workflow (analysis → structure generation → role generation) and supports human interaction at each stage.
-- You get a readable and editable **graph design artifact**, which can be compiled into runnable MASFactory graphs.
+- You get a readable and editable **AML artifact**, which can be compiled into runnable MASFactory graphs.
 
 <ThemedDiagram
   light="/imgs/tutorial/chatdev-lite/prog-vibe-pipeline-light.svg"
   dark="/imgs/tutorial/chatdev-lite/prog-vibe-pipeline-dark.svg"
-  alt="VibeGraphing: intent → graph_design → compile → run"
+  alt="VibeGraphing: intent → AML → compile → run"
 />
 
 ---
@@ -32,8 +32,8 @@ Workflow = NodeTemplate(
     VibeGraph,
     invoke_model=model,
     build_model=model,
-    build_instructions="Build a simple linear workflow: ENTRY -> a -> b -> EXIT.",
-    build_cache_path=Path("assets/cache/graph_design.json"),
+    build_instructions="Build a simple linear AML workflow with two agent steps.",
+    build_cache_path=Path("assets/cache/workflow.aml"),
 )
 
 g = RootGraph(
@@ -55,6 +55,8 @@ g.invoke({})
 
 When the `build_cache_path` file exists, subsequent runs will load the cache and compile/run directly. You can:
 
-- edit `assets/cache/graph_design.json` manually (or edit it in **MASFactory Visualizer** via the Vibe tab);
+- edit `assets/cache/workflow.aml` manually (or edit it in **MASFactory Visualizer** via the Vibe tab);
 - run the script again to observe structure/runtime changes;
 - delete the cache file to force regeneration when you want a fresh design.
+
+Old `graph_design.json` caches belong to the compatibility path. Use `LegacyVibeGraph` if you need to load or migrate an existing graph-design cache.

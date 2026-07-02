@@ -1,26 +1,26 @@
 # Build ChatDev Lite with VibeGraph
 
-This tutorial demonstrates how to use `VibeGraph` to translate **natural-language intent** into a `graph_design.json` draft, then compile it into a runnable workflow.
+This tutorial demonstrates how to use `VibeGraph` to translate **natural-language intent** into an AML workflow, then compile it into a runnable workflow.
 
 Core flow:
 
-1. **Build**: run a build workflow to generate `graph_design.json` (cacheable)
+1. **Build**: run a build workflow to generate AML (cacheable)
 2. **Review / Edit**: quickly inspect and optionally edit the design in a visual preview
-3. **Compile + Run**: compile the `graph_design` into an executable graph and run with runtime observability
+3. **Compile + Run**: compile AML into an executable graph and run with runtime observability
 
 <ThemedDiagram
   light="/imgs/tutorial/chatdev-lite/prog-vibe-pipeline-en-light.svg"
   dark="/imgs/tutorial/chatdev-lite/prog-vibe-pipeline-en-dark.svg"
-  alt="VibeGraph: intent → graph_design → compile → run"
+  alt="VibeGraph: intent → AML → compile → run"
 />
 
 ---
 
-## Step 1 — Generate and cache `graph_design`
+## Step 1 — Generate and cache AML
 
 The example below writes a cache file to:
 
-- `assets/cache/chatdev_graph_design.json`
+- `assets/cache/chatdev_workflow.aml`
 
 On the first run, it will generate the design. If the cache file already exists, it will read from cache (useful when you want to edit the design manually and recompile/run).
 
@@ -32,16 +32,16 @@ from masfactory import RootGraph, VibeGraph, NodeTemplate, OpenAIModel
 
 # Natural-language instructions for the target ChatDev workflow.
 build_instructions = """
-You need to design a MASFactory workflow for code development, and output a graph_design.json draft.
+You need to design a MASFactory workflow for code development, and output an AML v0.2 workflow document.
 
 1) Top-level graph (linear control flow)
-ENTRY -> demand_analysis_phase -> language_choose_phase -> coding_phase -> test_loop -> EXIT
+entry -> demand_analysis_phase -> language_choose_phase -> coding_phase -> test_loop -> exit
 
-2) Each phase is a Loop with two Action nodes (Instructor + Assistant).
+2) Each phase is a loop with two agent nodes (Instructor + Assistant).
 Inside a phase:
-CONTROLLER -> assistant_agent
+controller -> assistant_agent
 assistant_agent -> instructor_agent
-instructor_agent -> CONTROLLER
+instructor_agent -> controller
 
 3) Phases (roles, IO fields, tools)
 - demand_analysis_phase (max_iterations=1)
@@ -60,8 +60,8 @@ instructor_agent -> CONTROLLER
   - output_fields (assistant writes back): codes, unimplemented_file
   - tools: codes_check_and_processing_tool, check_code_completeness_tool
 
-4) test_loop (Loop, max_iterations=3)
-CONTROLLER -> test_error_summary_phase -> test_modification_phase -> CONTROLLER
+4) test_loop (loop, max_iterations=3)
+controller -> test_error_summary_phase -> test_modification_phase -> controller
 Terminate if:
 - error_summary contains 'No errors found' (case-insensitive), OR
 - exist_bugs_flag is False, OR
@@ -76,9 +76,10 @@ Terminate if:
   - tools: codes_check_and_processing_tool
 
 6) Output requirement
-Return ONLY valid JSON compatible with the current MASFactory graph_design compiler schema.
-Use ENTRY/EXIT as graph ports (case-insensitive).
-Use CONTROLLER/TERMINATE for loop internal endpoints (case-insensitive).
+Return ONLY one complete AML v0.2 XML document.
+Do not return JSON, Markdown fences, or graph_design.
+Use lowercase built-in endpoints: entry, exit, controller, terminate.
+Use AML component tags such as agent, loop, logic_switch, graph, and custom_node.
 """
 
 build_model = OpenAIModel(
@@ -99,7 +100,7 @@ ChatDev = NodeTemplate(
     invoke_model=invoke_model,
     build_model=build_model,
     build_instructions=build_instructions,
-    build_cache_path=Path("assets/cache/chatdev_graph_design.json"),
+    build_cache_path=Path("assets/cache/chatdev_workflow.aml"),
 )
 
 g = RootGraph(
@@ -130,9 +131,9 @@ g.invoke({"task": "build a simple calculator"})
 
 You can open the cache file for inspection/editing:
 
-- `assets/cache/chatdev_graph_design.json`
+- `assets/cache/chatdev_workflow.aml`
 
-If you use **MASFactory Visualizer**, you can preview/edit the structure in the **Vibe** tab, then return to code and rerun for compilation/execution.
+If you use **MASFactory Visualizer**, you can preview/edit the AML structure in the **Vibe** tab, then return to code and rerun for compilation/execution.
 
 ![VibeGraph preview](/imgs/tutorial/chatdev-lite/graph_design_preview.png)
 
@@ -140,7 +141,7 @@ If you use **MASFactory Visualizer**, you can preview/edit the structure in the 
 
 ## Step 3 — Compile and run again
 
-When `build_cache_path` exists, `VibeGraph` reads the cache and compiles/runs directly.  
+When `build_cache_path` exists, `VibeGraph` reads the cached AML and compiles/runs directly.
 To regenerate from intent, delete the cache file and rerun.
 
 ---

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:unit": "node scripts/run-webview-tests.mjs"
   },
   "dependencies": {
     "cytoscape": "^3.28.1",
@@ -19,6 +20,8 @@
   "devDependencies": {
     "@types/dagre": "^0.7.52",
     "@vitejs/plugin-vue": "^5.2.4",
+    "@xmldom/xmldom": "^0.9.10",
+    "esbuild": "^0.21.5",
     "typescript": "^5.9.2",
     "vite": "^5.4.11",
     "vue-tsc": "^2.1.10"

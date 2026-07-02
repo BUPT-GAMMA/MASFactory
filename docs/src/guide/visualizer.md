@@ -93,19 +93,19 @@ Use it to:
 - *Canvas (middle)*: render the runtime graph and highlight node states (executed / running / waiting, etc.).
 - *Bottom panels (bottom)*: drill into runtime details (nodes, logs, messages, human requests, system events, structure snapshots).
 
-### 4) Vibe: preview/edit `graph_design.json`
+### 4) Vibe: preview/edit AML workflows
 
 Use it to:
-- Iterate on VibeGraphing outputs (`graph_design.json`) and converge structure;
+- Iterate on VibeGraphing outputs (`.aml`) and converge structure;
 - Apply human review before compiling to executable graphs;
-- Persist structure changes as a versionable IR.
+- Persist structure changes as a versionable AML source artifact.
 
 ![vibe-tab](/imgs/visualizer/vibe-tab.png)
 
 **Layout**
 - *Component panel (left)*: common components (Agent / Graph / Loop / Switch …) and drag-to-add nodes.
-- *Editor canvas (middle)*: visualize and edit the `graph_design.json` topology; supports Fit/Relayout, zoom, drag, and context-menu operations.
-- *Details panel (right)*: inspect/edit node/edge properties (type, label, agent, tools, attributes, etc.) and save back to JSON.
+- *Editor canvas (middle)*: visualize and edit the AML topology; supports Fit/Relayout, zoom, drag, and context-menu operations.
+- *Details panel (right)*: inspect/edit node/edge properties (type, label, agent, tools, attributes, etc.) and save back to AML. Derived implementation previews stay read-only.
 
 ---
 
@@ -114,6 +114,6 @@ Use it to:
 When a workflow triggers a human request at runtime, Visualizer surfaces it in the UI and provides a reply path back to the process. Typical requests include:
 
 - **Chat input**: session-scoped conversation history (Agent ↔ Human) and reply submission;
-- **File preview/edit**: open target files in VS Code, and provide a matching preview view in Visualizer (e.g., edit `graph_design.json` in Vibe).
+- **File preview/edit**: open target files in VS Code, and provide a matching preview view in Visualizer (e.g., edit `.aml` workflows in Vibe).
 
 ![human](/imgs/visualizer/human.png)

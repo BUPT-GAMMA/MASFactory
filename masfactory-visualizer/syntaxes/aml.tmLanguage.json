@@ -1,0 +1,119 @@
+{
+  "scopeName": "text.xml.aml",
+  "name": "AML",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#cdata" },
+    { "include": "#entity" },
+    { "include": "#graph-tag" },
+    { "include": "#node-tag" },
+    { "include": "#edge-tag" },
+    { "include": "#resource-tag" },
+    { "include": "#tag" }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.block.xml.aml",
+      "begin": "<!--",
+      "end": "-->"
+    },
+    "cdata": {
+      "name": "string.unquoted.cdata.xml.aml",
+      "begin": "<!\\[CDATA\\[",
+      "end": "\\]\\]>"
+    },
+    "entity": {
+      "name": "constant.character.entity.xml.aml",
+      "match": "&[A-Za-z0-9#]+;"
+    },
+    "tag-content": {
+      "patterns": [
+        {
+          "match": "\\b([A-Za-z_:][\\w:.-]*)(\\s*=\\s*)",
+          "captures": {
+            "1": { "name": "entity.other.attribute-name.xml.aml" },
+            "2": { "name": "punctuation.separator.key-value.xml.aml" }
+          }
+        },
+        {
+          "name": "string.quoted.double.xml.aml",
+          "match": "\"[^\"]*\""
+        },
+        {
+          "name": "string.quoted.single.xml.aml",
+          "match": "'[^']*'"
+        }
+      ]
+    },
+    "graph-tag": {
+      "name": "meta.tag.graph.xml.aml",
+      "begin": "(<)(/?)(aml|definitions|graphs|graph|loop|runtime|metadata|input_keys|output_keys)(?=[\\s>/])",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "2": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "3": { "name": "entity.name.tag.graph.xml.aml" }
+      },
+      "end": "(/?>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.xml.aml" }
+      },
+      "patterns": [{ "include": "#tag-content" }]
+    },
+    "node-tag": {
+      "name": "meta.tag.node.xml.aml",
+      "begin": "(<)(/?)(nodes|agent|custom_node|logic_switch|agent_switch)(?=[\\s>/])",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "2": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "3": { "name": "entity.name.tag.node.xml.aml" }
+      },
+      "end": "(/?>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.xml.aml" }
+      },
+      "patterns": [{ "include": "#tag-content" }]
+    },
+    "edge-tag": {
+      "name": "meta.tag.edge.xml.aml",
+      "begin": "(<)(/?)(edges|edge|keys)(?=[\\s>/])",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "2": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "3": { "name": "entity.name.tag.edge.xml.aml" }
+      },
+      "end": "(/?>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.xml.aml" }
+      },
+      "patterns": [{ "include": "#tag-content" }]
+    },
+    "resource-tag": {
+      "name": "meta.tag.resource.xml.aml",
+      "begin": "(<)(/?)(imports|import|resources|resource|models|model|tools|tool|agents|skills|skill|memories|memory|retrievers|retriever|attributes|attribute|field|pull_keys|push_keys|parameters|param|terminate)(?=[\\s>/])",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "2": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "3": { "name": "entity.name.tag.resource.xml.aml" }
+      },
+      "end": "(/?>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.xml.aml" }
+      },
+      "patterns": [{ "include": "#tag-content" }]
+    },
+    "tag": {
+      "name": "meta.tag.xml.aml",
+      "begin": "(<)(/?)([A-Za-z_:][\\w:.-]*)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "2": { "name": "punctuation.definition.tag.begin.xml.aml" },
+        "3": { "name": "entity.name.tag.xml.aml" }
+      },
+      "end": "(/?>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.xml.aml" }
+      },
+      "patterns": [{ "include": "#tag-content" }]
+    }
+  }
+}

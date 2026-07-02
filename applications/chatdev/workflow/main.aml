@@ -1,0 +1,517 @@
+<aml version="0.2" profile="masfactory" kind="graph" id="applications.chatdev.graph" lang="zh-CN">
+  <definitions>
+    <resources>
+      <resource id="chat_chain_config" kind="json" path="../assets/config/ChatChainConfig.json" />
+      <resource id="phase_config" kind="json" path="../assets/config/PhaseConfig.json" />
+      <resource id="role_config" kind="json" path="../assets/config/RoleConfig.json" />
+    </resources>
+
+    <models>
+      <model id="chat_model" provider="openai" class="OpenAIModel">
+        <param name="model_name" value="{model_name}" default="gpt-4o-mini" />
+        <param name="api_key" value="{api_key}" env="OPENAI_API_KEY" />
+        <param name="base_url" value="{base_url}" env="BASE_URL" />
+      </model>
+      <model id="image_model" provider="openai" class="OpenAIModel">
+        <param name="model_name" value="{model_name}" default="gpt-4o-mini" />
+        <param name="api_key" value="{api_key}" env="OPENAI_API_KEY" />
+        <param name="base_url" value="{base_url}" env="BASE_URL" />
+      </model>
+    </models>
+
+    <memories>
+      <memory id="demand_analysis_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="DEMAND_ANALYSIS_MEMORY" />
+      <memory id="language_choose_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="LANGUAGE_CHOOSE_MEMORY" />
+      <memory id="coding_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="CODING_MEMORY" />
+      <memory id="code_complete_all_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="CODE_COMPLETE_ALL_COMPOSED_MEMORY" />
+      <memory id="code_review_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="CODE_REVIEW_COMPOSED_MEMORY" />
+      <memory id="test_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="TEST_COMPOSED_MEMORY" />
+      <memory id="environment_doc_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="ENVIRONMENT_DOC_MEMORY" />
+      <memory id="manual_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="MANUAL_MEMORY" />
+    </memories>
+
+    <graphs>
+      <graph id="phase_demand_analysis" implementation="python:applications.chatdev.components.phase.phase.DemandAnalysisPhase">
+        <parameters>
+          <param name="assistant_role_name" value="Chief Product Officer" />
+          <param name="instructor_role_name" value="Chief Executive Officer" />
+          <param name="assistant_instructions" source="#role_config" key="Chief Product Officer" />
+          <param name="instructor_instructions" source="#role_config" key="Chief Executive Officer" />
+          <param name="phase_instructions" source="#phase_config" key="DemandAnalysis.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#demand_analysis_memory" />
+          <param name="max_turns" value="10" />
+          <param name="reflect_roles">
+            <entry name="ceo" source="#role_config" key="Chief Product Officer" />
+            <entry name="counselor" source="#role_config" key="Chief Executive Officer" />
+          </param>
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" required="true" description="The task prompt for software development" />
+            <field name="description" type="string" description="The task description" />
+            <field name="chatdev_prompt" type="string" description="The background prompt for ChatDev" />
+            <field name="discussion_opinion" type="string" description="No opinions yet." />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="discussion_opinion" type="string" description="Opinion on demand analysis" />
+            <field name="modality" type="string" description="The product modality determined from demand analysis" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_language_choose" implementation="python:applications.chatdev.components.phase.phase.LanguageChoosePhase">
+        <parameters>
+          <param name="assistant_role_name" value="Chief Technology Officer" />
+          <param name="instructor_role_name" value="Chief Executive Officer" />
+          <param name="assistant_instructions" source="#role_config" key="Chief Technology Officer" />
+          <param name="instructor_instructions" source="#role_config" key="Chief Executive Officer" />
+          <param name="phase_instructions" source="#phase_config" key="LanguageChoose.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#language_choose_memory" />
+          <param name="max_turns" value="10" />
+          <param name="reflect_roles">
+            <entry name="ceo" source="#role_config" key="Chief Technology Officer" />
+            <entry name="counselor" source="#role_config" key="Chief Executive Officer" />
+          </param>
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="description" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="discussion_opinion" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="discussion_opinion" type="string" />
+            <field name="language" type="string" description="The programming language chosen for development" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_coding" implementation="python:applications.chatdev.components.phase.phase.CodingPhase">
+        <parameters>
+          <param name="assistant_role_name" value="Programmer" />
+          <param name="instructor_role_name" value="Chief Technology Officer" />
+          <param name="assistant_instructions" source="#role_config" key="Programmer" />
+          <param name="instructor_instructions" source="#role_config" key="Chief Technology Officer" />
+          <param name="phase_instructions" source="#phase_config" key="Coding.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#coding_memory" />
+          <param name="max_turns" value="1" />
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="description" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="git_management" type="boolean" />
+            <field name="gui" type="string" />
+            <field name="code_manager" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" description="The generated source code files" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_code_complete" implementation="python:applications.chatdev.components.phase.phase.CodeCompletePhase">
+        <parameters>
+          <param name="assistant_role_name" source="#phase_config" key="CodeComplete.assistant_role_name" />
+          <param name="instructor_role_name" source="#phase_config" key="CodeComplete.user_role_name" />
+          <param name="assistant_instructions" source="#phase_config" key="CodeComplete.assistant_role_prompt" />
+          <param name="instructor_instructions" source="#phase_config" key="CodeComplete.user_role_prompt" />
+          <param name="phase_instructions" source="#phase_config" key="CodeComplete.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#code_complete_all_memory" />
+          <param name="max_turns" value="1" />
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="unimplemented_file" type="string" />
+            <field name="cycle_index" type="integer" />
+            <field name="git_management" type="boolean" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_code_complete_all" implementation="python:applications.chatdev.components.composed_phase.CodeCompleteAllComposedPhase">
+        <parameters>
+          <param name="cycle_num" value="10" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#code_complete_all_memory" />
+          <composition>
+            <phase ref="#phase_code_complete" name="CodeComplete" phase_type="SimplePhase" max_turn_step="1" need_reflect="false" />
+          </composition>
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="directory" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_code_review_comment" implementation="python:applications.chatdev.components.phase.phase.CodeReviewCommentPhase">
+        <parameters>
+          <param name="assistant_role_name" source="#phase_config" key="CodeReviewComment.assistant_role_name" />
+          <param name="instructor_role_name" source="#phase_config" key="CodeReviewComment.user_role_name" />
+          <param name="assistant_instructions" source="#phase_config" key="CodeReviewComment.assistant_role_prompt" />
+          <param name="instructor_instructions" source="#phase_config" key="CodeReviewComment.user_role_prompt" />
+          <param name="phase_instructions" source="#phase_config" key="CodeReviewComment.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#code_review_memory" />
+          <param name="max_turns" value="1" />
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="images" type="array" />
+            <field name="cycle_index" type="integer" />
+            <field name="chatdev_prompt" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="review_comments" type="string" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_code_review_modification" implementation="python:applications.chatdev.components.phase.phase.CodeReviewModificationPhase">
+        <parameters>
+          <param name="assistant_role_name" source="#phase_config" key="CodeReviewModification.assistant_role_name" />
+          <param name="instructor_role_name" source="#phase_config" key="CodeReviewModification.user_role_name" />
+          <param name="assistant_instructions" source="#phase_config" key="CodeReviewModification.assistant_role_prompt" />
+          <param name="instructor_instructions" source="#phase_config" key="CodeReviewModification.user_role_prompt" />
+          <param name="phase_instructions" source="#phase_config" key="CodeReviewModification.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#code_review_memory" />
+          <param name="max_turns" value="1" />
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="review_comments" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="cycle_index" type="integer" />
+            <field name="git_management" type="boolean" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+            <field name="modification_conclusion" type="string" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_code_review" implementation="python:applications.chatdev.components.composed_phase.CodeReviewComposedPhase">
+        <parameters>
+          <param name="cycle_num" value="3" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#code_review_memory" />
+          <composition>
+            <phase ref="#phase_code_review_comment" name="CodeReviewComment" phase_type="SimplePhase" max_turn_step="1" need_reflect="false" />
+            <phase ref="#phase_code_review_modification" name="CodeReviewModification" phase_type="SimplePhase" max_turn_step="1" need_reflect="false" />
+          </composition>
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="images" type="array" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_test_error_summary" implementation="python:applications.chatdev.components.phase.phase.TestErrorSummaryPhase">
+        <parameters>
+          <param name="assistant_role_name" source="#phase_config" key="TestErrorSummary.assistant_role_name" />
+          <param name="instructor_role_name" source="#phase_config" key="TestErrorSummary.user_role_name" />
+          <param name="assistant_instructions" source="#phase_config" key="TestErrorSummary.assistant_role_prompt" />
+          <param name="instructor_instructions" source="#phase_config" key="TestErrorSummary.user_role_prompt" />
+          <param name="phase_instructions" source="#phase_config" key="TestErrorSummary.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#test_memory" />
+          <param name="max_turns" value="1" />
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="directory" type="string" />
+            <field name="incorporated_images" type="array" />
+            <field name="proposed_images" type="array" />
+            <field name="image_model" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="error_summary" type="string" />
+            <field name="test_reports" type="string" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_test_modification" implementation="python:applications.chatdev.components.phase.phase.TestModificationPhase">
+        <parameters>
+          <param name="assistant_role_name" source="#phase_config" key="TestModification.assistant_role_name" />
+          <param name="instructor_role_name" source="#phase_config" key="TestModification.user_role_name" />
+          <param name="assistant_instructions" source="#phase_config" key="TestModification.assistant_role_prompt" />
+          <param name="instructor_instructions" source="#phase_config" key="TestModification.user_role_prompt" />
+          <param name="phase_instructions" source="#phase_config" key="TestModification.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#test_memory" />
+          <param name="max_turns" value="1" />
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="test_reports" type="string" />
+            <field name="error_summary" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="directory" type="string" />
+            <field name="cycle_index" type="integer" />
+            <field name="git_management" type="boolean" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+            <field name="modification_conclusion" type="string" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_test" implementation="python:applications.chatdev.components.composed_phase.TestComposedPhase">
+        <parameters>
+          <param name="cycle_num" value="3" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#test_memory" />
+          <composition>
+            <phase ref="#phase_test_error_summary" name="TestErrorSummary" phase_type="SimplePhase" max_turn_step="1" need_reflect="false" />
+            <phase ref="#phase_test_modification" name="TestModification" phase_type="SimplePhase" max_turn_step="1" need_reflect="false" />
+          </composition>
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="directory" type="string" />
+            <field name="test_reports" type="string" />
+            <field name="image_model" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_environment_doc" implementation="python:applications.chatdev.components.phase.phase.EnvironmentDocPhase">
+        <parameters>
+          <param name="assistant_role_name" value="Programmer" />
+          <param name="instructor_role_name" value="Chief Technology Officer" />
+          <param name="assistant_instructions" source="#role_config" key="Programmer" />
+          <param name="instructor_instructions" source="#role_config" key="Chief Technology Officer" />
+          <param name="phase_instructions" source="#phase_config" key="EnvironmentDoc.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#environment_doc_memory" />
+          <param name="max_turns" value="1" />
+          <param name="reflect_roles">
+            <entry name="ceo" value="" />
+            <entry name="counselor" value="" />
+          </param>
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="requirement_manager" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="requirements" type="string" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="phase_manual" implementation="python:applications.chatdev.components.phase.phase.ManualPhase">
+        <parameters>
+          <param name="assistant_role_name" value="Chief Product Officer" />
+          <param name="instructor_role_name" value="Chief Executive Officer" />
+          <param name="assistant_instructions" source="#role_config" key="Chief Product Officer" />
+          <param name="instructor_instructions" source="#role_config" key="Chief Executive Officer" />
+          <param name="phase_instructions" source="#phase_config" key="Manual.phase_prompt" />
+          <param name="model" ref="#chat_model" />
+          <param name="memory" ref="#manual_memory" />
+          <param name="max_turns" value="1" />
+        </parameters>
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="requirements" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="manual_manager" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="manual" type="string" />
+          </push_keys>
+        </attributes>
+      </graph>
+
+      <graph id="chatdev_main" kind="root">
+        <metadata>
+          <name>ChatDev</name>
+          <description>用 MASFactory 复现 ChatDev 软件开发流水线：需求分析、语言选择、编码、补全、评审、测试、环境文档和用户手册。</description>
+        </metadata>
+        <input_keys>
+          <field name="task" type="string" modality="TEXT" required="true" description="Software development task prompt" />
+          <field name="project_name" type="string" modality="TEXT" required="true" description="Software name" />
+          <field name="org_name" type="string" modality="TEXT" required="true" description="Organization name" />
+          <field name="model_name" type="string" modality="TEXT" required="true" description="OpenAI-compatible model name" />
+        </input_keys>
+        <output_keys>
+          <field name="codes" type="array" modality="TEXT" description="Generated source code files" />
+          <field name="requirements" type="string" modality="TEXT" description="Generated dependency document" />
+          <field name="manual" type="string" modality="TEXT" description="Generated manual document" />
+          <field name="directory" type="string" modality="TEXT" description="Generated project directory" />
+        </output_keys>
+        <runtime model="#chat_model" />
+
+        <attributes>
+          <attribute name="config" type="object" source="#chat_chain_config" />
+          <attribute name="config_phase" type="object" source="#phase_config" />
+          <attribute name="config_role" type="object" source="#role_config" />
+          <attribute name="task" type="string" default="Develop a basic Gomoku game." />
+          <attribute name="project_name" type="string" default="Gomoku" />
+          <attribute name="org_name" type="string" default="DefaultOrganization" />
+          <attribute name="model_name" type="string" default="gpt-4o-mini" />
+          <attribute name="code_path" type="string" default="" />
+          <attribute name="start_time" type="string" source="runtime:now" />
+          <attribute name="directory" type="string" />
+          <attribute name="log_filepath" type="string" />
+          <attribute name="chatdev_prompt" type="string" source="#chat_chain_config" key="background_prompt" />
+          <attribute name="seminar_conclusion" type="string" default="" />
+          <attribute name="chat_record" type="string" default="" />
+          <attribute name="current_iteration" type="integer" default="0" />
+          <attribute name="git_management" type="boolean" default="false" />
+          <attribute name="modality" type="string" />
+          <attribute name="description" type="string" />
+          <attribute name="ideas" type="string" />
+          <attribute name="language" type="string" />
+          <attribute name="gui" type="string" default="The software should be equipped with graphical user interface (GUI)." />
+          <attribute name="code_manager" type="object" factory="python:applications.chatdev.chatdev.codes.Codes" />
+          <attribute name="codes" type="array" />
+          <attribute name="codes_alias" type="string" />
+          <attribute name="unimplemented_file" type="string" />
+          <attribute name="pyfiles" type="array" />
+          <attribute name="num_tried" type="object" />
+          <attribute name="cycle_index" type="integer" />
+          <attribute name="images" type="array" />
+          <attribute name="review_comments" type="string" />
+          <attribute name="modification_conclusion" type="string" />
+          <attribute name="incorporated_images" type="array" />
+          <attribute name="proposed_images" type="array" />
+          <attribute name="test_reports" type="string" default="" />
+          <attribute name="exist_bugs_flag" type="boolean" />
+          <attribute name="error_summary" type="string" />
+          <attribute name="requirement_manager" type="object" factory="python:applications.chatdev.chatdev.documents.Documents" />
+          <attribute name="requirements" type="string" />
+          <attribute name="manual_manager" type="object" factory="python:applications.chatdev.chatdev.documents.Documents" />
+          <attribute name="manual" type="string" />
+          <attribute name="discussion_finished" type="boolean" default="false" />
+          <attribute name="image_model" type="object" ref="#image_model" />
+        </attributes>
+
+        <nodes>
+          <custom_node id="pre_processing_phase" forward="python:applications.chatdev.workflow.handlers.pre_processing">
+            <attributes>
+              <pull_keys mode="all" />
+              <push_keys mode="all" />
+            </attributes>
+          </custom_node>
+          <graph id="demand_analysis_phase" ref="#phase_demand_analysis" label="Demand Analysis" />
+          <graph id="language_choose_phase" ref="#phase_language_choose" label="Language Choose" />
+          <graph id="coding_phase" ref="#phase_coding" label="Coding" />
+          <graph id="code_complete_all_composed_phase" ref="#phase_code_complete_all" label="Code Complete All" />
+          <graph id="code_review_composed_phase" ref="#phase_code_review" label="Code Review" />
+          <graph id="test_composed_phase" ref="#phase_test" label="Test" />
+          <graph id="environment_doc_phase" ref="#phase_environment_doc" label="Environment Documentation" />
+          <graph id="manual_phase" ref="#phase_manual" label="Manual" />
+          <custom_node id="post_processing_phase" forward="python:applications.chatdev.workflow.handlers.post_processing">
+            <attributes>
+              <pull_keys mode="all" />
+              <push_keys mode="all" />
+            </attributes>
+          </custom_node>
+        </nodes>
+
+        <edges>
+          <edge from="entry" to="pre_processing_phase"><keys /></edge>
+          <edge from="pre_processing_phase" to="demand_analysis_phase"><keys /></edge>
+          <edge from="demand_analysis_phase" to="language_choose_phase"><keys /></edge>
+          <edge from="language_choose_phase" to="coding_phase"><keys /></edge>
+          <edge from="coding_phase" to="code_complete_all_composed_phase"><keys /></edge>
+          <edge from="code_complete_all_composed_phase" to="code_review_composed_phase"><keys /></edge>
+          <edge from="code_review_composed_phase" to="test_composed_phase"><keys /></edge>
+          <edge from="test_composed_phase" to="environment_doc_phase"><keys /></edge>
+          <edge from="environment_doc_phase" to="manual_phase"><keys /></edge>
+          <edge from="manual_phase" to="post_processing_phase"><keys /></edge>
+          <edge from="post_processing_phase" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+    </graphs>
+  </definitions>
+
+</aml>

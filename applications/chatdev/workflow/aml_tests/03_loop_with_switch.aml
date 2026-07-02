@@ -1,0 +1,47 @@
+<aml version="0.2" profile="masfactory" kind="graph" id="aml_tests.loop_with_switch" lang="zh-CN">
+  <definitions>
+    <agents>
+      <agent id="coder">
+        <instructions>Write or revise the code artifact.</instructions>
+      </agent>
+      <agent id="tester">
+        <instructions>Evaluate the artifact and decide whether it is accepted.</instructions>
+      </agent>
+    </agents>
+  </definitions>
+
+  <graph id="root" kind="root" label="Loop With Switch">
+    <nodes>
+      <loop id="revision_loop" label="Revision Loop" max_iterations="3">
+        <terminate match="Stop when the tester accepts the artifact or max iterations is reached." />
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="artifact" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="artifact" type="string" />
+            <field name="accepted" type="boolean" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <agent id="revise_artifact" ref="#coder" label="Revise Artifact" />
+          <agent id="test_artifact" ref="#tester" label="Test Artifact" />
+          <logic_switch id="quality_gate" label="Quality Gate" />
+        </nodes>
+        <edges>
+          <edge from="controller" to="revise_artifact" />
+          <edge from="revise_artifact" to="test_artifact" />
+          <edge from="test_artifact" to="quality_gate" />
+          <edge from="quality_gate" to="controller" if="not attributes.get('accepted', False)" />
+          <edge from="quality_gate" to="terminate" if="attributes.get('accepted', False)" />
+        </edges>
+      </loop>
+    </nodes>
+
+    <edges>
+      <edge from="entry" to="revision_loop" />
+      <edge from="revision_loop" to="exit" />
+    </edges>
+  </graph>
+</aml>

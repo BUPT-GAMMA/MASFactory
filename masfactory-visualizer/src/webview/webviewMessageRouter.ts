@@ -37,8 +37,14 @@ export type WebviewMessageHandlers = {
     content: string,
     fileName?: string
   ) => Promise<void>;
-  openFileLocation: (filePath?: unknown, line?: unknown, column?: unknown) => void;
-  vibeSave: (webview: vscode.Webview, documentUri?: unknown, text?: unknown) => Promise<void>;
+  openFileLocation: (
+    filePath?: unknown,
+    line?: unknown,
+    column?: unknown,
+    targetTab?: unknown,
+    amlGraphId?: unknown
+  ) => void;
+  vibeSave: (webview: vscode.Webview, documentUri?: unknown, text?: unknown, extraWrites?: unknown) => Promise<void>;
   vibeReload: (documentUri?: unknown) => Promise<void>;
 };
 
@@ -53,7 +59,7 @@ export function registerWebviewMessageHandling(args: {
   webview.onDidReceiveMessage(
     (raw) => {
       const message = parseWebviewMessage(raw);
-      if (!message) return;
+      if (!message) {return;}
       switch (message.type) {
         case 'navigateToLine':
           handlers.navigateToLine(message.uri, message.lineNumber);
@@ -110,10 +116,10 @@ export function registerWebviewMessageHandling(args: {
           void handlers.runtimeExportSession(message.sessionId, message.format, message.content, message.fileName);
           return;
         case 'openFileLocation':
-          handlers.openFileLocation(message.filePath, message.line, message.column);
+          handlers.openFileLocation(message.filePath, message.line, message.column, message.targetTab, message.amlGraphId);
           return;
         case 'vibeSave':
-          void handlers.vibeSave(webview, message.documentUri, message.text);
+          void handlers.vibeSave(webview, message.documentUri, message.text, message.extraWrites);
           return;
         case 'vibeReload':
           void handlers.vibeReload(message.documentUri);

@@ -13,7 +13,7 @@ applications/vibegraph_demo/
 ├── assets/
 │   ├── build.txt                # Build instructions (natural-language workflow description)
 │   └── cache/
-│       └── graph_design.json    # Cached graph design (auto-generated)
+│       └── workflow.aml         # Cached AML workflow (auto-generated)
 ├── main.py                      # Entry point
 └── README.md
 ```
@@ -43,13 +43,13 @@ uv run python applications/vibegraph_demo/main.py --model gpt-4o-mini
 | `--model` | `gpt-4o-mini` | Model used for invoke (running the compiled agents) |
 | `--api_key` | `$OPENAI_API_KEY` | API key for invoke model |
 | `--base_url` | `$OPENAI_BASE_URL` | Base URL for invoke model |
-| `--build_model` | same as `--model` | Model used for build (generating the graph design) |
+| `--build_model` | same as `--model` | Model used for build (generating the AML workflow) |
 | `--build_api_key` | same as `--api_key` | API key for build model |
 | `--build_base_url` | same as `--base_url` | Base URL for build model |
 
 ### Using a Different Build Model
 
-If you want to use a more capable model for graph design generation while keeping a lighter model for execution:
+If you want to use a more capable model for AML workflow generation while keeping a lighter model for execution:
 
 ```bash
 uv run python applications/vibegraph_demo/main.py \
@@ -60,17 +60,17 @@ uv run python applications/vibegraph_demo/main.py \
 ## How It Works
 
 1. **Read build instructions** — Loads `assets/build.txt` which contains a detailed natural-language description of the desired workflow (agents, phases, tools, etc.)
-2. **Build** — `VibeGraph` invokes the build workflow with these instructions to produce a `graph_design` JSON, then caches it to `assets/cache/graph_design.json`
-3. **Compile** — The graph design is compiled into runnable nodes and edges on the fly
+2. **Build** — `VibeGraph` invokes the build workflow with these instructions to produce AML, then caches it to `assets/cache/workflow.aml`
+3. **Compile** — The AML workflow is compiled into runnable nodes and edges on the fly
 4. **Invoke** — The compiled graph executes the full ChatDev pipeline
 
-On subsequent runs, if `assets/cache/graph_design.json` already exists, the build step is skipped and the cached design is loaded directly.
+On subsequent runs, if `assets/cache/workflow.aml` already exists, the build step is skipped and the cached design is loaded directly.
 
 ## Customization
 
-To design a different workflow, edit `assets/build.txt` with your own instructions, then delete `assets/cache/graph_design.json` to force regeneration:
+To design a different workflow, edit `assets/build.txt` with your own instructions, then delete `assets/cache/workflow.aml` to force regeneration:
 
 ```bash
-rm -f applications/vibegraph_demo/assets/cache/graph_design.json
+rm -f applications/vibegraph_demo/assets/cache/workflow.aml
 uv run python applications/vibegraph_demo/main.py
 ```

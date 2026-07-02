@@ -50,8 +50,8 @@ export class ControlFlowStateStore {
 
     public setTemplateSelection(uri: string, templateName: string | null): void {
         const next = typeof templateName === 'string' ? templateName.trim() : '';
-        if (next) this.templateSelectionByUri.set(uri, next);
-        else this.templateSelectionByUri.delete(uri);
+        if (next) {this.templateSelectionByUri.set(uri, next);}
+        else {this.templateSelectionByUri.delete(uri);}
         this.persist();
     }
 
@@ -94,14 +94,14 @@ export class ControlFlowStateStore {
         cfg.clear();
         for (const [loopId, value] of Object.entries(loopIterations)) {
             const numeric = Number(value);
-            if (!Number.isFinite(numeric)) continue;
+            if (!Number.isFinite(numeric)) {continue;}
             const clamped = Math.max(1, Math.min(maxIterations, Math.floor(numeric)));
             cfg.set(loopId, clamped);
         }
 
         const global = this.getGlobalLoopConfig(uri);
         global.clear();
-        for (const [loopId, value] of cfg.entries()) global.set(loopId, value);
+        for (const [loopId, value] of cfg.entries()) {global.set(loopId, value);}
         this.persist();
         return new Map(cfg);
     }
@@ -130,17 +130,17 @@ export class ControlFlowStateStore {
 
         const existingKeys = new Set(Object.keys(loopControls));
         for (const [loopId, info] of Object.entries(loopControls)) {
-            if (!config.has(loopId)) config.set(loopId, info.defaultIterations);
+            if (!config.has(loopId)) {config.set(loopId, info.defaultIterations);}
         }
 
         for (const key of Array.from(config.keys())) {
-            if (!existingKeys.has(key)) config.delete(key);
+            if (!existingKeys.has(key)) {config.delete(key);}
         }
     }
 
     private buildConditionMap(conditions: Record<string, boolean>): Map<string, boolean> {
         const map = new Map<string, boolean>();
-        for (const [key, value] of Object.entries(conditions)) map.set(key, value === true);
+        for (const [key, value] of Object.entries(conditions)) {map.set(key, value === true);}
         return map;
     }
 
@@ -155,10 +155,10 @@ export class ControlFlowStateStore {
                     if (loops && typeof loops === 'object') {
                         for (const [loopId, value] of Object.entries(loops)) {
                             const numeric = Number(value);
-                            if (Number.isFinite(numeric)) m.set(loopId, numeric);
+                            if (Number.isFinite(numeric)) {m.set(loopId, numeric);}
                         }
                     }
-                    if (m.size > 0) this.globalLoopIterationsByUri.set(uri, m);
+                    if (m.size > 0) {this.globalLoopIterationsByUri.set(uri, m);}
                 }
             }
 
@@ -173,7 +173,7 @@ export class ControlFlowStateStore {
                             m.set(condId, value === true);
                         }
                     }
-                    if (m.size > 0) this.globalConditionValuesByUri.set(uri, m);
+                    if (m.size > 0) {this.globalConditionValuesByUri.set(uri, m);}
                 }
             }
 
@@ -182,7 +182,7 @@ export class ControlFlowStateStore {
             );
             if (storedTemplates && typeof storedTemplates === 'object') {
                 for (const [uri, name] of Object.entries(storedTemplates)) {
-                    if (typeof name === 'string' && name.trim()) this.templateSelectionByUri.set(uri, name.trim());
+                    if (typeof name === 'string' && name.trim()) {this.templateSelectionByUri.set(uri, name.trim());}
                 }
             }
         } catch {
@@ -206,7 +206,7 @@ export class ControlFlowStateStore {
 
             const templatesOut: Record<string, string> = {};
             for (const [uri, name] of this.templateSelectionByUri.entries()) {
-                if (name && name.trim()) templatesOut[uri] = name.trim();
+                if (name && name.trim()) {templatesOut[uri] = name.trim();}
             }
             void this.context.workspaceState.update(ControlFlowStateStore.STORAGE_KEY_TEMPLATE_SELECTION, templatesOut);
         } catch {

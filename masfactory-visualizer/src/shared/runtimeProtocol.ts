@@ -150,7 +150,7 @@ function asOptionalString(value: unknown): string | undefined {
 }
 
 function asNumber(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'number' && Number.isFinite(value)) {return value;}
   if (typeof value === 'string' && value.trim() !== '') {
     const n = Number(value);
     return Number.isFinite(n) ? n : null;
@@ -169,24 +169,24 @@ function asRequiredNumber(value: unknown): number | null {
 
 function asMode(value: unknown): VisualizerMode {
   const s = typeof value === 'string' ? value.toLowerCase() : '';
-  if (s === 'debug') return 'debug';
-  if (s === 'run') return 'run';
+  if (s === 'debug') {return 'debug';}
+  if (s === 'run') {return 'run';}
   return 'unknown';
 }
 
 function parseSessions(value: unknown): VisualizerSession[] {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) {return [];}
   const out: VisualizerSession[] = [];
   for (const it of value) {
-    if (!isRecord(it)) continue;
+    if (!isRecord(it)) {continue;}
     const id = asString(it.id);
-    if (!id) continue;
+    if (!id) {continue;}
     const pid = it.pid === null ? null : asNumber(it.pid);
     const graphName = typeof it.graphName === 'string' ? it.graphName : it.graphName === null ? null : null;
     const connectedAt = asRequiredNumber(it.connectedAt);
     const lastSeenAt = asRequiredNumber(it.lastSeenAt);
     const subscribed = typeof it.subscribed === 'boolean' ? it.subscribed : false;
-    if (connectedAt === null || lastSeenAt === null) continue;
+    if (connectedAt === null || lastSeenAt === null) {continue;}
     out.push({
       id,
       pid,
@@ -201,33 +201,33 @@ function parseSessions(value: unknown): VisualizerSession[] {
 }
 
 function parseDebugLocation(value: unknown): DebugLocation | undefined {
-  if (!isRecord(value)) return undefined;
+  if (!isRecord(value)) {return undefined;}
   const out: DebugLocation = {};
-  if (typeof value.path === 'string' && value.path) out.path = value.path;
-  if (typeof value.line === 'number' && Number.isFinite(value.line)) out.line = value.line;
-  if (typeof value.column === 'number' && Number.isFinite(value.column)) out.column = value.column;
-  if (typeof value.name === 'string' && value.name) out.name = value.name;
+  if (typeof value.path === 'string' && value.path) {out.path = value.path;}
+  if (typeof value.line === 'number' && Number.isFinite(value.line)) {out.line = value.line;}
+  if (typeof value.column === 'number' && Number.isFinite(value.column)) {out.column = value.column;}
+  if (typeof value.name === 'string' && value.name) {out.name = value.name;}
   return out;
 }
 
 function parseDebugException(value: unknown): DebugExceptionInfo | undefined {
-  if (!isRecord(value)) return undefined;
+  if (!isRecord(value)) {return undefined;}
   const out: DebugExceptionInfo = {};
-  if (typeof value.id === 'string' && value.id) out.id = value.id;
-  if (typeof value.description === 'string' && value.description) out.description = value.description;
-  if (value.details !== undefined) out.details = value.details;
+  if (typeof value.id === 'string' && value.id) {out.id = value.id;}
+  if (typeof value.description === 'string' && value.description) {out.description = value.description;}
+  if (value.details !== undefined) {out.details = value.details;}
   return out;
 }
 
 export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
-  if (!isRecord(raw)) return null;
+  if (!isRecord(raw)) {return null;}
   const type = asString(raw.type);
-  if (!type || !type.startsWith('runtime')) return null;
+  if (!type || !type.startsWith('runtime')) {return null;}
 
   if (type === 'runtimeState') {
     const port = raw.port === undefined || raw.port === null ? null : asNumber(raw.port);
     const sessions = parseSessions(raw.sessions);
-    if (port === null && raw.port !== undefined && raw.port !== null) return null;
+    if (port === null && raw.port !== undefined && raw.port !== null) {return null;}
     return { type, port, sessions };
   }
 
@@ -236,7 +236,7 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
     const requestId = asString(raw.requestId);
     const prompt = typeof raw.prompt === 'string' ? raw.prompt : null;
     const ts = asRequiredNumber(raw.ts);
-    if (!sessionId || !requestId || prompt === null || ts === null) return null;
+    if (!sessionId || !requestId || prompt === null || ts === null) {return null;}
     return {
       type,
       sessionId,
@@ -251,7 +251,7 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
 
   if (type === 'runtimeHistory') {
     const sessionId = asString(raw.sessionId);
-    if (!sessionId) return null;
+    if (!sessionId) {return null;}
     const nodeEvents: Array<any> = Array.isArray(raw.nodeEvents) ? raw.nodeEvents : [];
     const events = nodeEvents
       .filter((e) => isRecord(e) && typeof e.node === 'string' && typeof e.event === 'string')
@@ -279,7 +279,7 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
     const pid = raw.pid === null ? null : asNumber(raw.pid);
     const reason = asString(raw.reason);
     const ts = asRequiredNumber(raw.ts);
-    if (!reason || ts === null) return null;
+    if (!reason || ts === null) {return null;}
     return {
       type,
       pid,
@@ -297,7 +297,7 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
   if (type === 'runtimeDebugContinued') {
     const pid = raw.pid === null ? null : asNumber(raw.pid);
     const ts = asRequiredNumber(raw.ts);
-    if (ts === null) return null;
+    if (ts === null) {return null;}
     return {
       type,
       pid,
@@ -311,13 +311,13 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
   if (type === 'runtimeAutoTab') {
     const tab = raw.tab === 'debug' || raw.tab === 'run' ? raw.tab : null;
     const sessionId = asString(raw.sessionId);
-    if (!tab || !sessionId) return null;
+    if (!tab || !sessionId) {return null;}
     return { type, tab, sessionId };
   }
 
   if (type === 'runtimeDebugGraph') {
     const sessionId = asString(raw.sessionId);
-    if (!sessionId) return null;
+    if (!sessionId) {return null;}
     return { type, sessionId, graph: raw.graph };
   }
 
@@ -326,7 +326,7 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
     const node = asString(raw.node);
     const ev = raw.event === 'start' || raw.event === 'end' || raw.event === 'error' ? raw.event : null;
     const ts = asRequiredNumber(raw.ts);
-    if (!sessionId || !node || !ev || ts === null) return null;
+    if (!sessionId || !node || !ev || ts === null) {return null;}
     return {
       type,
       sessionId,
@@ -344,7 +344,7 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
   if (type === 'runtimeLog') {
     const level = raw.level === 'info' || raw.level === 'warn' || raw.level === 'error' ? raw.level : null;
     const message = typeof raw.message === 'string' ? raw.message : null;
-    if (!level || message === null) return null;
+    if (!level || message === null) {return null;}
     const channel = raw.channel === 'program' || raw.channel === 'system' ? raw.channel : undefined;
     const ts = asOptionalNumber(raw.ts);
     const sessionId = typeof raw.sessionId === 'string' ? raw.sessionId : undefined;
@@ -355,17 +355,17 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
     const sessionId = asString(raw.sessionId);
     const kind = asString(raw.kind);
     const ts = asRequiredNumber(raw.ts);
-    if (!sessionId || !kind || ts === null) return null;
+    if (!sessionId || !kind || ts === null) {return null;}
     const keysDetails = isRecord(raw.keysDetails)
-      ? Object.fromEntries(Object.entries(raw.keysDetails).map(([k, v]) => [String(k), v == null ? '' : String(v)]))
+      ? Object.fromEntries(Object.entries(raw.keysDetails).map(([k, v]) => [String(k), v === null || v === undefined ? '' : String(v)]))
       : undefined;
     const keys = Array.isArray(raw.keys)
       ? raw.keys
           .map((x) => {
-            if (typeof x === 'string') return x;
-            if (typeof x === 'number' && Number.isFinite(x)) return String(x);
-            if (typeof x === 'boolean') return x ? 'true' : 'false';
-            if (typeof x === 'bigint') return String(x);
+            if (typeof x === 'string') {return x;}
+            if (typeof x === 'number' && Number.isFinite(x)) {return String(x);}
+            if (typeof x === 'boolean') {return x ? 'true' : 'false';}
+            if (typeof x === 'bigint') {return String(x);}
             return null;
           })
           .filter((x): x is string => typeof x === 'string')
@@ -391,7 +391,7 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
 
   if (type === 'runtimeFlowHistory') {
     const sessionId = asString(raw.sessionId);
-    if (!sessionId) return null;
+    if (!sessionId) {return null;}
     const flows = Array.isArray(raw.flows) ? raw.flows.filter((x) => isRecord(x)) : [];
     return { type, sessionId, flows: flows as any };
   }
@@ -401,7 +401,7 @@ export function parseRuntimeMessage(raw: unknown): RuntimeUiMessage | null {
     const dir = raw.dir === 'in' || raw.dir === 'out' ? raw.dir : null;
     const messageType = asString(raw.messageType);
     const ts = asRequiredNumber(raw.ts);
-    if (!sessionId || !dir || !messageType || ts === null) return null;
+    if (!sessionId || !dir || !messageType || ts === null) {return null;}
     return { type, sessionId, dir, messageType, payload: raw.payload, ts };
   }
 

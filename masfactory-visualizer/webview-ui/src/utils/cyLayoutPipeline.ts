@@ -10,6 +10,13 @@ export type SmartDagreLayoutOptions = {
   dagreRankSep?: number;
 };
 
+type DagreLayoutOptions = {
+  name: 'dagre';
+  rankDir: 'TB' | 'LR';
+  nodeSep: number;
+  rankSep: number;
+};
+
 export function safeFit(cy: Core, padding = 30): void {
   const doFit = () => {
     try {
@@ -50,7 +57,13 @@ export function applySmartDagreLayout(cy: Core, opts?: SmartDagreLayoutOptions):
 
   if (isCyLayoutDegenerate(cy)) {
     try {
-      cy.layout({ name: 'dagre', rankDir: dagreRankDir, nodeSep: dagreNodeSep, rankSep: dagreRankSep }).run();
+      const layoutOptions: DagreLayoutOptions = {
+        name: 'dagre',
+        rankDir: dagreRankDir,
+        nodeSep: dagreNodeSep,
+        rankSep: dagreRankSep
+      };
+      cy.layout(layoutOptions as any).run();
     } catch {
       // ignore
     }

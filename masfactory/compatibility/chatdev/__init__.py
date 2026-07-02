@@ -1,4 +1,5 @@
 from masfactory.compatibility.chatdev.api import (
+    chatdev_document_to_aml,
     chatdev_document_to_graph_design,
     load_graph_from_chatdev_yaml,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "ChatDevRootGraph",
     "blueprint_to_chatdev_graph",
     "chatdev_chain_to_blueprint",
+    "chatdev_document_to_aml",
     "chatdev_document_to_blueprint",
     "chatdev_document_to_graph_design",
     "chatdev_majority_voting_to_blueprint",

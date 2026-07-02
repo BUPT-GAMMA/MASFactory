@@ -1,0 +1,114 @@
+<aml version="0.2" profile="masfactory" kind="graph" id="applications.chatdev.pure_aml.graph" lang="zh-CN">
+  <imports>
+    <import alias="common" src="./common.aml" />
+    <import alias="simple" src="./phases/simple_phases.aml" />
+    <import alias="composed" src="./phases/composed_phases.aml" />
+  </imports>
+
+  <definitions>
+    <graphs>
+      <graph id="chatdev_main" kind="root">
+        <metadata>
+          <name>ChatDev Pure AML</name>
+          <description>纯 AML 版本的 ChatDev：不 import 现有 Phase/ComposedPhase/InstructorAssistantGraph 复合组件，显式展开每个 phase 内的 instructor/assistant 节点与边。</description>
+        </metadata>
+        <input_keys>
+          <field name="task" type="string" modality="TEXT" required="true" />
+          <field name="project_name" type="string" modality="TEXT" required="true" />
+          <field name="org_name" type="string" modality="TEXT" required="true" />
+          <field name="model_name" type="string" modality="TEXT" required="true" />
+        </input_keys>
+        <output_keys>
+          <field name="codes" type="array" modality="TEXT" />
+          <field name="requirements" type="string" modality="TEXT" />
+          <field name="manual" type="string" modality="TEXT" />
+          <field name="directory" type="string" modality="TEXT" />
+        </output_keys>
+        <runtime model="common::chat_model" />
+
+        <attributes>
+          <attribute name="config" type="object" source="common::chat_chain_config" />
+          <attribute name="config_phase" type="object" source="common::phase_config" />
+          <attribute name="config_role" type="object" source="common::role_config" />
+          <attribute name="task" type="string" default="Develop a basic Gomoku game." />
+          <attribute name="project_name" type="string" default="Gomoku" />
+          <attribute name="org_name" type="string" default="DefaultOrganization" />
+          <attribute name="model_name" type="string" default="gpt-4o-mini" />
+          <attribute name="code_path" type="string" default="" />
+          <attribute name="start_time" type="string" source="runtime:now" />
+          <attribute name="directory" type="string" />
+          <attribute name="log_filepath" type="string" />
+          <attribute name="chatdev_prompt" type="string" source="common::chat_chain_config" key="background_prompt" />
+          <attribute name="seminar_conclusion" type="string" default="" />
+          <attribute name="chat_record" type="string" default="" />
+          <attribute name="current_iteration" type="integer" default="0" />
+          <attribute name="git_management" type="boolean" default="false" />
+          <attribute name="modality" type="string" />
+          <attribute name="description" type="string" />
+          <attribute name="ideas" type="string" />
+          <attribute name="language" type="string" />
+          <attribute name="gui" type="string" default="The software should be equipped with graphical user interface (GUI)." />
+          <attribute name="code_manager" type="object" factory="python:applications.chatdev.chatdev.codes.Codes" />
+          <attribute name="codes" type="array" />
+          <attribute name="codes_alias" type="string" />
+          <attribute name="unimplemented_file" type="string" />
+          <attribute name="pyfiles" type="array" />
+          <attribute name="num_tried" type="object" />
+          <attribute name="cycle_index" type="integer" />
+          <attribute name="images" type="array" />
+          <attribute name="review_comments" type="string" />
+          <attribute name="modification_conclusion" type="string" />
+          <attribute name="incorporated_images" type="array" />
+          <attribute name="proposed_images" type="array" />
+          <attribute name="test_reports" type="string" default="" />
+          <attribute name="exist_bugs_flag" type="boolean" />
+          <attribute name="error_summary" type="string" />
+          <attribute name="requirement_manager" type="object" factory="python:applications.chatdev.chatdev.documents.Documents" />
+          <attribute name="requirements" type="string" />
+          <attribute name="manual_manager" type="object" factory="python:applications.chatdev.chatdev.documents.Documents" />
+          <attribute name="manual" type="string" />
+          <attribute name="discussion_finished" type="boolean" default="false" />
+          <attribute name="image_model" type="object" ref="common::image_model" />
+        </attributes>
+
+        <nodes>
+          <custom_node id="pre_processing_phase" forward="python:applications.chatdev.workflow.handlers.pre_processing">
+            <attributes>
+              <pull_keys mode="all" />
+              <push_keys mode="all" />
+            </attributes>
+          </custom_node>
+          <graph id="demand_analysis_phase" ref="simple::demand_analysis_phase" />
+          <graph id="language_choose_phase" ref="simple::language_choose_phase" />
+          <graph id="coding_phase" ref="simple::coding_phase" />
+          <graph id="code_complete_all_phase" ref="composed::code_complete_all_phase" />
+          <graph id="code_review_phase" ref="composed::code_review_phase" />
+          <graph id="test_phase" ref="composed::test_phase" />
+          <graph id="environment_doc_phase" ref="simple::environment_doc_phase" />
+          <graph id="manual_phase" ref="simple::manual_phase" />
+          <custom_node id="post_processing_phase" forward="python:applications.chatdev.workflow.handlers.post_processing">
+            <attributes>
+              <pull_keys mode="all" />
+              <push_keys mode="all" />
+            </attributes>
+          </custom_node>
+        </nodes>
+
+        <edges>
+          <edge from="entry" to="pre_processing_phase"><keys /></edge>
+          <edge from="pre_processing_phase" to="demand_analysis_phase"><keys /></edge>
+          <edge from="demand_analysis_phase" to="language_choose_phase"><keys /></edge>
+          <edge from="language_choose_phase" to="coding_phase"><keys /></edge>
+          <edge from="coding_phase" to="code_complete_all_phase"><keys /></edge>
+          <edge from="code_complete_all_phase" to="code_review_phase"><keys /></edge>
+          <edge from="code_review_phase" to="test_phase"><keys /></edge>
+          <edge from="test_phase" to="environment_doc_phase"><keys /></edge>
+          <edge from="environment_doc_phase" to="manual_phase"><keys /></edge>
+          <edge from="manual_phase" to="post_processing_phase"><keys /></edge>
+          <edge from="post_processing_phase" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+    </graphs>
+  </definitions>
+
+</aml>

@@ -1,4 +1,4 @@
-import type { Core } from 'cytoscape';
+import type { Core, EdgeSingular } from 'cytoscape';
 import dagre from 'dagre';
 
 export type SmartLayoutDirection = 'LR' | 'TB';
@@ -89,8 +89,14 @@ function collectSnapshot(cy: Core): LayoutSnapshot {
 
   const edges = cy
     .edges()
-    .filter((e) => e && e.visible() && e.source().visible() && e.target().visible())
-    .map((e) => ({ from: e.source().id(), to: e.target().id() }));
+    .filter((e) => {
+      const edge = e as EdgeSingular;
+      return !!edge && edge.visible() && edge.source().visible() && edge.target().visible();
+    })
+    .map((e) => {
+      const edge = e as EdgeSingular;
+      return { from: edge.source().id(), to: edge.target().id() };
+    });
 
   return { nodeMeta, parentById, childrenByParent, edges };
 }
@@ -432,4 +438,3 @@ export function applySmartLayout(cy: Core, options: SmartLayoutOptions = {}): { 
 
   return { direction: best.cfg.rankDir as SmartLayoutDirection };
 }
-

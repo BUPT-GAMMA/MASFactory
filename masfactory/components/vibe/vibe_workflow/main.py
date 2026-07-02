@@ -20,11 +20,11 @@ VibeWorkflow = NodeTemplate(
         ("ENTRY", "profile-graph", {"user_demand": ""}),
         ("role-assigner-graph", "planner-graph", {"role_list": ""}),
         ("role-assigner-graph", "profile-graph", {"role_list": ""}),
-        ("planner-graph", "profile-graph", {"graph_design": "Your new design of graph."}),
+        ("planner-graph", "profile-graph", {"aml": "Workflow AML topology from planner."}),
         (
             "profile-graph",
             "EXIT",
-            {"graph_design": "The generated graph design accroding to the user's demand and the roles."},
+            {"aml": "The generated AML workflow according to the user's demand and the roles."},
         ),
     ],
 )

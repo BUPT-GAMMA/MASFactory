@@ -68,15 +68,17 @@ export function isSameLevelEdge(from, to, g) {
  * @param {string} endpoint
  * @param {Set<string>} nodeNames
  * @param {Record<string, string>} typeByName
+ * @param {Record<string, boolean>} opaqueByName
  * @returns {boolean}
  */
-function endpointExists(endpoint, nodeNames, typeByName) {
+function endpointExists(endpoint, nodeNames, typeByName, opaqueByName) {
   const ep = String(endpoint || '').trim();
   if (!ep) return false;
   if (ep === 'entry' || ep === 'exit') return true;
   const { base, suffix } = parseEndpoint(ep);
   if (!nodeNames.has(base)) return false;
   if (!suffix) return true;
+  if (opaqueByName[base]) return false;
   if (suffix === 'entry' || suffix === 'exit') return typeByName[base] === 'Graph' || typeByName[base] === 'Subgraph';
   if (suffix === 'controller' || suffix === 'terminate') return typeByName[base] === 'Loop';
   return false;
@@ -151,6 +153,10 @@ export function validateGraphDesign(g) {
   const typeByName = {};
   /** @type {Record<string, string | undefined>} */
   const parentByName = {};
+  /** @type {Record<string, boolean>} */
+  const opaqueByName = {};
+  /** @type {Record<string, boolean>} */
+  const implementationPreviewByName = {};
 
   // -------- Node-level checks --------
   for (const n of nodes) {
@@ -166,6 +172,8 @@ export function validateGraphDesign(g) {
     nodeNames.add(name);
     nodeByName[name] = n;
     typeByName[name] = String(n.type || 'Agent');
+    opaqueByName[name] = !!(n.__aml_opaque || n.__vibe_opaque_container);
+    implementationPreviewByName[name] = !!(n.__aml_from_implementation || n.__aml_implementation_expanded);
     const parent = typeof n.parent === 'string' && n.parent.trim() ? n.parent.trim() : undefined;
     parentByName[name] = parent;
 
@@ -187,12 +195,12 @@ export function validateGraphDesign(g) {
       });
     }
 
-    if (typeByName[name] === 'Agent' || typeByName[name] === 'Action') {
+    if (!implementationPreviewByName[name] && (typeByName[name] === 'Agent' || typeByName[name] === 'Action')) {
       const agent = typeof n.agent === 'string' ? n.agent.trim() : '';
       if (!agent) {
         invalidNodes.add(name);
         issues.push({
-          message: `Action node "${name}" requires non-empty "agent"`,
+          message: `Agent node "${name}" requires non-empty "agent"`,
           nodes: [name],
           edges: []
         });
@@ -215,6 +223,15 @@ export function validateGraphDesign(g) {
       invalidNodes.add(parent);
       issues.push({
         message: `Node ${name} parent must be Graph/Subgraph/Loop (got ${pt})`,
+        nodes: [name, parent],
+        edges: []
+      });
+    }
+    if (opaqueByName[parent]) {
+      invalidNodes.add(name);
+      invalidNodes.add(parent);
+      issues.push({
+        message: `Node ${name} parent cannot be opaque Graph/Loop node: ${parent}`,
         nodes: [name, parent],
         edges: []
       });
@@ -274,8 +291,8 @@ export function validateGraphDesign(g) {
       issues.push({ message: `Edge[${i}] is a self-loop (${from})`, nodes: [from], edges: [i] });
     }
 
-    const fromExists = endpointExists(from, nodeNames, typeByName);
-    const toExists = endpointExists(to, nodeNames, typeByName);
+    const fromExists = endpointExists(from, nodeNames, typeByName, opaqueByName);
+    const toExists = endpointExists(to, nodeNames, typeByName, opaqueByName);
     if (!fromExists || !toExists) {
       invalidEdges.add(i);
       issues.push({
@@ -286,34 +303,41 @@ export function validateGraphDesign(g) {
       continue;
     }
 
+    const fromParsed = parseEndpoint(from);
+    const toParsed = parseEndpoint(to);
     const fromParent = parentOfEndpoint(from, parentByName);
     const toParent = parentOfEndpoint(to, parentByName);
+    const implementationPreviewEdge =
+      !!e?.__aml_from_implementation ||
+      !!implementationPreviewByName[fromParsed.base] ||
+      !!implementationPreviewByName[toParsed.base] ||
+      !!(fromParent && implementationPreviewByName[fromParent]);
     if (fromParent !== toParent) {
-      invalidEdges.add(i);
-      issues.push({
-        message: `Cross-level edge[${i}] (${from} -> ${to})`,
-        nodes: [],
-        edges: [i]
-      });
+      if (!implementationPreviewEdge) {
+        invalidEdges.add(i);
+        issues.push({
+          message: `Cross-level edge[${i}] (${from} -> ${to})`,
+          nodes: [],
+          edges: [i]
+        });
+      }
       continue;
     }
 
     const kind = scopeKind(fromParent, typeByName);
-    const fromParsed = parseEndpoint(from);
-    const toParsed = parseEndpoint(to);
 
     const isEntryTarget = to === 'entry' || toParsed.suffix === 'entry';
     const isExitSource = from === 'exit' || fromParsed.suffix === 'exit';
-    if (isEntryTarget) {
+    if (!implementationPreviewEdge && isEntryTarget) {
       invalidEdges.add(i);
       issues.push({ message: `Edge[${i}] cannot target ENTRY endpoint: ${to}`, nodes: [], edges: [i] });
     }
-    if (isExitSource) {
+    if (!implementationPreviewEdge && isExitSource) {
       invalidEdges.add(i);
       issues.push({ message: `Edge[${i}] cannot originate from EXIT endpoint: ${from}`, nodes: [], edges: [i] });
     }
 
-    if (fromParsed.suffix === 'terminate') {
+    if (!implementationPreviewEdge && fromParsed.suffix === 'terminate') {
       invalidEdges.add(i);
       issues.push({
         message: `Edge[${i}] cannot originate from TERMINATE endpoint: ${from}`,
@@ -322,7 +346,7 @@ export function validateGraphDesign(g) {
       });
     }
 
-    if (kind === 'loop') {
+    if (!implementationPreviewEdge && kind === 'loop') {
       const usesEntryExit =
         from === 'entry' ||
         to === 'exit' ||
@@ -338,7 +362,7 @@ export function validateGraphDesign(g) {
           edges: [i]
         });
       }
-    } else {
+    } else if (!implementationPreviewEdge) {
       const usesLoopBuiltins =
         fromParsed.suffix === 'controller' ||
         fromParsed.suffix === 'terminate' ||
@@ -355,7 +379,7 @@ export function validateGraphDesign(g) {
     }
 
     // Switch outgoing edge condition is mandatory.
-    if (!fromParsed.suffix) {
+    if (!implementationPreviewEdge && !fromParsed.suffix) {
       const fromType = typeByName[fromParsed.base];
       if (fromType === 'LogicSwitch' || fromType === 'AgentSwitch' || fromType === 'Switch') {
         const cond = typeof e?.condition === 'string' ? String(e.condition).trim() : '';
@@ -390,7 +414,13 @@ export function validateGraphDesign(g) {
   const scopes = [undefined];
   for (const name of nodeNames) {
     const t = typeByName[name];
-    if (t === 'Graph' || t === 'Subgraph' || t === 'Loop') scopes.push(name);
+    if (
+      !opaqueByName[name] &&
+      !implementationPreviewByName[name] &&
+      (t === 'Graph' || t === 'Subgraph' || t === 'Loop')
+    ) {
+      scopes.push(name);
+    }
   }
 
   const scopeKey = (scopeName) => (scopeName ? `scope:${scopeName}` : 'scope:root');

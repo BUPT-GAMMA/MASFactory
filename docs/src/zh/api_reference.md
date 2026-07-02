@@ -1899,6 +1899,7 @@ def load_graph_from_dify_yaml(
     graph_name: str | None = None,
     options: DifyCompileOptions | None = None,
     graph_design_path: str | Path | bool | None = None,
+    aml_path: str | Path | bool | None = None,
 ) -> Graph
 ```
 
@@ -1913,6 +1914,7 @@ def load_graph_from_dify_dict(
     graph_name: str | None = None,
     options: DifyCompileOptions | None = None,
     graph_design_path: str | Path | bool | None = None,
+    aml_path: str | Path | bool | None = None,
 ) -> Graph
 ```
 
@@ -1928,6 +1930,7 @@ def load_graph_from_chatdev_yaml(
     options: ChatDevCompileOptions | None = None,
     use_placeholder: bool = False,
     graph_design_path: str | Path | bool | None = None,
+    aml_path: str | Path | bool | None = None,
 ) -> ChatDevRootGraph | Graph
 ```
 
@@ -1942,6 +1945,7 @@ def load_graph_from_langflow_json(
     graph_name: str = "langflow_import",
     options: LangflowCompileOptions | None = None,
     graph_design_path: str | Path | bool | None = None,
+    aml_path: str | Path | bool | None = None,
 ) -> LangflowRootGraph
 ```
 
@@ -1954,9 +1958,10 @@ def load_graph_from_langflow_json(
 | `source` | `str \| Path \| bytes` | 文件路径、内联文档文本，或 UTF-8 bytes |
 | `graph_name` | `str \| None` | 生成图的名称 |
 | `options` | Compile options | 各产品对应的运行时选项 |
-| `graph_design_path` | `str \| Path \| bool \| None` | 可选的 Visualizer `graph_design.json` 导出路径 |
+| `aml_path` | `str \| Path \| bool \| None` | 可选的 AML 导出路径，用于 Visualizer 预览和迁移检查 |
+| `graph_design_path` | `str \| Path \| bool \| None` | 可选的旧 Visualizer `graph_design.json` 导出路径 |
 
-`graph_design_path=True` 会在 `masfactory/compatibility/out/` 下写入自动命名的预览文件。相对路径会解析到该目录下；绝对路径会直接使用。
+`aml_path=True` 会在 `masfactory/compatibility/out/` 下写入自动命名的 `.aml` 文件。`graph_design_path=True` 会写入旧 JSON 预览格式。相对路径会解析到该目录下；绝对路径会直接使用。
 
 ### Compile Options
 
@@ -2001,7 +2006,22 @@ class LangflowCompileOptions:
     openai_base_url: str | None = None
 ```
 
-### Graph Design Helpers
+### AML Helpers
+
+```python
+from masfactory.compatibility import (
+    dify_document_to_aml,
+    chatdev_document_to_aml,
+    langflow_document_to_aml,
+    blueprint_to_aml_document,
+    export_aml_for_blueprint,
+    write_aml,
+)
+```
+
+这些 helper 用于生成 AML 文档，便于 Visualizer 预览、源级检查和迁移工作流。
+
+### Legacy Graph Design Helpers
 
 ```python
 from masfactory.compatibility import (
@@ -2012,7 +2032,7 @@ from masfactory.compatibility import (
 )
 ```
 
-这些 helper 可以在不构建可执行图的情况下生成适合 Visualizer 预览的 `{"graph_design": ...}` 文档。
+这些 helper 可以在不构建可执行图的情况下生成适合 Visualizer 预览的 `{"graph_design": ...}` 文档。它们保留给 legacy 预览工具使用；新工作流优先使用 AML helper。
 
 ### Blueprint 层 API
 
@@ -2024,6 +2044,7 @@ from masfactory.compatibility import (
     blueprint_to_dify_graph,
     blueprint_to_chatdev_graph,
     blueprint_to_langflow_graph,
+    blueprint_to_aml_document,
     workflow_export_to_blueprint,
 )
 ```

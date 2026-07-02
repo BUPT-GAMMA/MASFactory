@@ -12,9 +12,9 @@ function isFiniteNumber(value: unknown): value is number {
  * - `protocolVersion` <= `PROTOCOL_VERSION` is accepted
  */
 export function assertSupportedInboundProtocol(raw: unknown): void {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {return;}
   const v = (raw as any).protocolVersion;
-  if (!isFiniteNumber(v)) return;
+  if (!isFiniteNumber(v)) {return;}
   if (v > PROTOCOL_VERSION) {
     throw new Error(
       `Unsupported protocolVersion ${v} (supported <= ${PROTOCOL_VERSION}). Please update masfactory-visualizer.`

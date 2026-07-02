@@ -38,13 +38,14 @@ PlannerGraph = NodeTemplate(
             "planner-diagnose-loop",
             "planner-human",
             {
-                "graph_design": "The generated graph design accroding to the user's demand and the roles."
+                "aml": "The generated AML workflow topology according to the user's demand and the roles."
             },
         ),
         (
             "planner-human",
             "CONTROLLER",
             {
+                "aml": "Edited AML workflow topology.",
                 "user_advice": "Do you agree the plan? If you agree, enter AGREE. If you have any comments, please enter your comments."
             }
         ),
@@ -52,7 +53,7 @@ PlannerGraph = NodeTemplate(
             "planner-diagnose-loop",
             "CONTROLLER",
             {
-                "graph_design": "The generated graph design accroding to the user's demand and the roles."
+                "aml": "The generated AML workflow topology according to the user's demand and the roles."
             }
         ),
     ],

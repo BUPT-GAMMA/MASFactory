@@ -43,8 +43,8 @@ def build_chatdev_lite_vibegraph(*, model: Model) -> RootGraph:
     )
 
     cache_dir = Path(__file__).resolve().parent / "assets" / "cache"  # ./assets/cache
-    graph_design_cache_dir = cache_dir / "graph_design"
-    graph_design_cache_dir.mkdir(parents=True, exist_ok=True)
+    aml_cache_dir = cache_dir / "aml"
+    aml_cache_dir.mkdir(parents=True, exist_ok=True)
 
     # ----------------------------------------
     # 0) Workdir init (logs + code files)
@@ -60,7 +60,7 @@ def build_chatdev_lite_vibegraph(*, model: Model) -> RootGraph:
         invoke_model=model,     
         build_instructions=load_build_instructions("demand_analysis_phase"),
         build_model=model,
-        build_cache_path=str(graph_design_cache_dir / "demand_analysis.graph_design.json"),
+        build_cache_path=str(aml_cache_dir / "demand_analysis.aml"),
         pull_keys={
             "task": "The task prompt for software development",
             "chatdev_prompt": "Background prompt (optional)",
@@ -82,7 +82,7 @@ def build_chatdev_lite_vibegraph(*, model: Model) -> RootGraph:
         invoke_model=model,
         build_instructions=load_build_instructions("language_choose_phase"),
         build_model=model,
-        build_cache_path=str(graph_design_cache_dir / "language_choose.graph_design.json"),
+        build_cache_path=str(aml_cache_dir / "language_choose.aml"),
         pull_keys={
             "task": "The task prompt for software development",
             "modality": "The product modality",
@@ -103,7 +103,7 @@ def build_chatdev_lite_vibegraph(*, model: Model) -> RootGraph:
         invoke_model=model,
         build_instructions=load_build_instructions("coding_phase"),
         build_model=model,
-        build_cache_path=str(graph_design_cache_dir / "coding.graph_design.json"),
+        build_cache_path=str(aml_cache_dir / "coding.aml"),
         pull_keys={
             "task": "The task prompt for software development",
             "modality": "The product modality",
@@ -147,7 +147,7 @@ def build_chatdev_lite_vibegraph(*, model: Model) -> RootGraph:
         invoke_model=model,
         build_instructions=load_build_instructions("test_error_summary_phase"),
         build_model=model,
-        build_cache_path=str(graph_design_cache_dir / "test_error_summary.graph_design.json"),
+        build_cache_path=str(aml_cache_dir / "test_error_summary.aml"),
         pull_keys={
             "task": "The task prompt for software development",
             "language": "The programming language / stack",
@@ -166,7 +166,7 @@ def build_chatdev_lite_vibegraph(*, model: Model) -> RootGraph:
         invoke_model=model,
         build_instructions=load_build_instructions("test_modification_phase"),
         build_model=model,
-        build_cache_path=str(graph_design_cache_dir / "test_modification.graph_design.json"),
+        build_cache_path=str(aml_cache_dir / "test_modification.aml"),
         pull_keys={
             "task": "The task prompt for software development",
             "language": "The programming language / stack",

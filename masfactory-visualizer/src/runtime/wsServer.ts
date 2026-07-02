@@ -41,7 +41,7 @@ function encodeFrame(opcode: Opcode, payload: Buffer): Buffer {
 function tryDecodeFrame(
   buffer: Buffer
 ): { frame: { fin: boolean; opcode: Opcode; payload: Buffer; masked: boolean }; rest: Buffer } | null {
-  if (buffer.length < 2) return null;
+  if (buffer.length < 2) {return null;}
 
   const b0 = buffer[0];
   const b1 = buffer[1];
@@ -53,11 +53,11 @@ function tryDecodeFrame(
   let offset = 2;
 
   if (len === 126) {
-    if (buffer.length < 4) return null;
+    if (buffer.length < 4) {return null;}
     len = buffer.readUInt16BE(2);
     offset = 4;
   } else if (len === 127) {
-    if (buffer.length < 10) return null;
+    if (buffer.length < 10) {return null;}
     const big = buffer.readBigUInt64BE(2);
     if (big > BigInt(Number.MAX_SAFE_INTEGER)) {
       throw new Error('WebSocket frame too large');
@@ -68,12 +68,12 @@ function tryDecodeFrame(
 
   let mask: Buffer | null = null;
   if (masked) {
-    if (buffer.length < offset + 4) return null;
+    if (buffer.length < offset + 4) {return null;}
     mask = buffer.subarray(offset, offset + 4);
     offset += 4;
   }
 
-  if (buffer.length < offset + len) return null;
+  if (buffer.length < offset + len) {return null;}
 
   let payload = buffer.subarray(offset, offset + len);
   if (masked && mask) {
@@ -114,7 +114,7 @@ export class WsConnection extends EventEmitter {
   }
 
   public sendText(text: string): void {
-    if (this.closed) return;
+    if (this.closed) {return;}
     const payload = Buffer.from(text, 'utf8');
     this.socket.write(encodeFrame(0x1, payload));
   }
@@ -124,7 +124,7 @@ export class WsConnection extends EventEmitter {
   }
 
   public close(code = 1000, reason = ''): void {
-    if (this.closed) return;
+    if (this.closed) {return;}
     this.closed = true;
     try {
       const reasonBuf = Buffer.from(reason, 'utf8');
@@ -141,7 +141,7 @@ export class WsConnection extends EventEmitter {
   }
 
   private emitCloseOnce(): void {
-    if (this.closeEmitted) return;
+    if (this.closeEmitted) {return;}
     this.closeEmitted = true;
     this.emit('close');
   }
@@ -163,11 +163,11 @@ export class WsConnection extends EventEmitter {
   }
 
   private onData(chunk: Buffer): void {
-    if (this.closed) return;
+    if (this.closed) {return;}
     this.buffer = Buffer.concat([this.buffer, chunk]);
     while (true) {
       const decoded = tryDecodeFrame(this.buffer);
-      if (!decoded) break;
+      if (!decoded) {break;}
       this.buffer = decoded.rest;
 
       const { fin, opcode, payload } = decoded.frame;
@@ -242,7 +242,7 @@ export class SimpleWebSocketServer extends EventEmitter {
   }
 
   public async listen(): Promise<number> {
-    if (this.port !== null) return this.port;
+    if (this.port !== null) {return this.port;}
     await new Promise<void>((resolve, reject) => {
       const onError = (err: unknown) => {
         cleanup();

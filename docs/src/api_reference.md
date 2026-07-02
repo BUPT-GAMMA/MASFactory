@@ -1904,6 +1904,7 @@ def load_graph_from_dify_yaml(
     graph_name: str | None = None,
     options: DifyCompileOptions | None = None,
     graph_design_path: str | Path | bool | None = None,
+    aml_path: str | Path | bool | None = None,
 ) -> Graph
 ```
 
@@ -1918,6 +1919,7 @@ def load_graph_from_dify_dict(
     graph_name: str | None = None,
     options: DifyCompileOptions | None = None,
     graph_design_path: str | Path | bool | None = None,
+    aml_path: str | Path | bool | None = None,
 ) -> Graph
 ```
 
@@ -1933,6 +1935,7 @@ def load_graph_from_chatdev_yaml(
     options: ChatDevCompileOptions | None = None,
     use_placeholder: bool = False,
     graph_design_path: str | Path | bool | None = None,
+    aml_path: str | Path | bool | None = None,
 ) -> ChatDevRootGraph | Graph
 ```
 
@@ -1947,6 +1950,7 @@ def load_graph_from_langflow_json(
     graph_name: str = "langflow_import",
     options: LangflowCompileOptions | None = None,
     graph_design_path: str | Path | bool | None = None,
+    aml_path: str | Path | bool | None = None,
 ) -> LangflowRootGraph
 ```
 
@@ -1959,9 +1963,10 @@ Loads a Langflow JSON export and compiles common chat-flow components into execu
 | `source` | `str \| Path \| bytes` | File path, inline document text, or UTF-8 bytes |
 | `graph_name` | `str \| None` | Name assigned to the generated graph |
 | `options` | Compile options | Product-specific runtime options |
-| `graph_design_path` | `str \| Path \| bool \| None` | Optional Visualizer `graph_design.json` export path |
+| `aml_path` | `str \| Path \| bool \| None` | Optional AML export path for Visualizer preview and migration review |
+| `graph_design_path` | `str \| Path \| bool \| None` | Optional legacy Visualizer `graph_design.json` export path |
 
-`graph_design_path=True` writes a generated preview file under `masfactory/compatibility/out/`. Relative paths are resolved under that directory; absolute paths are used directly.
+`aml_path=True` writes a generated `.aml` file under `masfactory/compatibility/out/`. `graph_design_path=True` writes the legacy JSON preview format. Relative paths are resolved under that directory; absolute paths are used directly.
 
 ### Compile Options
 
@@ -2006,7 +2011,22 @@ class LangflowCompileOptions:
     openai_base_url: str | None = None
 ```
 
-### Graph Design Helpers
+### AML Helpers
+
+```python
+from masfactory.compatibility import (
+    dify_document_to_aml,
+    chatdev_document_to_aml,
+    langflow_document_to_aml,
+    blueprint_to_aml_document,
+    export_aml_for_blueprint,
+    write_aml,
+)
+```
+
+These helpers produce AML documents for Visualizer preview, source-level inspection, and migration workflows.
+
+### Legacy Graph Design Helpers
 
 ```python
 from masfactory.compatibility import (
@@ -2017,7 +2037,7 @@ from masfactory.compatibility import (
 )
 ```
 
-These helpers produce Visualizer-previewable `{"graph_design": ...}` documents without building an executable graph.
+These helpers produce Visualizer-previewable `{"graph_design": ...}` documents without building an executable graph. They remain available for legacy preview tooling; prefer AML helpers for new workflows.
 
 ### Blueprint-Level APIs
 
@@ -2029,6 +2049,7 @@ from masfactory.compatibility import (
     blueprint_to_dify_graph,
     blueprint_to_chatdev_graph,
     blueprint_to_langflow_graph,
+    blueprint_to_aml_document,
     workflow_export_to_blueprint,
 )
 ```

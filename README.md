@@ -305,7 +305,7 @@ python -m applications.chatdev_lite.workflow.main --task "Develop a basic Gomoku
 # ChatDev Lite (VibeGraphing version)
 python -m applications.chatdev_lite_vibegraph.main --task "Write a Ping-Pong (Pong) game." --name "PingPong"
 
-# VibeGraph Demo (intent → graph_design.json → compile → run)
+# VibeGraph Demo (intent -> AML -> compile -> run)
 python -m applications.vibegraph_demo.main
 
 # AgentVerse · PythonCalculator

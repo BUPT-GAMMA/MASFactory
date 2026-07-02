@@ -53,6 +53,7 @@ const allWarnings = computed<string[]>(() => {
   const w2 = Array.isArray(w2Raw) ? w2Raw.filter((x: any) => typeof x === 'string') : [];
   return [...w1, ...w2];
 });
+const warningsCollapsed = ref(false);
 const previewContextMenu = ref<{
   visible: boolean;
   x: number;
@@ -414,7 +415,9 @@ function hideDescendants(nodeId: string): void {
   const node = cy.getElementById(nodeId);
   if (!node || node.empty()) return;
   try {
-    node.descendants().forEach((d) => d.style('display', 'none'));
+    node.descendants().forEach((d) => {
+      d.style('display', 'none');
+    });
   } catch {
     // ignore
   }
@@ -425,7 +428,9 @@ function showDescendants(nodeId: string): void {
   const node = cy.getElementById(nodeId);
   if (!node || node.empty()) return;
   try {
-    node.descendants().forEach((d) => d.style('display', 'element'));
+    node.descendants().forEach((d) => {
+      d.style('display', 'element');
+    });
   } catch {
     // ignore
   }
@@ -823,7 +828,10 @@ function attachCyHandlers(): void {
       tooltip.style.top = `${e.renderedPosition.y + 15}px`;
     };
     mousemoveHandler(evt as any);
-    cy.on('mousemove', mousemoveHandler);
+    const core = cy;
+    if (core) {
+      core.on('mousemove', mousemoveHandler);
+    }
   });
 
   cy.on('mouseout', 'node', (evt: EventObjectNode) => {
@@ -885,7 +893,10 @@ function attachCyHandlers(): void {
       tooltip.style.top = `${e.renderedPosition.y + 15}px`;
     };
     mousemoveHandler(evt as any);
-    cy.on('mousemove', mousemoveHandler);
+    const core = cy;
+    if (core) {
+      core.on('mousemove', mousemoveHandler);
+    }
   });
 
   cy.on('mouseout', 'edge', (evt: EventObjectEdge) => {
@@ -934,7 +945,9 @@ function attachCyHandlers(): void {
       if (n.isParent && n.isParent()) {
         affected.push(n.id());
       } else {
-        n.parents().forEach((p) => affected.push(p.id()));
+        n.parents().forEach((p) => {
+          affected.push(p.id());
+        });
       }
       if (affected.length > 0) overlayMgr?.scheduleUpdate(affected);
     } catch {
@@ -1020,6 +1033,7 @@ onBeforeUnmount(() => {
 watch(
   () => [preview.graph, preview.documentUri],
   async () => {
+    warningsCollapsed.value = false;
     await nextTick();
     normalizeControlPanelWithinViewport();
     if (!cy) return;
@@ -1241,10 +1255,19 @@ watch(
         <div
           id="warningSection"
           class="control-section"
+          :class="{ collapsed: warningsCollapsed }"
           v-show="allWarnings.length > 0"
         >
-          <h3>Warnings</h3>
-          <div id="warningList">
+          <button
+            id="warningToggle"
+            type="button"
+            :aria-expanded="!warningsCollapsed"
+            @click="warningsCollapsed = !warningsCollapsed"
+          >
+            <span>Warnings ({{ allWarnings.length }})</span>
+            <span>{{ warningsCollapsed ? 'Show' : 'Hide' }}</span>
+          </button>
+          <div v-if="!warningsCollapsed" id="warningList">
             <div v-for="(w, i) in allWarnings" :key="i" class="warning-item">
               {{ w }}
             </div>
@@ -1450,6 +1473,20 @@ watch(
 #refreshViewButton,
 #resetViewButton {
   margin-bottom: 8px;
+}
+
+#warningToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  background: rgba(244, 135, 113, 0.13);
+  color: var(--vscode-editor-foreground);
+}
+
+#warningSection.collapsed #warningToggle {
+  margin-bottom: 0;
 }
 
 .warning-item {

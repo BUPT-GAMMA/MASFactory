@@ -1,0 +1,33 @@
+<aml version="0.2" profile="masfactory" kind="library" id="applications.chatdev.pure_aml.common" lang="zh-CN">
+  <definitions>
+    <resources>
+      <resource id="chat_chain_config" kind="json" path="../../assets/config/ChatChainConfig.json" />
+      <resource id="phase_config" kind="json" path="../../assets/config/PhaseConfig.json" />
+      <resource id="role_config" kind="json" path="../../assets/config/RoleConfig.json" />
+    </resources>
+
+    <models>
+      <model id="chat_model" provider="openai" class="OpenAIModel">
+        <param name="model_name" value="{model_name}" default="gpt-4o-mini" />
+        <param name="api_key" value="{api_key}" env="OPENAI_API_KEY" />
+        <param name="base_url" value="{base_url}" env="BASE_URL" />
+      </model>
+      <model id="image_model" provider="openai" class="OpenAIModel">
+        <param name="model_name" value="{model_name}" default="gpt-4o-mini" />
+        <param name="api_key" value="{api_key}" env="OPENAI_API_KEY" />
+        <param name="base_url" value="{base_url}" env="BASE_URL" />
+      </model>
+    </models>
+
+    <memories>
+      <memory id="demand_analysis_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="DEMAND_ANALYSIS_MEMORY" />
+      <memory id="language_choose_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="LANGUAGE_CHOOSE_MEMORY" />
+      <memory id="coding_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="CODING_MEMORY" />
+      <memory id="code_complete_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="CODE_COMPLETE_MEMORY" />
+      <memory id="code_review_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="CODE_REVIEW_MEMORY" />
+      <memory id="test_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="TEST_MEMORY" />
+      <memory id="environment_doc_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="ENVIRONMENT_DOC_MEMORY" />
+      <memory id="manual_memory" kind="vector" class="VectorMemory" embedder="SimpleEmbedder" vocab_size="10000" context_label="MANUAL_MEMORY" />
+    </memories>
+  </definitions>
+</aml>

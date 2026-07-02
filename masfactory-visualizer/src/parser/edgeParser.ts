@@ -27,11 +27,11 @@ function getExpandedDictNode(
     literalValues?: { [name: string]: TSNode }
 ): TSNode | null {
     const raw = getNodeText(arg, code).trim();
-    if (!raw.startsWith('**')) return null;
+    if (!raw.startsWith('**')) {return null;}
     const inlineDict = arg.namedChildren.find((child): child is TSNode => !!child && child.type === 'dictionary');
-    if (inlineDict) return inlineDict;
+    if (inlineDict) {return inlineDict;}
     const expr = raw.slice(2).trim();
-    if (!expr || !literalValues) return null;
+    if (!expr || !literalValues) {return null;}
     return literalValues[expr] && literalValues[expr].type === 'dictionary' ? literalValues[expr] : null;
 }
 
@@ -52,12 +52,12 @@ function getExpandedKeywordValue(
         }
 
         const expanded = getExpandedDictNode(arg, code, literalValues);
-        if (!expanded) continue;
+        if (!expanded) {continue;}
         for (const child of expanded.namedChildren) {
-            if (!child || child.type !== 'pair') continue;
+            if (!child || child.type !== 'pair') {continue;}
             const keyNode = child.childForFieldName('key');
             const valueNode = child.childForFieldName('value');
-            if (!keyNode || !valueNode) continue;
+            if (!keyNode || !valueNode) {continue;}
             const keyText = getNodeText(keyNode, code).replace(/^["']|["']$/g, '');
             if (keyText === key) {
                 return valueNode;
@@ -438,7 +438,7 @@ export function parseEdgeCreation(
     functionText: string
 ): void {
     const argsNode = callNode.childForFieldName('arguments');
-    if (!argsNode) return;
+    if (!argsNode) {return;}
 
     const args = argsNode.namedChildren.filter((n): n is TSNode => !!n && n.type !== 'comment');
     const lineOffset = ctx.lineOffset || 0;

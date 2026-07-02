@@ -1,8 +1,8 @@
-You need to help me design a workflow for code development. First, this workflow contains 6 Loop structures, which we refer to as Phases in the following text. Each Phase contains two Agents.
+You need to help me design an AML workflow for code development. First, this workflow contains Loop structures, which we refer to as Phases in the following text. Each Phase contains two Agents.
 The structure of each Phase contains an InstructorAgent and an AssistantAgent, with the following structure:
-CONTROLLER -> AssistantAgent
+controller -> AssistantAgent
 AssistantAgent -> InstructorAgent
-InstructorAgent -> CONTROLLER
+InstructorAgent -> controller
 
 We need to implement a total of 5 Phases, which are:
 - demand_analysis_phase
@@ -12,16 +12,18 @@ We need to implement a total of 5 Phases, which are:
 - test_modification_phase
 
 So the structure of our top-level graph is as follows:
-START -> demand_analysis_phase
+entry -> demand_analysis_phase
 demand_analysis_phase -> language_choose_phase
 language_choose_phase -> coding_phase
 coding_phase -> test_loop
-test_loop -> END
+test_loop -> exit
 
-And test_loop is a subgraph, its internal construction is as follows:
-CONTROLLER->test_error_summary_phase
+And test_loop is a loop, its internal construction is as follows:
+controller->test_error_summary_phase
 test_error_summary_phase->test_modification_phase
-test_modification_phase->CONTROLLER
+test_modification_phase->controller
+
+Generate AML v0.2. Do not generate graph_design JSON. Use AML endpoints `entry`, `exit`, and `controller`.
 
 The details within each phase are introduced one by one below:
 1. demand_analysis_phase

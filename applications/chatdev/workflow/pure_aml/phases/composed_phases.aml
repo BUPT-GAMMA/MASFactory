@@ -1,0 +1,139 @@
+<aml version="0.2" profile="masfactory" kind="library" id="applications.chatdev.pure_aml.composed_phases" lang="zh-CN">
+  <imports>
+    <import alias="common" src="../common.aml" />
+    <import alias="simple" src="./simple_phases.aml" />
+  </imports>
+
+  <definitions>
+    <graphs>
+      <graph id="code_complete_all_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="directory" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+          </push_keys>
+          <attribute name="cycle_num" type="integer" default="10" />
+          <attribute name="current_phase_turn" type="integer" default="1" />
+        </attributes>
+        <nodes>
+          <custom_node id="loop_preprocessor" forward="builtin:prepare_code_complete_loop" />
+          <loop id="code_complete_loop" max_iterations="10">
+            <terminate if="empty(unimplemented_file)" />
+            <nodes>
+              <graph id="code_complete" ref="simple::code_complete_phase" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="code_complete"><keys /></edge>
+              <edge from="code_complete" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="loop_postprocessor" forward="builtin:noop" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="loop_preprocessor"><keys /></edge>
+          <edge from="loop_preprocessor" to="code_complete_loop"><keys /></edge>
+          <edge from="code_complete_loop" to="loop_postprocessor"><keys /></edge>
+          <edge from="loop_postprocessor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="code_review_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="images" type="array" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+          </push_keys>
+          <attribute name="cycle_num" type="integer" default="3" />
+          <attribute name="current_phase_turn" type="integer" default="1" />
+          <attribute name="modification_conclusion" type="string" default="" />
+        </attributes>
+        <nodes>
+          <custom_node id="loop_preprocessor" forward="builtin:noop" />
+          <loop id="code_review_loop" max_iterations="6">
+            <terminate if="contains(modification_conclusion, &apos;Finished&apos;)" />
+            <nodes>
+              <logic_switch id="round_control_switch" />
+              <graph id="code_review_comment" ref="simple::code_review_comment_phase" />
+              <graph id="code_review_modification" ref="simple::code_review_modification_phase" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="round_control_switch"><keys /></edge>
+              <edge from="round_control_switch" to="code_review_comment" if="current_phase_turn == 1"><keys /></edge>
+              <edge from="round_control_switch" to="code_review_modification" if="current_phase_turn == 2"><keys /></edge>
+              <edge from="code_review_comment" to="controller"><keys /></edge>
+              <edge from="code_review_modification" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="loop_postprocessor" forward="builtin:noop" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="loop_preprocessor"><keys /></edge>
+          <edge from="loop_preprocessor" to="code_review_loop"><keys /></edge>
+          <edge from="code_review_loop" to="loop_postprocessor"><keys /></edge>
+          <edge from="loop_postprocessor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="test_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="directory" type="string" />
+            <field name="test_reports" type="string" />
+            <field name="image_model" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+          </push_keys>
+          <attribute name="cycle_num" type="integer" default="3" />
+          <attribute name="current_phase_turn" type="integer" default="1" />
+        </attributes>
+        <nodes>
+          <custom_node id="loop_preprocessor" forward="builtin:noop" />
+          <loop id="test_loop" max_iterations="6">
+            <terminate if="exist_bugs_flag == false" />
+            <nodes>
+              <logic_switch id="round_control_switch" />
+              <graph id="test_error_summary" ref="simple::test_error_summary_phase" />
+              <graph id="test_modification" ref="simple::test_modification_phase" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="round_control_switch"><keys /></edge>
+              <edge from="round_control_switch" to="test_error_summary" if="current_phase_turn == 1"><keys /></edge>
+              <edge from="round_control_switch" to="test_modification" if="current_phase_turn == 2"><keys /></edge>
+              <edge from="test_error_summary" to="controller"><keys /></edge>
+              <edge from="test_modification" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="loop_postprocessor" forward="builtin:noop" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="loop_preprocessor"><keys /></edge>
+          <edge from="loop_preprocessor" to="test_loop"><keys /></edge>
+          <edge from="test_loop" to="loop_postprocessor"><keys /></edge>
+          <edge from="loop_postprocessor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+    </graphs>
+  </definitions>
+</aml>

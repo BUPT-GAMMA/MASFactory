@@ -1,19 +1,26 @@
 import * as vscode from 'vscode';
 import type { WebviewProvider } from '../webview/webviewProvider';
 
+function isVibeDocument(document: vscode.TextDocument): boolean {
+  const languageId = document.languageId;
+  if (languageId === 'json' || languageId === 'jsonc' || languageId === 'aml') {
+    return true;
+  }
+  return document.uri.fsPath.toLowerCase().endsWith('.aml');
+}
+
 export function registerDocumentListeners(args: {
   context: vscode.ExtensionContext;
   webviewProvider: WebviewProvider;
 }): void {
   const { context, webviewProvider } = args;
-  const isJsonLang = (id: string): boolean => id === 'json' || id === 'jsonc';
 
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (editor && editor.document.languageId === 'python') {
         webviewProvider.setLastActivePythonDocument(editor.document);
         webviewProvider.updateGraph(editor.document);
-      } else if (editor && isJsonLang(editor.document.languageId)) {
+      } else if (editor && isVibeDocument(editor.document)) {
         webviewProvider.setLastActiveVibeDocument(editor.document);
         webviewProvider.updateVibeDocument(editor.document);
       }
@@ -22,13 +29,15 @@ export function registerDocumentListeners(args: {
 
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument((document) => {
-      if (vscode.window.activeTextEditor?.document !== document) return;
+      if (vscode.window.activeTextEditor?.document !== document) {
+        return;
+      }
       if (document.languageId === 'python') {
         webviewProvider.setLastActivePythonDocument(document);
         webviewProvider.updateGraph(document);
         return;
       }
-      if (isJsonLang(document.languageId)) {
+      if (isVibeDocument(document)) {
         webviewProvider.setLastActiveVibeDocument(document);
         webviewProvider.updateVibeDocument(document);
       }
@@ -39,11 +48,15 @@ export function registerDocumentListeners(args: {
     vscode.workspace.onDidChangeTextDocument((event) => {
       const doc = event.document;
       if (doc.languageId === 'python') {
-        if (webviewProvider.isLastActivePythonDocument(doc)) webviewProvider.updateGraph(doc);
+        if (webviewProvider.isLastActivePythonDocument(doc)) {
+          webviewProvider.updateGraph(doc);
+        }
         return;
       }
-      if (isJsonLang(doc.languageId)) {
-        if (webviewProvider.isLastActiveVibeDocument(doc)) webviewProvider.updateVibeDocument(doc);
+      if (isVibeDocument(doc)) {
+        if (webviewProvider.isLastActiveVibeDocument(doc)) {
+          webviewProvider.updateVibeDocument(doc);
+        }
       }
     })
   );
@@ -53,7 +66,7 @@ export function registerDocumentListeners(args: {
   if (activeDoc?.languageId === 'python') {
     webviewProvider.setLastActivePythonDocument(activeDoc);
     webviewProvider.updateGraph(activeDoc);
-  } else if (activeDoc && isJsonLang(activeDoc.languageId)) {
+  } else if (activeDoc && isVibeDocument(activeDoc)) {
     webviewProvider.setLastActiveVibeDocument(activeDoc);
     webviewProvider.updateVibeDocument(activeDoc);
   }

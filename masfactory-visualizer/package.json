@@ -17,6 +17,7 @@
   ],
   "activationEvents": [
     "onStartupFinished",
+    "onLanguage:aml",
     "onWebviewPanel:masfactoryVisualizerEditor",
     "onView:masfactoryVisualizerView",
     "onCommand:masfactory-visualizer.start",
@@ -42,11 +43,31 @@
         }
       }
     ],
+    "languages": [
+      {
+        "id": "aml",
+        "aliases": [
+          "AML",
+          "Agent Mark Language"
+        ],
+        "extensions": [
+          ".aml"
+        ],
+        "configuration": "./language-configuration-aml.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "aml",
+        "scopeName": "text.xml.aml",
+        "path": "./syntaxes/aml.tmLanguage.json"
+      }
+    ],
     "menus": {
       "editor/title": [
         {
           "command": "masfactory-visualizer.openInEditor",
-          "when": "resourceLangId == python || resourceLangId == json || resourceLangId == jsonc",
+          "when": "resourceLangId == python || resourceLangId == json || resourceLangId == jsonc || resourceLangId == aml",
           "group": "navigation"
         }
       ]

@@ -1,4 +1,5 @@
 from masfactory.compatibility.langflow.api import (
+    langflow_document_to_aml,
     langflow_document_to_graph,
     langflow_document_to_graph_design,
     load_graph_from_langflow_json,
@@ -13,6 +14,7 @@ __all__ = [
     "LangflowRootGraph",
     "blueprint_to_langflow_graph",
     "is_langflow_document",
+    "langflow_document_to_aml",
     "langflow_document_to_blueprint",
     "langflow_document_to_graph",
     "langflow_document_to_graph_design",

@@ -1,0 +1,63 @@
+<aml version="0.2" profile="masfactory" kind="graph" id="aml_tests.agent_switch_and_attributes" lang="zh-CN">
+  <definitions>
+    <agents>
+      <agent id="triage">
+        <instructions>Classify the request into code, document, or question.</instructions>
+      </agent>
+      <agent id="code_specialist">
+        <instructions>Handle coding requests.</instructions>
+      </agent>
+      <agent id="doc_specialist">
+        <instructions>Handle documentation requests.</instructions>
+      </agent>
+      <agent id="qa_specialist">
+        <instructions>Handle general questions and final answers.</instructions>
+      </agent>
+    </agents>
+  </definitions>
+
+  <graph id="root" kind="root" label="Agent Switch And Attributes">
+    <attributes>
+      <pull_keys mode="keys">
+        <field name="request" type="string" description="Incoming user request" />
+      </pull_keys>
+      <push_keys mode="keys">
+        <field name="answer" type="string" description="Final answer" />
+      </push_keys>
+    </attributes>
+
+    <nodes>
+      <agent id="classify_request" ref="#triage" label="Classify Request">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="request" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="route" type="string" description="code, docs, or qa" />
+          </push_keys>
+        </attributes>
+      </agent>
+      <agent_switch id="route_request" label="Route Request" />
+      <agent id="handle_code" ref="#code_specialist" label="Code Path" />
+      <agent id="handle_docs" ref="#doc_specialist" label="Docs Path" />
+      <agent id="handle_qa" ref="#qa_specialist" label="QA Path" />
+      <agent id="final_answer" ref="#qa_specialist" label="Final Answer" />
+    </nodes>
+
+    <edges>
+      <edge from="entry" to="classify_request" />
+      <edge from="classify_request" to="route_request">
+        <keys>
+          <field name="route" description="Routing decision" />
+        </keys>
+      </edge>
+      <edge from="route_request" to="handle_code" match="Choose this path when route is code." />
+      <edge from="route_request" to="handle_docs" match="Choose this path when route is docs." />
+      <edge from="route_request" to="handle_qa" match="Choose this path when route is qa or unclear." />
+      <edge from="handle_code" to="final_answer" />
+      <edge from="handle_docs" to="final_answer" />
+      <edge from="handle_qa" to="final_answer" />
+      <edge from="final_answer" to="exit" />
+    </edges>
+  </graph>
+</aml>

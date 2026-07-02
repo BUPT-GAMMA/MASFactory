@@ -1,24 +1,24 @@
 # VibeGraph 构建 ChatDev Lite
 
-本教程演示如何用 `VibeGraph` 把“自然语言意图”转化为 `graph_design.json` 设计，并编译为可运行的工作流。
+本教程演示如何用 `VibeGraph` 把“自然语言意图”转化为 AML 工作流，并编译为可运行的工作流。
 
 核心思路：
 
-1. **Build**：用一个 build workflow 生成 `graph_design.json`（可缓存）。
+1. **Build**：用一个 build workflow 生成 AML（可缓存）。
 2. **Review / Edit**：在可视化预览中快速检查并手工调整结构（可选）。
-3. **Compile + Run**：把 `graph_design` 编译为图结构，在运行时执行并观察。
+3. **Compile + Run**：把 AML 编译为图结构，在运行时执行并观察。
 
 <ThemedDiagram
   light="/imgs/tutorial/chatdev-lite/prog-vibe-pipeline-light.svg"
   dark="/imgs/tutorial/chatdev-lite/prog-vibe-pipeline-dark.svg"
-  alt="VibeGraph：意图 → graph_design → 编译 → 运行"
+  alt="VibeGraph：意图 → AML → 编译 → 运行"
 />
 
 ---
 
-## Step 1 生成并缓存 graph_design
+## Step 1 生成并缓存 AML
 
-下面例子会在 `assets/cache/chatdev_graph_design.json` 写入缓存。  
+下面例子会在 `assets/cache/chatdev_workflow.aml` 写入缓存。
 第一次运行会生成；之后如果文件已存在，会优先从缓存读取（可用于“手工改结构后再编译运行”）。
 
 ```python
@@ -28,16 +28,16 @@ from pathlib import Path
 from masfactory import RootGraph, VibeGraph, NodeTemplate, OpenAIModel
 # 使用自然语言编写要实现的ChatDev描述
 build_instructions = """
-You need to design a MASFactory workflow for code development, and output a graph_design.json draft.
+You need to design a MASFactory workflow for code development, and output an AML v0.2 workflow document.
 
 1) Top-level graph (linear control flow)
-ENTRY -> demand_analysis_phase -> language_choose_phase -> coding_phase -> test_loop -> EXIT
+entry -> demand_analysis_phase -> language_choose_phase -> coding_phase -> test_loop -> exit
 
-2) Each phase is a Loop with two Action nodes (Instructor + Assistant).
+2) Each phase is a loop with two agent nodes (Instructor + Assistant).
 Inside a phase:
-CONTROLLER -> assistant_agent
+controller -> assistant_agent
 assistant_agent -> instructor_agent
-instructor_agent -> CONTROLLER
+instructor_agent -> controller
 
 3) Phases (roles, IO fields, tools)
 - demand_analysis_phase (max_iterations=1)
@@ -56,8 +56,8 @@ instructor_agent -> CONTROLLER
   - output_fields (assistant writes back): codes, unimplemented_file
   - tools: codes_check_and_processing_tool, check_code_completeness_tool
 
-4) test_loop (Loop, max_iterations=3)
-CONTROLLER -> test_error_summary_phase -> test_modification_phase -> CONTROLLER
+4) test_loop (loop, max_iterations=3)
+controller -> test_error_summary_phase -> test_modification_phase -> controller
 Terminate if:
 - error_summary contains 'No errors found' (case-insensitive), OR
 - exist_bugs_flag is False, OR
@@ -72,9 +72,10 @@ Terminate if:
   - tools: codes_check_and_processing_tool
 
 6) Output requirement
-Return ONLY valid JSON following the graph_design standard in graph_design/.
-Use ENTRY/EXIT as graph ports (case-insensitive).
-Use CONTROLLER/TERMINATE for loop internal endpoints (case-insensitive).
+Return ONLY one complete AML v0.2 XML document.
+Do not return JSON, Markdown fences, or graph_design.
+Use lowercase built-in endpoints: entry, exit, controller, terminate.
+Use AML component tags such as agent, loop, logic_switch, graph, and custom_node.
 """
 build_model = OpenAIModel(
     # 建议为 build 选择能力更强的模型，以获得更稳定的结构化设计输出（例如 gpt-5.2）
@@ -95,7 +96,7 @@ ChatDev = NodeTemplate(
     invoke_model=invoke_model,
     build_model=build_model,
     build_instructions=build_instructions,
-    build_cache_path=Path("assets/cache/chatdev_graph_design.json"),
+    build_cache_path=Path("assets/cache/chatdev_workflow.aml"),
 )
 
 g = RootGraph(
@@ -126,16 +127,16 @@ g.invoke({"task":"build a simple calculator"})
 
 可以直接打开缓存文件进行检查 / 编辑：
 
-- `assets/cache/chatdev_graph_design.json`
+- `assets/cache/chatdev_workflow.aml`
 
-如果你使用 **MASFactory Visualizer**，可以在 Vibe 视图预览/编辑 `graph_design.json` 的结构，再回到代码运行即可生效。
+如果你使用 **MASFactory Visualizer**，可以在 Vibe 视图预览/编辑 AML 结构，再回到代码运行即可生效。
 
 ![VibeGraph 预览](/imgs/tutorial/chatdev-lite/graph_design_preview.png)
 
 
 ## Step 3 重新编译运行
 
-当 `build_cache_path` 已存在时，`VibeGraph` 会直接读取缓存并编译运行。  
+当 `build_cache_path` 已存在时，`VibeGraph` 会直接读取缓存的 AML 并编译运行。
 如果你希望“重新从意图生成”，删除缓存文件后再运行即可。
 
 ---

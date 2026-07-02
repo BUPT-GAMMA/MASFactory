@@ -9,7 +9,7 @@ This chapter reproduces a simplified ChatDev (1.0-style) from scratch using MASF
 
 - **Declarative**: express structure with `nodes/edges` and reuse configuration via `NodeTemplate`
 - **Imperative**: assemble the graph using `create_node / create_edge`
-- **VibeGraph**: draft a `graph_design.json` from intent, then compile and run
+- **VibeGraph**: draft AML from intent, then compile and run
 
 ::: tip Note
 THUNLP and OpenBMB released a more capable ChatDev 2.0 in December 2025. It is no longer limited to standard software-development workflows and supports low-code construction of general multi-agent workflows. This chapter focuses on a simplified version of ChatDev 1.0.

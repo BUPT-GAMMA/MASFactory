@@ -23,6 +23,7 @@ const props = defineProps<{
   layoutMeta?: VibeLayoutMeta | null;
   invalidNodes?: readonly string[];
   invalidEdges?: readonly number[];
+  readonly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -34,6 +35,7 @@ const emit = defineEmits<{
   (e: 'nodeParentChanged', payload: { nodeId: string; parent?: string }): void;
   (e: 'dropComponent', payload: { componentType: string; x: number; y: number; parent?: string }): void;
   (e: 'createEdge', payload: { from: string; to: string }): void;
+  (e: 'nodeDoubleClick', nodeId: string): void;
 }>();
 
 const rootRef = ref<HTMLDivElement | null>(null);
@@ -113,6 +115,30 @@ function handleSupport(id: string, type: string): { inOk: boolean; outOk: boolea
   if (isEntry) return { inOk: false, outOk: true };
   if (isExit || isTerminate) return { inOk: true, outOk: false };
   return { inOk: true, outOk: true };
+}
+
+function isDerivedCyNode(node: any): boolean {
+  return String(node?.data?.('derived') || '') === '1';
+}
+
+function isInternalCyNode(node: any): boolean {
+  return String(node?.data?.('internal') || '') === '1';
+}
+
+function isInDerivedCyScope(node: any): boolean {
+  if (!cy) return false;
+  const parent = String(node?.data?.('parent') || '');
+  if (!parent) return false;
+  const parentNode = cy.getElementById(parent);
+  return !!parentNode && !parentNode.empty() && isDerivedCyNode(parentNode);
+}
+
+function canChangeCyNodeStructure(node: any): boolean {
+  return !props.readonly && !isInternalCyNode(node) && !isDerivedCyNode(node);
+}
+
+function canUseCyEndpoint(node: any): boolean {
+  return !props.readonly && !isDerivedCyNode(node) && !isInDerivedCyScope(node);
 }
 
 function updateCyStatus(): void {
@@ -328,6 +354,7 @@ function closeContextMenu(): void {
 }
 
 function openContextMenu(nodeId: string, e: MouseEvent): void {
+  if (props.readonly) return;
   if (!rootRef.value) return;
   const rect = rootRef.value.getBoundingClientRect();
   const rawX = e.clientX - rect.left;
@@ -350,6 +377,7 @@ function setDragTarget(targetId: string | null): void {
 }
 
 function scheduleDragUpdate(): void {
+  if (props.readonly) return;
   if (dragRaf !== null) return;
   dragRaf = requestAnimationFrame(() => {
     dragRaf = null;
@@ -358,6 +386,7 @@ function scheduleDragUpdate(): void {
 }
 
 function updateDragHover(): void {
+  if (props.readonly) return;
   if (!cy) return;
   if (!grabbedNodeId) return;
   if (edgeModeActive.value) return;
@@ -451,6 +480,10 @@ function applyEdgeModeClasses(scopeParent: string, anchorId: string, kind: EdgeM
       n.removeClass('vibe-target');
       return;
     }
+    if (!canUseCyEndpoint(n)) {
+      n.removeClass('vibe-target');
+      return;
+    }
     const type = String(n.data('type') || 'Node');
     const sup = handleSupport(id, type);
     const ok = want === 'in' ? sup.inOk : sup.outOk;
@@ -535,9 +568,11 @@ function cancelEdgeMode(): void {
 }
 
 function startEdgeMode(kind: EdgeModeKind, anchorId: string): void {
+  if (props.readonly) return;
   if (!cy) return;
   const node = cy.getElementById(anchorId);
   if (!node || node.empty()) return;
+  if (!canUseCyEndpoint(node)) return;
   const type = String(node.data('type') || 'Node');
   const sup = handleSupport(anchorId, type);
   if (kind === 'from' && !sup.outOk) return;
@@ -564,9 +599,13 @@ function startEdgeMode(kind: EdgeModeKind, anchorId: string): void {
 }
 
 function completeEdge(candidateId: string): void {
+  if (props.readonly) return;
   if (!edgeModeActive.value) return;
   const anchor = edgeModeAnchorId.value;
   if (!anchor) return;
+  if (!cy) return;
+  const candidate = cy.getElementById(candidateId);
+  if (!candidate || candidate.empty() || !canUseCyEndpoint(candidate)) return;
   const from = edgeModeKind.value === 'from' ? anchor : candidateId;
   const to = edgeModeKind.value === 'from' ? candidateId : anchor;
   clearEdgeMode();
@@ -584,6 +623,7 @@ function renderedToModel(clientX: number, clientY: number): { x: number; y: numb
 }
 
 function onMouseMove(e: MouseEvent): void {
+  if (props.readonly) return;
   if (!edgeModeActive.value || !cy) return;
   lastGhostModelPos = renderedToModel(e.clientX, e.clientY);
   if (ghostRaf !== null) return;
@@ -837,26 +877,74 @@ function render(): void {
           }
         },
         {
+          selector: 'node[type="TerminateNode"]',
+          style: {
+            shape: 'ellipse',
+            'background-color': '#5a2f2f',
+            'border-color': '#a85757',
+            width: '78px',
+            height: '35px',
+            'font-size': 11,
+            padding: '5px'
+          }
+        },
+        {
+          selector: 'node[type="Agent"]',
+          style: {
+            'background-color': '#293a52',
+            'border-color': '#4c77a8'
+          }
+        },
+        {
+          selector: 'node[type="CustomNode"]',
+          style: {
+            'background-color': '#3f3a22',
+            'border-color': '#c4a43f'
+          }
+        },
+        {
+          selector: 'node[type="LogicSwitch"], node[type="AgentSwitch"]',
+          style: {
+            shape: 'diamond',
+            'background-color': '#473154',
+            'border-color': '#9464b5'
+          }
+        },
+        {
+          selector: 'node[type="Loop"]',
+          style: {
+            'background-color': 'rgba(26, 73, 69, 0.24)',
+            'border-color': '#3d9b8e'
+          }
+        },
+        {
+          selector: 'node[type="Graph"]',
+          style: {
+            'background-color': 'rgba(76, 76, 76, 0.24)',
+            'border-color': '#8a8a8a'
+          }
+        },
+        {
           selector: 'node.subgraph',
           style: {
             label: '',
             'background-color': 'rgba(50, 50, 50, 0.22)',
             'border-style': 'dashed',
-            'border-width': 2,
+            'border-width': '2px',
             'border-color': '#5a5a5a',
-            'min-width': 240,
-            'min-height': 180,
-            'padding-top': 14,
-            'padding-left': 14,
-            'padding-right': 14,
-            'padding-bottom': 14
+            'min-width': '240px',
+            'min-height': '180px',
+            'padding-top': '14px',
+            'padding-left': '14px',
+            'padding-right': '14px',
+            'padding-bottom': '14px'
           }
         },
         {
           selector: 'node.subgraph.drop-target',
           style: {
             'border-style': 'solid',
-            'border-width': 3,
+            'border-width': '3px',
             'border-color': '#f2cc60'
           }
         },
@@ -872,7 +960,6 @@ function render(): void {
             'font-size': 9,
             color: '#8fb9d1',
             'text-rotation': 'none',
-            'edge-text-rotation': 'none',
             'text-wrap': 'wrap',
             'text-max-width': '120px'
           }
@@ -934,10 +1021,25 @@ function render(): void {
           style: {
             'background-opacity': 1
           }
+        },
+        {
+          selector: 'node[derived="1"]',
+          style: {
+            'border-style': 'dashed',
+            opacity: 0.86
+          }
+        },
+        {
+          selector: 'node[external="1"]',
+          style: {
+            'border-style': 'dotted',
+            'border-color': '#4fc1ff'
+          }
         }
       ],
       layout: { name: 'preset' },
-      wheelSensitivity: 1.2
+      wheelSensitivity: 1.2,
+      autoungrabify: false
     });
 
     cy.on('tap', (evt) => {
@@ -957,6 +1059,15 @@ function render(): void {
       emit('selectNode', id);
     });
 
+    cy.on('dblclick', 'node', (evt) => {
+      closeContextMenu();
+      if (edgeModeActive.value) return;
+      const node = evt.target;
+      const id = node.id();
+      if (!id) return;
+      emit('nodeDoubleClick', id);
+    });
+
     cy.on('tap', 'edge', (evt) => {
       closeContextMenu();
       if (edgeModeActive.value) return;
@@ -971,15 +1082,17 @@ function render(): void {
     });
 
     cy.on('cxttap', (evt) => {
+      if (props.readonly) return;
       if (edgeModeActive.value) return;
       if (evt.target === cy) closeContextMenu();
     });
 
     cy.on('cxttap', 'node', (evt) => {
+      if (props.readonly) return;
       if (edgeModeActive.value) return;
       const node = evt.target;
       const id = node.id();
-      if (String(node.data('internal') || '') === '1') return;
+      if (!canUseCyEndpoint(node)) return;
       emit('selectNode', id);
       const oe = (evt as any).originalEvent as MouseEvent | undefined;
       if (oe) openContextMenu(id, oe);
@@ -989,8 +1102,9 @@ function render(): void {
       if (edgeModeActive.value) return;
       closeContextMenu();
       const node = evt.target;
-      if (String(node.data('internal') || '') === '1') return;
+      if (isInternalCyNode(node)) return;
       resetDragState();
+      if (isDerivedCyNode(node)) return;
       grabbedNodeId = node.id();
       grabbedStartPos = node.position();
       dragScopeBoxes = snapshotScopeBoxes(node.id());
@@ -1008,7 +1122,7 @@ function render(): void {
       const node = evt.target;
       const id = node.id();
       if (!grabbedNodeId || id !== grabbedNodeId) return;
-      if (String(node.data('internal') || '') === '1') return;
+      if (isInternalCyNode(node) || isDerivedCyNode(node)) return;
       if (compoundDrag && compoundDrag.parentId === id) {
         applyCompoundDrag(node);
       }
@@ -1019,7 +1133,7 @@ function render(): void {
       const node = evt.target;
       const id = node.id();
       if (edgeModeActive.value) return;
-      if (String(node.data('internal') || '') === '1') {
+      if (isInternalCyNode(node)) {
         const p = node.position();
         emit('nodePosition', id, { x: p.x, y: p.y });
         return;
@@ -1029,10 +1143,11 @@ function render(): void {
       const curParent = String(node.data('parent') || '');
       const normalizedCurrent = curParent ? curParent : undefined;
       const p0 = node.position();
-      const nextParent = isPrimary ? computeNextParent(id, { x: p0.x, y: p0.y }) : undefined;
+      const canChangeStructure = canChangeCyNodeStructure(node);
+      const nextParent = canChangeStructure && isPrimary ? computeNextParent(id, { x: p0.x, y: p0.y }) : undefined;
       const normalizedNext = nextParent ? nextParent : undefined;
 
-      const shouldRevert = isPrimary && !normalizedNext && !!normalizedCurrent && !!grabbedStartPos;
+      const shouldRevert = canChangeStructure && isPrimary && !normalizedNext && !!normalizedCurrent && !!grabbedStartPos;
       if (shouldRevert) {
         try {
           node.position({ x: grabbedStartPos!.x, y: grabbedStartPos!.y });
@@ -1041,9 +1156,11 @@ function render(): void {
         }
         if (compoundDrag && compoundDrag.parentId === id) {
           try {
-            cy.batch(() => {
+            const core = cy;
+            if (!core) return;
+            core.batch(() => {
               for (const [did, sp] of compoundDrag!.startPosById.entries()) {
-                const el = cy!.getElementById(did);
+                const el = core.getElementById(did);
                 if (!el || el.empty()) continue;
                 el.position({ x: sp.x, y: sp.y });
               }
@@ -1052,7 +1169,7 @@ function render(): void {
             // ignore
           }
         }
-      } else if (isPrimary && normalizedNext && normalizedNext !== normalizedCurrent) {
+      } else if (canChangeStructure && isPrimary && normalizedNext && normalizedNext !== normalizedCurrent) {
         emit('nodeParentChanged', { nodeId: id, parent: normalizedNext });
       }
 
@@ -1202,6 +1319,7 @@ function snapshotScopeBoxes(draggedId: string): Array<{ id: string; bb: { x1: nu
   cy.nodes('.subgraph').forEach((n) => {
     const id = n.id();
     if (id === draggedId) return;
+    if (isDerivedCyNode(n)) return;
     if (isDescendant(id, draggedId)) return;
     const bb = n.boundingBox();
     const area = (bb.x2 - bb.x1) * (bb.y2 - bb.y1);
@@ -1231,11 +1349,13 @@ function computeNextParent(nodeId: string, pos: { x: number; y: number }): strin
 }
 
 function onDragOver(e: DragEvent) {
+  if (props.readonly) return;
   e.preventDefault();
   closeContextMenu();
 }
 
 function onDrop(e: DragEvent) {
+  if (props.readonly) return;
   e.preventDefault();
   if (!cy || !containerRef.value) return;
   if (edgeModeActive.value) return;
@@ -1257,6 +1377,7 @@ function onDrop(e: DragEvent) {
   const parents = cy.nodes('.subgraph');
   let bestArea = Number.POSITIVE_INFINITY;
   parents.forEach((n) => {
+    if (isDerivedCyNode(n)) return;
     const bb = n.boundingBox();
     if (x < bb.x1 || x > bb.x2 || y < bb.y1 || y > bb.y2) return;
     const area = (bb.x2 - bb.x1) * (bb.y2 - bb.y1);
@@ -1294,6 +1415,7 @@ const contextMoveOut = computed(() => {
 });
 
 function ctxAddOutgoing() {
+  if (props.readonly) return;
   const id = contextMenu.value.nodeId;
   closeContextMenu();
   if (!id) return;
@@ -1301,6 +1423,7 @@ function ctxAddOutgoing() {
 }
 
 function ctxAddIncoming() {
+  if (props.readonly) return;
   const id = contextMenu.value.nodeId;
   closeContextMenu();
   if (!id) return;
@@ -1308,6 +1431,7 @@ function ctxAddIncoming() {
 }
 
 function ctxMoveOut() {
+  if (props.readonly) return;
   const id = contextMenu.value.nodeId;
   closeContextMenu();
   if (!id) return;
@@ -1395,6 +1519,21 @@ watch(
     render();
   },
   { deep: false }
+);
+
+watch(
+  () => props.readonly,
+  () => {
+    clearEdgeMode();
+    closeContextMenu();
+    resetDragState();
+    if (!cy) return;
+    try {
+      cy.autoungrabify(false);
+    } catch {
+      // ignore
+    }
+  }
 );
 
 onMounted(() => {

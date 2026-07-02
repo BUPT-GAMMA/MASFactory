@@ -21,26 +21,26 @@ function stripStringQuotes(raw: string): string {
 
 function normalizeScalar(node: TSNode, code: string): string {
     const raw = getNodeText(node, code).trim();
-    if (node.type === 'string') return stripStringQuotes(raw);
+    if (node.type === 'string') {return stripStringQuotes(raw);}
     return raw;
 }
 
 function parseIntLiteral(node: TSNode, code: string): number | null {
-    if (node.type !== 'integer') return null;
+    if (node.type !== 'integer') {return null;}
     const raw = getNodeText(node, code).trim().replace(/_/g, '');
     const n = Number.parseInt(raw, 10);
     return Number.isFinite(n) ? n : null;
 }
 
 function parseDictLiteral(node: TSNode, code: string): DictLiteral | null {
-    if (node.type !== 'dictionary') return null;
+    if (node.type !== 'dictionary') {return null;}
     const out: DictLiteral = {};
     for (const child of node.namedChildren) {
-        if (!child) continue;
-        if (child.type !== 'pair') continue;
+        if (!child) {continue;}
+        if (child.type !== 'pair') {continue;}
         const keyNode = child.childForFieldName('key');
         const valueNode = child.childForFieldName('value');
-        if (!keyNode || !valueNode) continue;
+        if (!keyNode || !valueNode) {continue;}
         const key = stripStringQuotes(getNodeText(keyNode, code).trim());
         out[key] = normalizeScalar(valueNode, code);
     }
@@ -49,34 +49,34 @@ function parseDictLiteral(node: TSNode, code: string): DictLiteral | null {
 
 function getDictValueNodes(node: TSNode, code: string): Map<string, TSNode> {
     const map = new Map<string, TSNode>();
-    if (node.type !== 'dictionary') return map;
+    if (node.type !== 'dictionary') {return map;}
 
     for (const child of node.namedChildren) {
-        if (!child) continue;
-        if (child.type !== 'pair') continue;
+        if (!child) {continue;}
+        if (child.type !== 'pair') {continue;}
         const keyNode = child.childForFieldName('key');
         const valueNode = child.childForFieldName('value');
-        if (!keyNode || !valueNode) continue;
+        if (!keyNode || !valueNode) {continue;}
         let keyText = getNodeText(keyNode, code).trim();
-        if (keyNode.type === 'string') keyText = stripStringQuotes(keyText);
+        if (keyNode.type === 'string') {keyText = stripStringQuotes(keyText);}
         map.set(keyText, valueNode);
     }
     return map;
 }
 
 function parseListElements(node: TSNode): TSNode[] | null {
-    if (node.type !== 'list') return null;
+    if (node.type !== 'list') {return null;}
     return node.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
 }
 
 function parseTupleElements(node: TSNode): TSNode[] | null {
-    if (node.type !== 'tuple') return null;
+    if (node.type !== 'tuple') {return null;}
     return node.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
 }
 
 function parseListOrTupleElements(node: TSNode): TSNode[] | null {
-    if (node.type === 'list') return parseListElements(node);
-    if (node.type === 'tuple') return parseTupleElements(node);
+    if (node.type === 'list') {return parseListElements(node);}
+    if (node.type === 'tuple') {return parseTupleElements(node);}
     return null;
 }
 
@@ -93,11 +93,11 @@ function sanitizeIdPart(value: string): string {
 function getKeywordArgs(argsNode: TSNode, code: string): Map<string, TSNode> {
     const map = new Map<string, TSNode>();
     for (const arg of argsNode.namedChildren) {
-        if (!arg) continue;
-        if (arg.type !== 'keyword_argument') continue;
+        if (!arg) {continue;}
+        if (arg.type !== 'keyword_argument') {continue;}
         const nameNode = arg.childForFieldName('name');
         const valueNode = arg.childForFieldName('value');
-        if (!nameNode || !valueNode) continue;
+        if (!nameNode || !valueNode) {continue;}
         const name = getNodeText(nameNode, code).trim();
         map.set(name, valueNode);
     }
@@ -110,8 +110,8 @@ function ensureSubgraphMembership(
     subgraphs: { [parent: string]: string[] },
     subgraphParents: { [child: string]: string }
 ): void {
-    if (!subgraphs[parent]) subgraphs[parent] = [];
-    if (!subgraphs[parent].includes(child)) subgraphs[parent].push(child);
+    if (!subgraphs[parent]) {subgraphs[parent] = [];}
+    if (!subgraphs[parent].includes(child)) {subgraphs[parent].push(child);}
     subgraphParents[child] = parent;
 }
 
@@ -129,9 +129,9 @@ function addNodeIfMissing(
         nodeCtx.nodeLineNumbers[nodeName] = lineNumber;
     }
     // Default metadata for expanded nodes
-    if (nodeCtx.nodePullKeys[nodeName] === undefined) nodeCtx.nodePullKeys[nodeName] = 'empty';
-    if (nodeCtx.nodePushKeys[nodeName] === undefined) nodeCtx.nodePushKeys[nodeName] = 'empty';
-    if (nodeCtx.nodeAttributes[nodeName] === undefined) nodeCtx.nodeAttributes[nodeName] = null;
+    if (nodeCtx.nodePullKeys[nodeName] === undefined) {nodeCtx.nodePullKeys[nodeName] = 'empty';}
+    if (nodeCtx.nodePushKeys[nodeName] === undefined) {nodeCtx.nodePushKeys[nodeName] = 'empty';}
+    if (nodeCtx.nodeAttributes[nodeName] === undefined) {nodeCtx.nodeAttributes[nodeName] = null;}
 }
 
 function addEdgeIfMissing(
@@ -142,7 +142,7 @@ function addEdgeIfMissing(
     edgeCtx: EdgeParseContext
 ): void {
     const exists = edgeCtx.edges.some(e => e.from === from && e.to === to);
-    if (exists) return;
+    if (exists) {return;}
     edgeCtx.edges.push({
         from,
         to,
@@ -167,7 +167,7 @@ export function expandComposedGraphInstances(
     const subgraphParents = nodeCtx.subgraphParents || {};
 
     const normalizeType = (t: string | undefined): string => {
-        if (!t) return '';
+        if (!t) {return '';}
         return t.includes('.') ? t.split('.').pop()! : t;
     };
 
@@ -179,10 +179,10 @@ export function expandComposedGraphInstances(
     for (const assign of assignments) {
         const leftSide = assign.childForFieldName('left');
         const rightSide = assign.childForFieldName('right');
-        if (!leftSide || !rightSide || rightSide.type !== 'call') continue;
+        if (!leftSide || !rightSide || rightSide.type !== 'call') {continue;}
 
         const funcNode = rightSide.childForFieldName('function');
-        if (!funcNode) continue;
+        if (!funcNode) {continue;}
         const funcText = getNodeText(funcNode, code).trim();
         if (!funcText.endsWith('.create_node') && funcText !== 'create_node' && funcText !== 'self.create_node') {
             continue;
@@ -191,13 +191,13 @@ export function expandComposedGraphInstances(
         const variableName = getNodeText(leftSide, code);
         const lineNumber = rightSide.startPosition.row + 1;
         const createdNodeName = nodeCtx.variableToNodeName[variableName];
-        if (!createdNodeName) continue;
+        if (!createdNodeName) {continue;}
 
         const createdNodeTypeRaw = nodeCtx.nodeTypes[createdNodeName];
         const createdNodeType = normalizeType(createdNodeTypeRaw);
 
         const argsNode = rightSide.childForFieldName('arguments');
-        if (!argsNode) continue;
+        if (!argsNode) {continue;}
         const kw = getKeywordArgs(argsNode, code);
 
         // Common internal entry/exit nodes for Graph-based composed graphs.
@@ -206,9 +206,9 @@ export function expandComposedGraphInstances(
 
         if (createdNodeType === 'VerticalGraph') {
             const nodeConfigsNode = kw.get('node_configs');
-            if (!nodeConfigsNode) continue;
+            if (!nodeConfigsNode) {continue;}
             const nodeConfigs = parseListElements(nodeConfigsNode);
-            if (!nodeConfigs) continue;
+            if (!nodeConfigs) {continue;}
 
             // Ensure internal entry/exit exist.
             addNodeIfMissing(entryId, 'entry', lineNumber, nodeCtx);
@@ -231,10 +231,10 @@ export function expandComposedGraphInstances(
 
             for (let i = 0; i < nodeConfigs.length; i++) {
                 const cfgNode = nodeConfigs[i];
-                if (cfgNode.type !== 'dictionary') continue;
+                if (cfgNode.type !== 'dictionary') {continue;}
                 const entries = getDictValueNodes(cfgNode, code);
                 const nodeArgsNode = entries.get('node');
-                if (!nodeArgsNode || nodeArgsNode.type !== 'dictionary') continue;
+                if (!nodeArgsNode || nodeArgsNode.type !== 'dictionary') {continue;}
 
                 const nodeArgs = parseDictLiteral(nodeArgsNode, code) || {};
                 const rawName = nodeArgs['name'] || nodeArgs['role_name'] || `node${i + 1}`;
@@ -266,9 +266,9 @@ export function expandComposedGraphInstances(
 
         if (createdNodeType === 'HorizontalGraph') {
             const nodeArgsListNode = kw.get('node_args_list');
-            if (!nodeArgsListNode) continue;
+            if (!nodeArgsListNode) {continue;}
             const nodeArgsList = parseListElements(nodeArgsListNode);
-            if (!nodeArgsList) continue;
+            if (!nodeArgsList) {continue;}
 
             // Ensure internal entry/exit exist.
             addNodeIfMissing(entryId, 'entry', lineNumber, nodeCtx);
@@ -314,15 +314,15 @@ export function expandComposedGraphInstances(
         }
 
         const nodeArgsListNode = kw.get('node_args_list');
-        if (!nodeArgsListNode) continue;
+        if (!nodeArgsListNode) {continue;}
 
         const nodeArgsList = parseListElements(nodeArgsListNode);
-        if (!nodeArgsList) continue;
+        if (!nodeArgsList) {continue;}
 
         // Build index -> internal nodeId mapping.
         const indexToNodeId = new Map<number, string>();
         const n = nodeArgsList.length;
-        if (n < 2) continue;
+        if (n < 2) {continue;}
 
         // Use existing internal entry/exit names if present, otherwise add them.
         addNodeIfMissing(entryId, 'entry', lineNumber, nodeCtx);
@@ -347,9 +347,9 @@ export function expandComposedGraphInstances(
 
         if (createdNodeType === 'AdjacencyListGraph') {
             const adjacencyListNode = kw.get('adjacency_list');
-            if (!adjacencyListNode) continue;
+            if (!adjacencyListNode) {continue;}
             const rows = parseListElements(adjacencyListNode);
-            if (!rows) continue;
+            if (!rows) {continue;}
 
             // Two formats supported:
             // 1) Preferred (matches composed_graph): adjacency_list is list[list[edgeSpec]]
@@ -358,9 +358,9 @@ export function expandComposedGraphInstances(
                 for (let fromIdx = 0; fromIdx < rows.length; fromIdx++) {
                     const row = rows[fromIdx];
                     const edgeSpecs = parseListOrTupleElements(row);
-                    if (!edgeSpecs) continue;
+                    if (!edgeSpecs) {continue;}
                     const fromId = indexToNodeId.get(fromIdx);
-                    if (!fromId) continue;
+                    if (!fromId) {continue;}
 
                     for (const edgeSpec of edgeSpecs) {
                         let toIdx: number | null = null;
@@ -370,7 +370,7 @@ export function expandComposedGraphInstances(
                             toIdx = parseIntLiteral(edgeSpec, code);
                         } else if (edgeSpec.type === 'tuple' || edgeSpec.type === 'list') {
                             const parts = parseListOrTupleElements(edgeSpec);
-                            if (!parts || parts.length === 0) continue;
+                            if (!parts || parts.length === 0) {continue;}
                             toIdx = parseIntLiteral(parts[0], code);
                             if (parts.length >= 2) {
                                 const keysNode = parts[1];
@@ -384,23 +384,23 @@ export function expandComposedGraphInstances(
                             continue;
                         }
 
-                        if (toIdx === null) continue;
+                        if (toIdx === null) {continue;}
                         const toId = indexToNodeId.get(toIdx);
-                        if (!toId) continue;
+                        if (!toId) {continue;}
                         addEdgeIfMissing(fromId, toId, keysDetails, lineNumber, edgeCtx);
                     }
                 }
             } else {
                 for (const tup of rows) {
                     const parts = parseListOrTupleElements(tup);
-                    if (!parts || parts.length < 2) continue;
+                    if (!parts || parts.length < 2) {continue;}
                     const fromIdx = parseIntLiteral(parts[0], code);
                     const toIdx = parseIntLiteral(parts[1], code);
-                    if (fromIdx === null || toIdx === null) continue;
+                    if (fromIdx === null || toIdx === null) {continue;}
 
                     const fromId = indexToNodeId.get(fromIdx);
                     const toId = indexToNodeId.get(toIdx);
-                    if (!fromId || !toId) continue;
+                    if (!fromId || !toId) {continue;}
 
                     let keysDetails: DictLiteral | undefined;
                     if (parts.length >= 3) {
@@ -417,7 +417,7 @@ export function expandComposedGraphInstances(
             }
         } else if (createdNodeType === 'AdjacencyMatrixGraph') {
             const adjacencyMatrixNode = kw.get('adjacency_matrix');
-            if (!adjacencyMatrixNode) continue;
+            if (!adjacencyMatrixNode) {continue;}
 
             // Support adjacency_matrix=[...] or adjacency_matrix=np.array([...])
             let matrixListNode: TSNode | null = null;
@@ -437,14 +437,14 @@ export function expandComposedGraphInstances(
                 }
             }
 
-            if (!matrixListNode) continue;
+            if (!matrixListNode) {continue;}
             const rows = parseListElements(matrixListNode);
-            if (!rows) continue;
+            if (!rows) {continue;}
 
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 const cells = parseListElements(row);
-                if (!cells) continue;
+                if (!cells) {continue;}
                 for (let j = 0; j < cells.length; j++) {
                     const cell = cells[j];
 
@@ -459,14 +459,14 @@ export function expandComposedGraphInstances(
                         hasEdge = true;
                     } else if (cell.type === 'integer') {
                         const v = parseIntLiteral(cell, code);
-                        if (v !== null && v !== 0) hasEdge = true;
+                        if (v !== null && v !== 0) {hasEdge = true;}
                     }
 
-                    if (!hasEdge) continue;
+                    if (!hasEdge) {continue;}
 
                     const fromId = indexToNodeId.get(i);
                     const toId = indexToNodeId.get(j);
-                    if (!fromId || !toId) continue;
+                    if (!fromId || !toId) {continue;}
                     addEdgeIfMissing(fromId, toId, keysDetails, lineNumber, edgeCtx);
                 }
             }

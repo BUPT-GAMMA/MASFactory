@@ -1,4 +1,5 @@
 from masfactory.compatibility.dify.api import (
+    dify_document_to_aml,
     dify_document_to_graph_design,
     load_graph_from_dify_dict,
     load_graph_from_dify_yaml,
@@ -13,6 +14,7 @@ __all__ = [
     "DifyCompileOptions",
     "DifyRootGraph",
     "blueprint_to_dify_graph",
+    "dify_document_to_aml",
     "dify_document_to_blueprint",
     "dify_document_to_graph_design",
     "is_dify_app_document",

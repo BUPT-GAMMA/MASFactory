@@ -44,14 +44,14 @@ PlannerDiagnoseLoop = NodeTemplate(
             "planner",
             "diagnose_node",
             {
-                "graph_design": "The generated graph design accroding to the user's demand and the roles.",
+                "aml": "The generated AML workflow topology according to the user's demand and the roles.",
             },
         ),
         (
             "planner",
             "CONTROLLER",
             {
-                "graph_design": "The generated graph design accroding to the user's demand and the roles.",
+                "aml": "The generated AML workflow topology according to the user's demand and the roles.",
             },
         ),
         (

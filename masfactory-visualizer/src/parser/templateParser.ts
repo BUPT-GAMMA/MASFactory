@@ -39,7 +39,7 @@ export interface ParsedNodeTemplate {
 
 function getCallArgs(callNode: TSNode): TSNode[] {
     const argsNode = callNode.childForFieldName('arguments');
-    if (!argsNode) return [];
+    if (!argsNode) {return [];}
     return argsNode.namedChildren.filter(isNonNullNode).filter(n => n.type !== 'comment');
 }
 
@@ -50,10 +50,10 @@ function getPositionalArgs(args: TSNode[]): TSNode[] {
 function getKeywordArgMap(args: TSNode[], code: string): Map<string, TSNode> {
     const map = new Map<string, TSNode>();
     for (const arg of args) {
-        if (arg.type !== 'keyword_argument') continue;
+        if (arg.type !== 'keyword_argument') {continue;}
         const nameNode = arg.childForFieldName('name');
         const valueNode = arg.childForFieldName('value');
-        if (!nameNode || !valueNode) continue;
+        if (!nameNode || !valueNode) {continue;}
         const key = getNodeText(nameNode, code).trim();
         map.set(key, valueNode);
     }
@@ -66,7 +66,7 @@ function stripStringQuotes(raw: string): string {
 
 function inferBaseKindFromNodeClass(nodeClassText: string): TemplateBaseKind {
     const normalized = nodeClassText.includes('.') ? nodeClassText.split('.').pop()! : nodeClassText;
-    if (normalized.includes('Loop') || normalized.endsWith('Loop')) return 'Loop';
+    if (normalized.includes('Loop') || normalized.endsWith('Loop')) {return 'Loop';}
     if (normalized.includes('Graph') || normalized.endsWith('Graph') || normalized.endsWith('Workflow') || normalized === 'RootGraph') {
         return 'Graph';
     }
@@ -119,16 +119,16 @@ export function tryParseNodeTemplateAssignment(
     callNode: TSNode,
     code: string
 ): ParsedNodeTemplate | null {
-    if (!leftVarText) return null;
-    if (callNode.type !== 'call') return null;
+    if (!leftVarText) {return null;}
+    if (callNode.type !== 'call') {return null;}
     const funcNode = callNode.childForFieldName('function');
-    if (!funcNode) return null;
+    if (!funcNode) {return null;}
     const funcText = getNodeText(funcNode, code).trim();
-    if (!isNodeTemplateCallee(funcText)) return null;
+    if (!isNodeTemplateCallee(funcText)) {return null;}
 
     const args = getCallArgs(callNode);
     const positional = getPositionalArgs(args);
-    if (positional.length === 0) return null;
+    if (positional.length === 0) {return null;}
 
     const nodeClass = getNodeText(positional[0], code).trim();
     const baseKind = inferBaseKindFromNodeClass(nodeClass);
@@ -148,12 +148,12 @@ export function tryParseNodeTemplateAssignment(
         lineNumber: callNode.startPosition.row + 1
     };
 
-    if (nodesArg) out.nodesArg = nodesArg;
-    if (edgesArg) out.edgesArg = edgesArg;
-    if (pullKeysNode) out.pullKeys = parseKeysArgument(pullKeysNode, code);
-    if (pushKeysNode) out.pushKeys = parseKeysArgument(pushKeysNode, code);
-    if (attributesNode) out.attributes = parseDictArgument(attributesNode, code);
-    if (buildFuncNode) out.buildFunc = parseBuildFuncArgument(buildFuncNode, code);
+    if (nodesArg) {out.nodesArg = nodesArg;}
+    if (edgesArg) {out.edgesArg = edgesArg;}
+    if (pullKeysNode) {out.pullKeys = parseKeysArgument(pullKeysNode, code);}
+    if (pushKeysNode) {out.pushKeys = parseKeysArgument(pushKeysNode, code);}
+    if (attributesNode) {out.attributes = parseDictArgument(attributesNode, code);}
+    if (buildFuncNode) {out.buildFunc = parseBuildFuncArgument(buildFuncNode, code);}
 
     // Normalize leftVarText: for assignments like "self.foo = NodeTemplate(...)" keep raw key as-is,
     // but also support deref by the final segment in lookups elsewhere.

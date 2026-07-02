@@ -14,11 +14,12 @@ export type ComponentLikeStructure = {
   subgraphs?: Record<string, string[]>;
   subgraphParents?: Record<string, string>;
   sourceFilePath?: string;
+  hasComplexStructure?: boolean;
 };
 
 function pushUnique(list: string[], value: string): void {
-  if (!value) return;
-  if (list.includes(value)) return;
+  if (!value) {return;}
+  if (list.includes(value)) {return;}
   list.push(value);
 }
 
@@ -33,7 +34,7 @@ function inferInternalBoundaryNodes(graphData: GraphData, parentNode: string): s
   for (const id of candidates) {
     const t = graphData.nodeTypes?.[id];
     const exists = graphData.nodes.includes(id);
-    if (!exists && !t) continue;
+    if (!exists && !t) {continue;}
     pushUnique(out, id);
   }
   return out;
@@ -44,10 +45,10 @@ function inferStructureBoundaries(parentNode: string, structure: ComponentLikeSt
   const has = (name: string): boolean => rawNodes.includes(name);
 
   const out: string[] = [];
-  if (has('controller')) pushUnique(out, `${parentNode}_controller`);
-  if (has('terminate')) pushUnique(out, `${parentNode}_terminate`);
-  if (has('entry')) pushUnique(out, `${parentNode}_entry`);
-  if (has('exit')) pushUnique(out, `${parentNode}_exit`);
+  if (has('controller')) {pushUnique(out, `${parentNode}_controller`);}
+  if (has('terminate')) {pushUnique(out, `${parentNode}_terminate`);}
+  if (has('entry')) {pushUnique(out, `${parentNode}_entry`);}
+  if (has('exit')) {pushUnique(out, `${parentNode}_exit`);}
   return out;
 }
 
@@ -58,13 +59,13 @@ function removeNodeFromGraphData(graphData: GraphData, nodeId: string): void {
   delete graphData.nodePullKeys[nodeId];
   delete graphData.nodePushKeys[nodeId];
   delete graphData.nodeAttributes[nodeId];
-  if (graphData.nodeAliases) delete graphData.nodeAliases[nodeId];
-  if (graphData.nodeFilePaths) delete graphData.nodeFilePaths[nodeId];
+  if (graphData.nodeAliases) {delete graphData.nodeAliases[nodeId];}
+  if (graphData.nodeFilePaths) {delete graphData.nodeFilePaths[nodeId];}
 
-  if (graphData.subgraphParents) delete graphData.subgraphParents[nodeId];
+  if (graphData.subgraphParents) {delete graphData.subgraphParents[nodeId];}
 
   for (const [parent, children] of Object.entries(graphData.subgraphs || {})) {
-    if (!Array.isArray(children) || children.length === 0) continue;
+    if (!Array.isArray(children) || children.length === 0) {continue;}
     graphData.subgraphs[parent] = children.filter((c) => c !== nodeId);
   }
 
@@ -77,7 +78,7 @@ export function mergePrefixedStructure(
   structure: ComponentLikeStructure | null | undefined,
   opts: { mode: MergePrefixedStructureMode }
 ): void {
-  if (!structure || !Array.isArray(structure.nodes)) return;
+  if (!structure || !Array.isArray(structure.nodes)) {return;}
 
   const prefix = `${parentNode}_`;
   const prefixed = (name: string) => `${prefix}${name}`;
@@ -89,7 +90,7 @@ export function mergePrefixedStructure(
   const addedNodeNames: string[] = [];
 
   for (const node of structure.nodes) {
-    if (typeof node !== 'string') continue;
+    if (typeof node !== 'string') {continue;}
     const newName = prefixed(node);
     if (!graphData.nodes.includes(newName)) {
       graphData.nodes.push(newName);
@@ -99,7 +100,7 @@ export function mergePrefixedStructure(
     graphData.nodeLineNumbers[newName] = structure.nodeLineNumbers?.[node] || 0;
 
     if (structure.nodeFilePaths?.[node]) {
-      if (!graphData.nodeFilePaths) graphData.nodeFilePaths = {};
+      if (!graphData.nodeFilePaths) {graphData.nodeFilePaths = {};}
       graphData.nodeFilePaths[newName] = structure.nodeFilePaths[node];
     }
 
@@ -129,16 +130,16 @@ export function mergePrefixedStructure(
   const boundaryFromStructure = inferStructureBoundaries(parentNode, structure);
 
   const defaultInternal: string[] = [];
-  if (controllerName) pushUnique(defaultInternal, prefixed(controllerName));
-  if (terminateName) pushUnique(defaultInternal, prefixed(terminateName));
-  if (entryName) pushUnique(defaultInternal, prefixed(entryName));
-  if (exitName) pushUnique(defaultInternal, prefixed(exitName));
-  for (const id of boundaryFromStructure) pushUnique(defaultInternal, id);
+  if (controllerName) {pushUnique(defaultInternal, prefixed(controllerName));}
+  if (terminateName) {pushUnique(defaultInternal, prefixed(terminateName));}
+  if (entryName) {pushUnique(defaultInternal, prefixed(entryName));}
+  if (exitName) {pushUnique(defaultInternal, prefixed(exitName));}
+  for (const id of boundaryFromStructure) {pushUnique(defaultInternal, id);}
 
   // Some component structures omit a synthetic root container subgraph (common in build() parsing).
   // Preserve previously-created boundary nodes only when we can't infer boundaries from the structure.
   if (defaultInternal.length === 0) {
-    for (const id of inferInternalBoundaryNodes(graphData, parentNode)) pushUnique(defaultInternal, id);
+    for (const id of inferInternalBoundaryNodes(graphData, parentNode)) {pushUnique(defaultInternal, id);}
   } else if (boundaryFromStructure.length > 0) {
     // If the parser previously guessed the wrong container kind (e.g., a Loop named "*Graph"),
     // it may have created mismatched boundary nodes. Prune those to avoid showing both sets.
@@ -150,8 +151,8 @@ export function mergePrefixedStructure(
       `${parentNode}_exit`
     ];
     for (const id of candidates) {
-      if (keep.has(id)) continue;
-      if (!graphData.nodes.includes(id) && !graphData.nodeTypes?.[id]) continue;
+      if (keep.has(id)) {continue;}
+      if (!graphData.nodes.includes(id) && !graphData.nodeTypes?.[id]) {continue;}
       removeNodeFromGraphData(graphData, id);
     }
   }
@@ -170,7 +171,7 @@ export function mergePrefixedStructure(
     }
 
     for (const node of structure.nodes) {
-      if (typeof node !== 'string') continue;
+      if (typeof node !== 'string') {continue;}
       const id = prefixed(node);
       if (!defaultInternal.includes(id)) {
         pushUnique(graphData.subgraphs[parentNode], id);
@@ -191,7 +192,7 @@ export function mergePrefixedStructure(
   }
 
   for (const [sg, children] of Object.entries(localSubgraphs)) {
-    if (!Array.isArray(children)) continue;
+    if (!Array.isArray(children)) {continue;}
     const sgPrefixed = prefixed(sg);
     const childrenPrefixed = children.filter((c: any) => typeof c === 'string').map(prefixed);
     graphData.subgraphs[sgPrefixed] = childrenPrefixed;
@@ -206,7 +207,7 @@ export function mergePrefixedStructure(
 
   if (Array.isArray(structure.edges)) {
     for (const edge of structure.edges) {
-      if (!edge || typeof edge.from !== 'string' || typeof edge.to !== 'string') continue;
+      if (!edge || typeof edge.from !== 'string' || typeof edge.to !== 'string') {continue;}
       const prefixedEdge: GraphEdge = {
         ...edge,
         from: prefixed(edge.from),

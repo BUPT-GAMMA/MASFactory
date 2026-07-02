@@ -24,7 +24,7 @@ export class RuntimeSessionPanelManager {
   ) {}
 
   forEachSessionPanel(cb: (panel: vscode.WebviewPanel) => void): void {
-    for (const panel of this.runtimeSessionPanels.values()) cb(panel);
+    for (const panel of this.runtimeSessionPanels.values()) {cb(panel);}
   }
 
   handleRuntimeUiMessage(message: RuntimeUiMessage): void {
@@ -54,7 +54,7 @@ export class RuntimeSessionPanelManager {
     } else {
       // Main UI: replay history for debug sessions and active subscribed sessions.
       for (const s of snapshot.sessions) {
-        if (s.mode === 'debug' || s.subscribed) replayTargets.push(s.id);
+        if (s.mode === 'debug' || s.subscribed) {replayTargets.push(s.id);}
       }
     }
 
@@ -147,8 +147,8 @@ export class RuntimeSessionPanelManager {
     const snapshot = this.runtimeHub.getSessionsSnapshot();
     const session = snapshot.find((s) => s.id === sessionId);
     const titleParts: string[] = [];
-    if (session?.graphName) titleParts.push(session.graphName);
-    if (session?.pid) titleParts.push(`pid:${session.pid}`);
+    if (session?.graphName) {titleParts.push(session.graphName);}
+    if (session?.pid) {titleParts.push(`pid:${session.pid}`);}
     const title = titleParts.length > 0 ? `MASFactory Visualizer: ${titleParts.join(' ')}` : `MASFactory Visualizer: ${sessionId}`;
 
     const panel = vscode.window.createWebviewPanel('masfactoryVisualizerRuntimeSession', title, vscode.ViewColumn.Beside, {

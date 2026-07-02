@@ -9,6 +9,7 @@ const props = defineProps<{
   valueLabel?: string;
   emptyHint?: string;
   defaultHint?: string;
+  readonly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -78,6 +79,7 @@ watch(
 );
 
 function addRow() {
+  if (props.readonly) return;
   if (draftIsDefault.value) draftIsDefault.value = false;
   draftRows.value = [
     ...draftRows.value,
@@ -86,6 +88,7 @@ function addRow() {
 }
 
 function deleteRow(i: number) {
+  if (props.readonly) return;
   if (draftIsDefault.value) return;
   const next = draftRows.value.slice();
   next.splice(i, 1);
@@ -93,16 +96,19 @@ function deleteRow(i: number) {
 }
 
 function updateRow(i: number, patch: Partial<Pick<Row, 'k' | 'v'>>) {
+  if (props.readonly) return;
   if (draftIsDefault.value) draftIsDefault.value = false;
   draftRows.value = draftRows.value.map((r, idx) => (idx === i ? { ...r, ...patch } : r));
 }
 
 function setDefaultMode() {
+  if (props.readonly) return;
   draftIsDefault.value = true;
   draftRows.value = [];
 }
 
 function commitDraft() {
+  if (props.readonly) return;
   if (!isDirty.value) return;
   if (draftIsDefault.value) {
     emit('update:value', undefined);
@@ -127,6 +133,7 @@ const valueLabel = computed(() => props.valueLabel || 'Value');
             v-if="!draftIsDefault"
             class="link mono"
             type="button"
+            :disabled="props.readonly"
             title="Switch back to default (unset this field)"
             @click.prevent.stop="setDefaultMode"
           >
@@ -137,7 +144,7 @@ const valueLabel = computed(() => props.valueLabel || 'Value');
           <button
             class="icon-btn"
             type="button"
-            :disabled="!isDirty"
+            :disabled="props.readonly || !isDirty"
             title="Apply edits (commit to in-memory state)"
             @click.prevent.stop="commitDraft"
           >
@@ -160,6 +167,7 @@ const valueLabel = computed(() => props.valueLabel || 'Value');
         <div v-for="(r, i) in draftRows" :key="r.id" class="row">
           <input
             class="cell input mono"
+            :readonly="props.readonly"
             :value="r.k"
             @input="(e:any)=>updateRow(i,{k:e.target.value})"
             @keydown.enter.prevent.stop="commitDraft"
@@ -167,16 +175,17 @@ const valueLabel = computed(() => props.valueLabel || 'Value');
           />
           <input
             class="cell input mono"
+            :readonly="props.readonly"
             :value="r.v"
             @input="(e:any)=>updateRow(i,{v:e.target.value})"
             @keydown.enter.prevent.stop="commitDraft"
             placeholder="description/value"
           />
-          <button class="cell btn secondary" type="button" title="Remove" @click.prevent.stop="deleteRow(i)">×</button>
+          <button class="cell btn secondary" type="button" :disabled="props.readonly" title="Remove" @click.prevent.stop="deleteRow(i)">×</button>
         </div>
       </div>
 
-      <button class="add-row" type="button" @click.prevent.stop="addRow">
+      <button class="add-row" type="button" :disabled="props.readonly" @click.prevent.stop="addRow">
         <span class="cell add-cell">
           <span class="plus">+</span>
           <span class="label mono">Add</span>

@@ -32,25 +32,25 @@ function createSyntheticListNode(items: TSNode[], fallback?: TSNode | null): TSN
 
 function storeLiteralBinding(literalValues: { [name: string]: TSNode }, rawKey: string, value: TSNode): void {
     const store = (key: string) => {
-        if (!key) return;
+        if (!key) {return;}
         literalValues[key] = value;
     };
 
     const key = rawKey.trim();
-    if (!key) return;
+    if (!key) {return;}
 
     store(key);
-    if (key.startsWith('self._')) store(key.replace('self._', ''));
-    if (key.startsWith('self.')) store(key.replace('self.', ''));
+    if (key.startsWith('self._')) {store(key.replace('self._', ''));}
+    if (key.startsWith('self.')) {store(key.replace('self.', ''));}
 
     const last = key.split('.').pop();
-    if (last) store(last);
-    if (last?.startsWith('_')) store(last.slice(1));
+    if (last) {store(last);}
+    if (last?.startsWith('_')) {store(last.slice(1));}
 }
 
 function resolveLiteralBinding(literalValues: { [name: string]: TSNode }, rawKey: string): TSNode | null {
     const key = rawKey.trim();
-    if (!key) return null;
+    if (!key) {return null;}
 
     return (
         literalValues[key] ||
@@ -62,8 +62,8 @@ function resolveLiteralBinding(literalValues: { [name: string]: TSNode }, rawKey
 }
 
 function extractListItemsFromLiteral(node: TSNode | null | undefined): TSNode[] {
-    if (!node) return [];
-    if (node.type !== 'list') return [];
+    if (!node) {return [];}
+    if (node.type !== 'list') {return [];}
     return node.namedChildren.filter((child): child is TSNode => !!child && child.type !== 'comment');
 }
 
@@ -73,10 +73,10 @@ function shouldParseEdgeForRootGraph(
     rootGraphVariable: string
 ): boolean {
     const methodCall = extractMethodCall(functionText);
-    if (!methodCall) return false;
+    if (!methodCall) {return false;}
     const caller = String(methodCall.caller || '').trim();
-    if (!caller) return false;
-    if (caller === rootGraphVariable) return true;
+    if (!caller) {return false;}
+    if (caller === rootGraphVariable) {return true;}
     return !!nodeCtx.variableToNodeName[caller];
 }
 
@@ -85,10 +85,10 @@ function extendLiteralList(
     targetKey: string,
     items: TSNode[]
 ): boolean {
-    if (items.length === 0) return false;
+    if (items.length === 0) {return false;}
 
     const existing = resolveLiteralBinding(literalValues, targetKey);
-    if (!existing || existing.type !== 'list') return false;
+    if (!existing || existing.type !== 'list') {return false;}
 
     const merged = [...extractListItemsFromLiteral(existing), ...items];
     storeLiteralBinding(literalValues, targetKey, createSyntheticListNode(merged, existing));
@@ -137,11 +137,11 @@ function parseStatementsWithRootGraph(
     depth: number = 0,
     loopIteration?: number
 ): void {
-    if (!nodeCtx.templates) nodeCtx.templates = {};
-    if (!nodeCtx.literalValues) nodeCtx.literalValues = {};
+    if (!nodeCtx.templates) {nodeCtx.templates = {};}
+    if (!nodeCtx.literalValues) {nodeCtx.literalValues = {};}
 
     for (const child of blockNode.children) {
-        if (!child) continue;
+        if (!child) {continue;}
         // Skip nested function definitions
         if (child.type === 'function_definition' && depth > 0) {
             continue;
@@ -198,7 +198,7 @@ function parseForStatementWithRootGraph(
     depth: number
 ): void {
     const bodyNode = forNode.childForFieldName('body');
-    if (!bodyNode) return;
+    if (!bodyNode) {return;}
 
     const lineNumber = forNode.startPosition.row + 1;
 
@@ -294,7 +294,7 @@ function parseWithStatementWithRootGraph(
     loopIteration?: number
 ): void {
     const bodyNode = withNode.childForFieldName('body');
-    if (!bodyNode) return;
+    if (!bodyNode) {return;}
     parseStatementsWithRootGraph(bodyNode, code, nodeCtx, edgeCtx, subgraphs, rootGraphVariable, controlFlowCtx, depth + 1, loopIteration);
 }
 
@@ -315,7 +315,7 @@ function parseTryStatementWithRootGraph(
     }
 
     for (const clause of tryNode.namedChildren) {
-        if (!clause) continue;
+        if (!clause) {continue;}
         if (clause.type !== 'except_clause' && clause.type !== 'else_clause' && clause.type !== 'finally_clause') {
             continue;
         }
@@ -343,7 +343,7 @@ function parseAssignmentWithRootGraph(
     const leftSide = node.childForFieldName('left');
     const rightSide = node.childForFieldName('right');
     
-    if (!leftSide || !rightSide) return;
+    if (!leftSide || !rightSide) {return;}
 
     // Record best-effort literal bindings (used by declarative parser to resolve identifier->list/dict).
     if (rightSide.type !== 'call') {
@@ -379,7 +379,7 @@ function parseAssignmentWithRootGraph(
 
     if (rightSide.type === 'call') {
         const functionNode = rightSide.childForFieldName('function');
-        if (!functionNode) return;
+        if (!functionNode) {return;}
 
         const functionText = getNodeText(functionNode, code);
         const leftText = getNodeText(leftSide, code).trim();
@@ -388,7 +388,7 @@ function parseAssignmentWithRootGraph(
         if (functionText === 'NodeTemplate' || functionText.endsWith('.NodeTemplate')) {
             const parsed = tryParseNodeTemplateAssignment(leftText, rightSide, code);
             if (parsed) {
-                if (!nodeCtx.templates) nodeCtx.templates = {};
+                if (!nodeCtx.templates) {nodeCtx.templates = {};}
                 nodeCtx.templates[parsed.templateName] = parsed;
             }
         } else if (nodeCtx.resolveTemplateAssignment) {
@@ -400,7 +400,7 @@ function parseAssignmentWithRootGraph(
                 nodeCtx.literalValues
             );
             if (resolved) {
-                if (!nodeCtx.templates) nodeCtx.templates = {};
+                if (!nodeCtx.templates) {nodeCtx.templates = {};}
                 nodeCtx.templates[resolved.templateName] = resolved;
             }
         }
@@ -458,7 +458,7 @@ function parseExpressionStatementWithRootGraph(
     loopIteration?: number
 ): void {
     const callNode = node.namedChildren[0];
-    if (!callNode || callNode.type !== 'call') return;
+    if (!callNode || callNode.type !== 'call') {return;}
 
     // Handle direct create_node() call without assignment (best-effort)
     const functionNode = callNode.childForFieldName('function');
@@ -479,9 +479,9 @@ function parseExpressionStatementWithRootGraph(
                         appendedNode = resolveLiteralBinding(nodeCtx.literalValues || {}, getNodeText(firstArg, code).trim()) || firstArg;
                     }
                     if (appendedNode.type === 'tuple') {
-                        if (extendLiteralList(nodeCtx.literalValues || {}, targetKey, [appendedNode])) return;
+                        if (extendLiteralList(nodeCtx.literalValues || {}, targetKey, [appendedNode])) {return;}
                     } else if (appendedNode.type === 'list') {
-                        if (extendLiteralList(nodeCtx.literalValues || {}, targetKey, extractListItemsFromLiteral(appendedNode))) return;
+                        if (extendLiteralList(nodeCtx.literalValues || {}, targetKey, extractListItemsFromLiteral(appendedNode))) {return;}
                     }
                 }
 
@@ -491,7 +491,7 @@ function parseExpressionStatementWithRootGraph(
                         sourceNode = resolveLiteralBinding(nodeCtx.literalValues || {}, getNodeText(firstArg, code).trim()) || firstArg;
                     }
                     if (sourceNode.type === 'list') {
-                        if (extendLiteralList(nodeCtx.literalValues || {}, targetKey, extractListItemsFromLiteral(sourceNode))) return;
+                        if (extendLiteralList(nodeCtx.literalValues || {}, targetKey, extractListItemsFromLiteral(sourceNode))) {return;}
                     }
                 }
             }
@@ -522,10 +522,10 @@ function parseExpressionStatementWithRootGraph(
                         }
                     }
                     for (const arg of args) {
-                        if (arg.type !== 'keyword_argument') continue;
+                        if (arg.type !== 'keyword_argument') {continue;}
                         const nameNode = arg.childForFieldName('name');
                         const valueNode = arg.childForFieldName('value');
-                        if (!nameNode || !valueNode) continue;
+                        if (!nameNode || !valueNode) {continue;}
                         const k = getNodeText(nameNode, code);
                         if ((k === 'cls' || k === 'node_type') && nodeType === 'Node') {
                             nodeType = getNodeText(valueNode, code).trim();
@@ -535,10 +535,10 @@ function parseExpressionStatementWithRootGraph(
                     // Extract name from name= or second positional
                     let nodeName = '';
                     for (const arg of args) {
-                        if (arg.type !== 'keyword_argument') continue;
+                        if (arg.type !== 'keyword_argument') {continue;}
                         const nameNode = arg.childForFieldName('name');
                         const valueNode = arg.childForFieldName('value');
-                        if (!nameNode || !valueNode) continue;
+                        if (!nameNode || !valueNode) {continue;}
                         const k = getNodeText(nameNode, code);
                         if (k === 'name') {
                             nodeName = getNodeText(valueNode, code).trim().replace(/^f?["']|["']$/g, '');
@@ -569,7 +569,7 @@ function parseExpressionStatementWithRootGraph(
     const edgeCall = findEdgeCreationCall(callNode);
     if (edgeCall) {
         const edgeFunctionNode = edgeCall.childForFieldName('function');
-        if (!edgeFunctionNode) return;
+        if (!edgeFunctionNode) {return;}
         const edgeFunctionText = getNodeText(edgeFunctionNode, code);
         if (shouldParseEdgeForRootGraph(edgeFunctionText, nodeCtx, rootGraphVariable)) {
             parseEdgeCreation(edgeCall, code, edgeCtx, edgeFunctionText);

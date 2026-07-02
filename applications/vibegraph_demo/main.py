@@ -23,7 +23,7 @@ DEFAULT_TASK = (
 )
 APP_DIR = Path(__file__).resolve().parent
 ASSETS_DIR = APP_DIR / "assets"
-CACHE_PATH = ASSETS_DIR / "cache" / "graph_design.json"
+CACHE_PATH = ASSETS_DIR / "cache" / "workflow.aml"
 BUILD_PATH = ASSETS_DIR / "build.txt"
 
 

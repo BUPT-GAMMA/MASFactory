@@ -21,7 +21,7 @@ export type VisualizerUiCommand =
     };
 
 function asNumber(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'number' && Number.isFinite(value)) {return value;}
   if (typeof value === 'string' && value.trim() !== '') {
     const n = Number(value);
     return Number.isFinite(n) ? n : null;
@@ -30,21 +30,21 @@ function asNumber(value: unknown): number | null {
 }
 
 function asString(value: unknown): string | null {
-  if (typeof value === 'string' && value.trim() !== '') return value;
+  if (typeof value === 'string' && value.trim() !== '') {return value;}
   return null;
 }
 
 function asMode(value: unknown): VisualizerMode {
   const s = typeof value === 'string' ? value.toLowerCase() : '';
-  if (s === 'debug') return 'debug';
-  if (s === 'run') return 'run';
+  if (s === 'debug') {return 'debug';}
+  if (s === 'run') {return 'run';}
   return 'unknown';
 }
 
 function asView(value: unknown): 'auto' | 'preview' | 'vibe' {
   const s = typeof value === 'string' ? value.toLowerCase() : '';
-  if (s === 'preview') return 'preview';
-  if (s === 'vibe') return 'vibe';
+  if (s === 'preview') {return 'preview';}
+  if (s === 'vibe') {return 'vibe';}
   return 'auto';
 }
 
@@ -85,7 +85,7 @@ export class RuntimeHub extends EventEmitter {
   }
 
   public async start(): Promise<void> {
-    if (this.port !== null) return;
+    if (this.port !== null) {return;}
     try {
       this.port = await this.server.listen();
       this.emitState();
@@ -120,23 +120,23 @@ export class RuntimeHub extends EventEmitter {
   }
 
   public markDebugPid(pid: number): void {
-    if (!Number.isFinite(pid)) return;
+    if (!Number.isFinite(pid)) {return;}
     this.debugPids.add(pid);
     let changed = false;
     for (const s of this.sessions.values()) {
-      if (s.pid !== pid) continue;
+      if (s.pid !== pid) {continue;}
       if (s.mode !== 'debug') {
         s.mode = 'debug';
         changed = true;
         this.emitUi({ type: 'runtimeAutoTab', tab: 'debug', sessionId: s.id });
       }
     }
-    if (changed) this.emitState();
+    if (changed) {this.emitState();}
   }
 
   public getNodeEventHistory(sessionId: string): { events: Array<Extract<RuntimeUiMessage, { type: 'runtimeNodeEvent' }>>; dropped: number } | null {
     const h = this.nodeEventHistory.get(sessionId);
-    if (!h) return null;
+    if (!h) {return null;}
     return { events: h.events.slice(), dropped: h.dropped };
   }
 
@@ -144,7 +144,7 @@ export class RuntimeHub extends EventEmitter {
     sessionId: string
   ): { flows: Array<Extract<RuntimeUiMessage, { type: 'runtimeFlow' }>>; dropped: number } | null {
     const h = this.flowHistory.get(sessionId);
-    if (!h) return null;
+    if (!h) {return null;}
     return { flows: h.flows.slice(), dropped: h.dropped };
   }
 
@@ -152,15 +152,15 @@ export class RuntimeHub extends EventEmitter {
     sessionId: string
   ): { logs: Array<Extract<RuntimeUiMessage, { type: 'runtimeLog' }>>; dropped: number } | null {
     const h = this.programLogHistory.get(sessionId);
-    if (!h) return null;
+    if (!h) {return null;}
     return { logs: h.logs.slice(), dropped: h.dropped };
   }
 
   public subscribe(sessionId: string, subscriberId: string): void {
     const s = this.sessions.get(sessionId);
-    if (!s) return;
-    if (!subscriberId) return;
-    if (s.subscribers.has(subscriberId)) return;
+    if (!s) {return;}
+    if (!subscriberId) {return;}
+    if (s.subscribers.has(subscriberId)) {return;}
     const wasEmpty = s.subscribers.size === 0;
     s.subscribers.add(subscriberId);
     if (wasEmpty) {
@@ -182,8 +182,8 @@ export class RuntimeHub extends EventEmitter {
 
   public sendHumanResponse(sessionId: string, requestId: string, content: unknown): void {
     const s = this.sessions.get(sessionId);
-    if (!s) return;
-    if (!requestId) return;
+    if (!s) {return;}
+    if (!requestId) {return;}
     try {
       s.conn.sendJson({ type: 'INTERACT_RESPONSE', requestId, content });
       this.emitUi({
@@ -208,9 +208,9 @@ export class RuntimeHub extends EventEmitter {
 
   public unsubscribe(sessionId: string, subscriberId: string): void {
     const s = this.sessions.get(sessionId);
-    if (!s) return;
-    if (!subscriberId) return;
-    if (!s.subscribers.has(subscriberId)) return;
+    if (!s) {return;}
+    if (!subscriberId) {return;}
+    if (!s.subscribers.has(subscriberId)) {return;}
     s.subscribers.delete(subscriberId);
     if (s.subscribers.size === 0 && s.subscribed) {
       s.subscribed = false;
@@ -229,10 +229,10 @@ export class RuntimeHub extends EventEmitter {
   }
 
   public releaseSubscriber(subscriberId: string): void {
-    if (!subscriberId) return;
+    if (!subscriberId) {return;}
     let changed = false;
     for (const s of this.sessions.values()) {
-      if (!s.subscribers.has(subscriberId)) continue;
+      if (!s.subscribers.has(subscriberId)) {continue;}
       s.subscribers.delete(subscriberId);
       changed = true;
       if (s.subscribers.size === 0 && s.subscribed) {
@@ -251,7 +251,7 @@ export class RuntimeHub extends EventEmitter {
         });
       }
     }
-    if (changed) this.emitState();
+    if (changed) {this.emitState();}
   }
 
   public dispose(): void {
@@ -311,7 +311,7 @@ export class RuntimeHub extends EventEmitter {
   }
 
   private onClose(conn: WsConnection): void {
-    if (!this.sessions.has(conn.id)) return;
+    if (!this.sessions.has(conn.id)) {return;}
     this.sessions.delete(conn.id);
     this.emitUi({
       type: 'runtimeLog',
@@ -326,7 +326,7 @@ export class RuntimeHub extends EventEmitter {
 
   private onText(conn: WsConnection, text: string): void {
     const session = this.sessions.get(conn.id);
-    if (!session) return;
+    if (!session) {return;}
     session.lastSeenAt = Date.now();
 
     let msg: any;
@@ -335,7 +335,7 @@ export class RuntimeHub extends EventEmitter {
     } catch {
       return;
     }
-    if (!msg || typeof msg !== 'object') return;
+    if (!msg || typeof msg !== 'object') {return;}
 
     const type = typeof msg.type === 'string' ? msg.type.toUpperCase() : '';
     this.emitTrace(session.id, type, msg);
@@ -364,9 +364,9 @@ export class RuntimeHub extends EventEmitter {
     if (type === 'HEARTBEAT') {
       const pid = asNumber(msg.pid);
       const graphName = asString(msg.graphName) || asString(msg.graph_name);
-      if (pid !== null) session.pid = pid;
-      if (graphName) session.graphName = graphName;
-      if (session.mode === 'unknown') session.mode = asMode(msg.mode);
+      if (pid !== null) {session.pid = pid;}
+      if (graphName) {session.graphName = graphName;}
+      if (session.mode === 'unknown') {session.mode = asMode(msg.mode);}
       if (session.mode === 'debug' && session.pid !== null) {
         this.debugPids.add(session.pid);
       }
@@ -406,7 +406,7 @@ export class RuntimeHub extends EventEmitter {
       const evRaw = typeof msg.event === 'string' ? msg.event.toLowerCase() : '';
       const event = evRaw === 'start' || evRaw === 'end' || evRaw === 'error' ? evRaw : null;
       const node = asString(msg.node) || asString(msg.node_name) || asString(msg.nodeName);
-      if (!event || !node) return;
+      if (!event || !node) {return;}
       const ts = asNumber(msg.ts) ?? Date.now();
       const runId = asString(msg.runId) || asString(msg.run_id);
       const inputs = msg.inputs ?? msg.input ?? msg.in;
@@ -486,14 +486,14 @@ export class RuntimeHub extends EventEmitter {
       const programLogs: Array<Extract<RuntimeUiMessage, { type: 'runtimeLog' }>> = [];
 
       for (const ev of rawEvents) {
-        if (!ev || typeof ev !== 'object') continue;
+        if (!ev || typeof ev !== 'object') {continue;}
         const evType = typeof (ev as any).type === 'string' ? String((ev as any).type).toUpperCase() : '';
 
         if (evType === 'NODE_EVENT') {
           const evRaw = typeof (ev as any).event === 'string' ? String((ev as any).event).toLowerCase() : '';
           const event = evRaw === 'start' || evRaw === 'end' || evRaw === 'error' ? (evRaw as any) : null;
           const node = asString((ev as any).node) || asString((ev as any).node_name) || asString((ev as any).nodeName);
-          if (!event || !node) continue;
+          if (!event || !node) {continue;}
           const ts = asNumber((ev as any).ts) ?? Date.now();
           const runId = asString((ev as any).runId) || asString((ev as any).run_id);
           const inputs = (ev as any).inputs ?? (ev as any).input ?? (ev as any).in;
@@ -570,7 +570,7 @@ export class RuntimeHub extends EventEmitter {
           const levelRaw = typeof (ev as any).level === 'string' ? String((ev as any).level).toLowerCase() : 'info';
           const level = levelRaw === 'error' ? 'error' : levelRaw === 'warn' ? 'warn' : 'info';
           const message = typeof (ev as any).message === 'string' ? (ev as any).message : '';
-          if (!message) continue;
+          if (!message) {continue;}
           const ts = asNumber((ev as any).ts) ?? Date.now();
           const uiMsg: Extract<RuntimeUiMessage, { type: 'runtimeLog' }> = {
             type: 'runtimeLog',
@@ -601,7 +601,7 @@ export class RuntimeHub extends EventEmitter {
       }
 
       if (programLogs.length > 0) {
-        for (const l of programLogs) this.emitUi(l);
+        for (const l of programLogs) {this.emitUi(l);}
       }
 
       if (dropped > 0 || truncated > 0) {
@@ -620,7 +620,7 @@ export class RuntimeHub extends EventEmitter {
     if (type === 'INTERACT_REQUEST') {
       const requestId = asString(msg.requestId) || asString(msg.request_id);
       const prompt = asString(msg.prompt) || '';
-      if (!requestId || !prompt) return;
+      if (!requestId || !prompt) {return;}
       const node = asString(msg.node) || asString(msg.nodeName) || asString(msg.node_name) || undefined;
       const field = asString(msg.field) || undefined;
       const description = asString(msg.description) || undefined;
@@ -645,7 +645,7 @@ export class RuntimeHub extends EventEmitter {
         asString(msg.file_path) ||
         asString(msg.path) ||
         asString(msg.file);
-      if (!filePath) return;
+      if (!filePath) {return;}
       const view = asView(msg.view);
       const reveal = typeof msg.reveal === 'boolean' ? msg.reveal : true;
       const preserveFocus = typeof msg.preserveFocus === 'boolean' ? msg.preserveFocus : view === 'vibe';
@@ -678,7 +678,7 @@ export class RuntimeHub extends EventEmitter {
 
   private emitTrace(sessionId: string, messageType: string, msg: any): void {
     const ts = Date.now();
-    if (!sessionId) return;
+    if (!sessionId) {return;}
 
     const safeType = messageType || 'UNKNOWN';
     const payload = this.sanitizeTracePayload(safeType, msg);
@@ -695,7 +695,7 @@ export class RuntimeHub extends EventEmitter {
 
   private recordNodeEvent(msg: Extract<RuntimeUiMessage, { type: 'runtimeNodeEvent' }>): void {
     const sessionId = msg.sessionId;
-    if (!sessionId) return;
+    if (!sessionId) {return;}
     const entry = this.nodeEventHistory.get(sessionId) || { events: [], dropped: 0 };
     entry.events.push(msg);
     if (entry.events.length > this.nodeEventHistoryMax) {
@@ -710,7 +710,7 @@ export class RuntimeHub extends EventEmitter {
 
   private recordFlow(msg: Extract<RuntimeUiMessage, { type: 'runtimeFlow' }>): void {
     const sessionId = msg.sessionId;
-    if (!sessionId) return;
+    if (!sessionId) {return;}
     const entry = this.flowHistory.get(sessionId) || { flows: [], dropped: 0 };
     entry.flows.push(msg);
     if (entry.flows.length > this.flowHistoryMax) {
@@ -725,8 +725,8 @@ export class RuntimeHub extends EventEmitter {
 
   private recordProgramLog(msg: Extract<RuntimeUiMessage, { type: 'runtimeLog' }>): void {
     const sessionId = msg.sessionId;
-    if (!sessionId) return;
-    if (msg.channel && msg.channel !== 'program') return;
+    if (!sessionId) {return;}
+    if (msg.channel && msg.channel !== 'program') {return;}
     const entry = this.programLogHistory.get(sessionId) || { logs: [], dropped: 0 };
     entry.logs.push(msg);
     if (entry.logs.length > this.programLogHistoryMax) {
@@ -769,7 +769,7 @@ export class RuntimeHub extends EventEmitter {
       // Generic: keep shallow fields only
       const out: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(msg || {})) {
-        if (k === 'graph') continue;
+        if (k === 'graph') {continue;}
         if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' || v === null) {
           out[k] = v;
         }

@@ -11,7 +11,7 @@ export function isNonNullNode(node: TSNode | null): node is TSNode {
  * Get text content of an AST node
  */
 export function getNodeText(node: TSNode | null, code: string): string {
-    if (!node) return '';
+    if (!node) {return '';}
     return code.substring(node.startIndex, node.endIndex);
 }
 
@@ -26,7 +26,7 @@ export function queryNodes(node: TSNode, type: string): TSNode[] {
             results.push(n);
         }
         for (const child of n.children) {
-            if (!child) continue;
+            if (!child) {continue;}
             traverse(child);
         }
     }
@@ -43,7 +43,7 @@ export function getBaseClasses(classNode: TSNode): string[] {
     const argList = classNode.childForFieldName('superclasses');
     if (argList) {
         for (const child of argList.namedChildren) {
-            if (!child) continue;
+            if (!child) {continue;}
             if (child.type === 'identifier') {
                 bases.push(child.text);
             } else if (child.type === 'attribute') {
@@ -63,7 +63,7 @@ export function collectClassBases(rootNode: TSNode, code: string): { [name: stri
     for (const classNode of queryNodes(rootNode, 'class_definition')) {
         const nameNode = classNode.childForFieldName('name');
         const className = getNodeText(nameNode, code).trim();
-        if (!className) continue;
+        if (!className) {continue;}
         out[className] = getBaseClasses(classNode);
     }
     return out;
@@ -76,7 +76,7 @@ export function parseDictArgument(node: TSNode, code: string): { [key: string]: 
     if (node.type === 'dictionary') {
         const result: { [key: string]: string } = {};
         for (const child of node.namedChildren) {
-            if (!child) continue;
+            if (!child) {continue;}
             if (child.type === 'pair') {
                 const key = child.childForFieldName('key');
                 const value = child.childForFieldName('value');

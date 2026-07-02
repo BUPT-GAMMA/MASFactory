@@ -9,6 +9,7 @@ import { queryNodes, getNodeText, getBaseClasses } from './astUtils';
 import { findBuildMethodAndBaseType, parseBuildMethod } from './buildMethodParser';
 import { NodeParseContext } from './nodeParser';
 import { EdgeParseContext } from './edgeParser';
+import type { ImportInfo } from './importResolver';
 import { tryParseNodeTemplateAssignment, ParsedNodeTemplate } from './templateParser';
 import { parseDictArgument } from './astUtils';
 
@@ -24,6 +25,8 @@ export interface ComponentStructure {
     hasComplexStructure: boolean;  // true if contains if/for (structure may be dynamic)
     /** Source file path where this component is defined (filled by GraphParser). */
     sourceFilePath?: string;
+    /** Imports from sourceFilePath, used by preview expansion to resolve nested composite nodes. */
+    sourceImports?: Map<string, ImportInfo>;
     /** Base classes (raw AST text) for optional inheritance fallback. */
     baseClasses?: string[];
     /** Which method was parsed to build this structure. */
@@ -38,11 +41,11 @@ export function parseComponentStructure(
     componentClassName: string
 ): ComponentStructure | null {
     const parser = createPythonParser();
-    if (!parser) return null;
+    if (!parser) {return null;}
     
     try {
         const tree = parser.parse(componentCode);
-        if (!tree) return null;
+        if (!tree) {return null;}
         const rootNode = tree.rootNode;
         
         // Find the specific class definition
@@ -95,7 +98,7 @@ function stripStringQuotes(raw: string): string {
 }
 
 function parseStringLiteral(node: TSNode, code: string): string | null {
-    if (node.type !== 'string') return null;
+    if (node.type !== 'string') {return null;}
     return stripStringQuotes(getNodeText(node, code).trim());
 }
 
@@ -104,7 +107,7 @@ function resolveLiteralNode(
     code: string,
     literalValues: { [name: string]: TSNode }
 ): TSNode {
-    if (node.type !== 'identifier' && node.type !== 'attribute') return node;
+    if (node.type !== 'identifier' && node.type !== 'attribute') {return node;}
     const raw = getNodeText(node, code).trim();
     return literalValues[raw] ?? (raw.includes('.') ? literalValues[raw.split('.').pop()!] ?? node : node);
 }
@@ -114,13 +117,13 @@ function inferContainerKind(
     templates: { [name: string]: ParsedNodeTemplate }
 ): 'Graph' | 'Loop' | null {
     const direct = templates[rawTypeText];
-    if (direct?.baseKind === 'Graph' || direct?.baseKind === 'Loop') return direct.baseKind;
+    if (direct?.baseKind === 'Graph' || direct?.baseKind === 'Loop') {return direct.baseKind;}
     const normalized = rawTypeText.includes('.') ? rawTypeText.split('.').pop()! : rawTypeText;
     const byLast = templates[normalized];
-    if (byLast?.baseKind === 'Graph' || byLast?.baseKind === 'Loop') return byLast.baseKind;
-    if (normalized === 'Loop' || normalized.endsWith('Loop')) return 'Loop';
-    if (normalized === 'Graph' || normalized === 'RootGraph') return 'Graph';
-    if (normalized.endsWith('Graph') || normalized.endsWith('Workflow')) return 'Graph';
+    if (byLast?.baseKind === 'Graph' || byLast?.baseKind === 'Loop') {return byLast.baseKind;}
+    if (normalized === 'Loop' || normalized.endsWith('Loop')) {return 'Loop';}
+    if (normalized === 'Graph' || normalized === 'RootGraph') {return 'Graph';}
+    if (normalized.endsWith('Graph') || normalized.endsWith('Workflow')) {return 'Graph';}
     return null;
 }
 
@@ -135,15 +138,15 @@ function parseNodesListLiteral(
     literalValues: { [name: string]: TSNode }
 ): Array<{ name: string; typeText: string; args: TSNode[]; lineNumber: number }> {
     node = resolveLiteralNode(node, code, literalValues);
-    if (node.type !== 'list') return [];
+    if (node.type !== 'list') {return [];}
     const out: Array<{ name: string; typeText: string; args: TSNode[]; lineNumber: number }> = [];
     for (const item of node.namedChildren) {
-        if (!item) continue;
-        if (item.type !== 'tuple') continue;
+        if (!item) {continue;}
+        if (item.type !== 'tuple') {continue;}
         const elems = item.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
-        if (elems.length < 2) continue;
+        if (elems.length < 2) {continue;}
         const name = parseStringLiteral(elems[0], code);
-        if (!name) continue;
+        if (!name) {continue;}
         const typeText = getNodeText(elems[1], code).trim();
         const args = elems.slice(2);
         out.push({ name, typeText, args, lineNumber: item.startPosition.row + 1 });
@@ -157,16 +160,16 @@ function parseEdgesListLiteral(
     literalValues: { [name: string]: TSNode }
 ): Array<{ from: string; to: string; keysNode?: TSNode; lineNumber: number }> {
     node = resolveLiteralNode(node, code, literalValues);
-    if (node.type !== 'list') return [];
+    if (node.type !== 'list') {return [];}
     const out: Array<{ from: string; to: string; keysNode?: TSNode; lineNumber: number }> = [];
     for (const item of node.namedChildren) {
-        if (!item) continue;
-        if (item.type !== 'tuple') continue;
+        if (!item) {continue;}
+        if (item.type !== 'tuple') {continue;}
         const elems = item.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
-        if (elems.length < 2) continue;
+        if (elems.length < 2) {continue;}
         const from = parseStringLiteral(elems[0], code);
         const to = parseStringLiteral(elems[1], code);
-        if (!from || !to) continue;
+        if (!from || !to) {continue;}
         const keysNode = elems.length >= 3 ? elems[2] : undefined;
         out.push({ from, to, keysNode, lineNumber: item.startPosition.row + 1 });
     }
@@ -174,15 +177,15 @@ function parseEdgesListLiteral(
 }
 
 function normalizeContainerEndpoint(name: string, kind: 'Graph' | 'Loop'): string {
-    if (!name) return name;
+    if (!name) {return name;}
     const lowered = name.trim().toLowerCase();
     if (kind === 'Loop') {
-        if (lowered === 'controller') return 'controller';
-        if (lowered === 'terminate' || lowered === 'terminate_node') return 'terminate';
+        if (lowered === 'controller') {return 'controller';}
+        if (lowered === 'terminate' || lowered === 'terminate_node') {return 'terminate';}
         return name;
     }
-    if (lowered === 'entry') return 'entry';
-    if (lowered === 'exit') return 'exit';
+    if (lowered === 'entry') {return 'entry';}
+    if (lowered === 'exit') {return 'exit';}
     return name;
 }
 
@@ -209,11 +212,11 @@ function looksLikeEdgeTupleList(
     literalValues: { [name: string]: TSNode }
 ): boolean {
     const resolved = resolveLiteralNode(node, code, literalValues);
-    if (resolved.type !== 'list') return false;
+    if (resolved.type !== 'list') {return false;}
     const firstTuple = resolved.namedChildren.find((c): c is TSNode => !!c && c.type === 'tuple');
-    if (!firstTuple) return false;
+    if (!firstTuple) {return false;}
     const elems = firstTuple.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
-    if (elems.length < 2) return false;
+    if (elems.length < 2) {return false;}
     return elems[0].type === 'string' && elems[1].type === 'string';
 }
 
@@ -223,11 +226,11 @@ function looksLikeNodeTupleList(
     literalValues: { [name: string]: TSNode }
 ): boolean {
     const resolved = resolveLiteralNode(node, code, literalValues);
-    if (resolved.type !== 'list') return false;
+    if (resolved.type !== 'list') {return false;}
     const firstTuple = resolved.namedChildren.find((c): c is TSNode => !!c && c.type === 'tuple');
-    if (!firstTuple) return false;
+    if (!firstTuple) {return false;}
     const elems = firstTuple.namedChildren.filter((c): c is TSNode => !!c && c.type !== 'comment');
-    if (elems.length < 2) return false;
+    if (elems.length < 2) {return false;}
     return elems[0].type === 'string' && elems[1].type !== 'string';
 }
 
@@ -239,7 +242,7 @@ function extractContainerListsFromArgs(
     const listCandidates: TSNode[] = [];
     for (const arg of args) {
         const resolved = resolveLiteralNode(arg, code, literalValues);
-        if (resolved.type === 'list') listCandidates.push(arg);
+        if (resolved.type === 'list') {listCandidates.push(arg);}
     }
     let nodesNode: TSNode | undefined;
     let edgesNode: TSNode | undefined;
@@ -267,11 +270,11 @@ export function parseTemplateStructure(
     templateName: string
 ): ComponentStructure | null {
     const parser = createPythonParser();
-    if (!parser) return null;
+    if (!parser) {return null;}
 
     try {
         const tree = parser.parse(componentCode);
-        if (!tree) return null;
+        if (!tree) {return null;}
         const rootNode = tree.rootNode;
 
         // Collect simple literal bindings (edges/nodes variables) and NodeTemplate definitions.
@@ -279,26 +282,26 @@ export function parseTemplateStructure(
         const templates: { [name: string]: ParsedNodeTemplate } = {};
 
         for (const child of rootNode.children) {
-            if (!child) continue;
-            if (child.type !== 'expression_statement') continue;
+            if (!child) {continue;}
+            if (child.type !== 'expression_statement') {continue;}
             const first = child.namedChildren[0];
-            if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) continue;
+            if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) {continue;}
             const left = first.childForFieldName('left');
             const right = first.childForFieldName('right');
-            if (!left || !right) continue;
+            if (!left || !right) {continue;}
 
             const leftText = getNodeText(left, componentCode).trim();
 
             if (right.type === 'list' || right.type === 'tuple' || right.type === 'dictionary') {
-                if (leftText) literalValues[leftText] = right;
+                if (leftText) {literalValues[leftText] = right;}
                 continue;
             }
 
-            if (right.type !== 'call') continue;
+            if (right.type !== 'call') {continue;}
             const fn = right.childForFieldName('function');
-            if (!fn) continue;
+            if (!fn) {continue;}
             const fnText = getNodeText(fn, componentCode).trim();
-            if (fnText !== 'NodeTemplate' && !fnText.endsWith('.NodeTemplate')) continue;
+            if (fnText !== 'NodeTemplate' && !fnText.endsWith('.NodeTemplate')) {continue;}
 
             const parsed = tryParseNodeTemplateAssignment(leftText, right, componentCode);
             if (parsed) {
@@ -409,19 +412,19 @@ export function buildTemplateStructure(
                             ? childKind
                             : normalizeTypeLabel(spec.typeText || 'Node');
                 const fullName = `${prefix}${spec.name}`;
-                if (!nodes.includes(fullName)) nodes.push(fullName);
-                if (!nodeTypes[fullName]) nodeTypes[fullName] = typeLabel;
-                if (!nodeLineNumbers[fullName]) nodeLineNumbers[fullName] = spec.lineNumber;
+                if (!nodes.includes(fullName)) {nodes.push(fullName);}
+                if (!nodeTypes[fullName]) {nodeTypes[fullName] = typeLabel;}
+                if (!nodeLineNumbers[fullName]) {nodeLineNumbers[fullName] = spec.lineNumber;}
 
                 if (containerKey) {
-                    if (!subgraphs[containerKey]) subgraphs[containerKey] = [];
-                    if (!subgraphs[containerKey].includes(fullName)) subgraphs[containerKey].push(fullName);
+                    if (!subgraphs[containerKey]) {subgraphs[containerKey] = [];}
+                    if (!subgraphs[containerKey].includes(fullName)) {subgraphs[containerKey].push(fullName);}
                 }
                 if (childKind) {
                     const internalA = childKind === 'Loop' ? `${fullName}_controller` : `${fullName}_entry`;
                     const internalB = childKind === 'Loop' ? `${fullName}_terminate` : `${fullName}_exit`;
-                    if (!nodes.includes(internalA)) nodes.push(internalA);
-                    if (!nodes.includes(internalB)) nodes.push(internalB);
+                    if (!nodes.includes(internalA)) {nodes.push(internalA);}
+                    if (!nodes.includes(internalB)) {nodes.push(internalB);}
                     nodeTypes[internalA] = childKind === 'Loop' ? 'Controller' : 'entry';
                     nodeTypes[internalB] = childKind === 'Loop' ? 'TerminateNode' : 'exit';
                     subgraphs[fullName] = [internalA, internalB];
@@ -512,16 +515,16 @@ export function buildTemplateStructure(
  */
 function findMethodInClass(classNode: TSNode, code: string, methodName: 'build' | '__init__'): TSNode | null {
     const body = classNode.childForFieldName('body');
-    if (!body) return null;
+    if (!body) {return null;}
     
     for (const child of body.namedChildren) {
-        if (!child) continue;
+        if (!child) {continue;}
         const funcDef = child.type === 'decorated_definition'
             ? child.namedChildren.find((c): c is TSNode => !!c && c.type === 'function_definition')
             : child.type === 'function_definition'
                 ? child
                 : null;
-        if (!funcDef) continue;
+        if (!funcDef) {continue;}
         const nameNode = funcDef.childForFieldName('name');
         if (nameNode && getNodeText(nameNode, code) === methodName) {
             return funcDef;
@@ -535,7 +538,7 @@ function findMethodInClass(classNode: TSNode, code: string, methodName: 'build' 
  */
 function checkForComplexStructure(buildMethod: TSNode): boolean {
     const body = buildMethod.childForFieldName('body');
-    if (!body) return false;
+    if (!body) {return false;}
     
     // Check for if_statement or for_statement at any level
     const ifNodes = queryNodes(body, 'if_statement');

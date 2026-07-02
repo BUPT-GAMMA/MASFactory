@@ -1,8 +1,8 @@
-from masfactory import NodeTemplate, Agent,JsonMessageFormatter,ParagraphMessageFormatter,HistoryMemory,HumanChatVisual,Loop
+from masfactory import Agent, HistoryMemory, NodeTemplate, ParagraphMessageFormatter, TwinsFieldTextFormatter
 
 INSTRUCTIONS = """
 # Role
-You are an expert workflow orchestrator. Your task is to convert a user's goal into a directed workflow graph.
+You are an expert workflow orchestrator. Your task is to convert a user's goal into a MASFactory AML v0.2 workflow document.
 
 # Input Data
 - User Goal: {{user_goal}}
@@ -10,34 +10,29 @@ You are an expert workflow orchestrator. Your task is to convert a user's goal i
 
 # Common Requirements (MUST follow)
 1. Language: Use English for all node labels and all edge conditions.
-2. Node types (ONLY): `Action`, `Switch`, `Loop`, `Subgraph`.
+2. AML nodes (ONLY): `<agent>`, `<logic_switch>`, `<loop>`, `<graph>`, `<custom_node>`.
 3. Agent assignment:
-   - `Action` nodes MUST include an `agent`, and it MUST be exactly one of the Available Roles (use the role name before `:`).
-   - `Switch` / `Loop` / `Subgraph` nodes MUST NOT include an `agent`.
-4. Built-in node IDs (UPPERCASE ONLY; do not define them as nodes, they appear ONLY in edges):
-   - Non-Loop workflows (root graph and any `Subgraph.sub_graph`): `ENTRY`, `EXIT` (REQUIRED)
-   - Loop sub-workflows (inside `Loop.sub_graph`): `CONTROLLER` (REQUIRED)
-5. Built-in IDs usage rules:
-   - `ENTRY` and `EXIT` MUST appear in every non-Loop workflow (root and subgraphs):
-     - at least one `ENTRY -> <node>` edge
-     - at least one `<node> -> EXIT` edge
-   - `CONTROLLER` MUST appear in every loop sub-workflow:
-     - at least one `CONTROLLER -> <node>` edge
-     - at least one `<node> -> CONTROLLER` edge
-   - `ENTRY`/`EXIT` MUST NOT appear inside a `Loop.sub_graph`.
-   - `CONTROLLER` MUST NOT appear outside a `Loop.sub_graph`.
+   - `<agent>` nodes MUST use `ref="#agent_definition_id"`.
+   - Agent definition ids MUST be derived from the Available Roles and written in snake_case.
+   - Non-agent nodes MUST NOT include agent refs.
+4. Built-in endpoints:
+   - Non-loop graphs use edge endpoints `entry` and `exit`.
+   - Loop bodies use edge endpoint `controller`.
+   - Do not define `entry`, `exit`, or `controller` as nodes.
+5. Endpoint usage rules:
+   - Every non-loop graph must have at least one `entry -> <node>` edge and one `<node> -> exit` edge.
+   - Every loop body must have at least one `controller -> <node>` edge and one `<node> -> controller` edge.
+   - Do not use `entry`/`exit` inside a loop body.
+   - Do not use `controller` outside a loop body.
 6. Edge conditions:
-   - Every outgoing edge from a `Switch` node MUST have a non-empty `condition`.
-7. Loop semantics (inside `Loop.sub_graph` only):
-   - `CONTROLLER` is the loop decision point.
-   - The loop MUST cycle back to `CONTROLLER`.
-   - `CONTROLLER` must have at least one "continue" branch: `CONTROLLER -> <step>`.
-   - The loop EXITs implicitly when the `terminate_condition` satisfied. The `terminate_condition` is a label in a node whose type is `Loop`.
-8. Subgraph semantics (inside `Subgraph.sub_graph` only):
-   - A `Subgraph` is a reusable packaged workflow (NOT a loop).
-   - Use `ENTRY` and `EXIT` inside the subgraph, and keep it connected.
+   - Every outgoing edge from `<logic_switch>` MUST have a non-empty `if` expression or `match` value.
+7. Loop semantics:
+   - A `<loop>` contains nested `<nodes>` and `<edges>`.
+   - Add `<terminate match="..."/>` or `<terminate if="..."/>` on every loop.
+8. Subgraph semantics:
+   - A nested `<graph>` is a packaged non-loop workflow and must use `entry`/`exit` internally.
 9. IDs:
-   - Node IDs must match `[A-Za-z0-9_-]+`, be unique, and MUST NOT be any built-in ID (`ENTRY/EXIT/CONTROLLER`).
+   - Node and definition ids must match `[A-Za-z0-9_-]+` and be unique within their scope.
 
 # Thinking Protocol (Mandatory)
 First output a `<think>...</think>` section. It MUST follow this template exactly, with the "..." filled in:
@@ -45,115 +40,100 @@ First output a `<think>...</think>` section. It MUST follow this template exactl
 <think>
 Let’s think step by step:
 1. Goal summary: The user wants to...
-2. Key constraints to obey: ... (English only; roles; built-in IDs; conditions; connectivity; loop/subgraph rules)
+2. Key constraints to obey: ... (English only; roles; AML endpoints; conditions; connectivity; loop/subgraph rules)
 3. Choose workflow pattern: (linear / branch / loop / branch+loop / subgraph). Why?
 4. List the concrete actions needed (brief): ...
-5. Assign agents (ONLY to Action nodes) using the Available Roles: ...
-6. Decide whether a Subgraph is needed. If yes, define what it packages and how it connects via ENTRY/EXIT: ...
+5. Assign agents (ONLY to `<agent>` nodes) using the Available Roles: ...
+6. Decide whether a nested graph is needed. If yes, define what it packages and how it connects via entry/exit: ...
 7. Decide whether a Loop is needed. If yes:
    - What work repeats?
-   - What is the CONTROLLER  condition for terminating?
-8. Draft node IDs and types (check: only Action/Switch/Loop/Subgraph; no built-in IDs as nodes): ...
+   - What is the controller condition for terminating?
+8. Draft node IDs and AML node tags (check: no built-in endpoints as nodes): ...
 9. Draft edges:
-   - Non-Loop workflows use ENTRY/EXIT.
-   - Loop sub-workflows use CONTROLLER, and do NOT use ENTRY/EXIT.
-   - Switch outgoing edges all have conditions.
+   - Non-loop workflows use entry/exit.
+   - Loop bodies use controller, and do NOT use entry/exit.
+   - logic_switch outgoing edges all have conditions.
 10. Final self-check (must be true):
    - English only in labels/conditions
    - No fake roles
-   - ENTRY and EXIT appear in every non-Loop workflow
-   - CONTROLLER appears in every Loop sub-workflow
-   - All nodes are connected (reachable from ENTRY and can reach EXIT)
-   - Loop cycles back to CONTROLLER; Subgraph is connected from ENTRY to EXIT
+   - entry and exit appear in every non-loop workflow
+   - controller appears in every loop body
+   - All nodes are connected (reachable from entry/controller and can reach exit/controller)
+   - Loop cycles back to controller; nested graph is connected from entry to exit
 If any check fails, revise and re-check before outputting.
 </think>
 
-# Output Format (JSON)
-After `</think>`, output exactly ONE `json` code block and nothing else.
+# Output Format (AML)
+After `</think>`, output exactly ONE complete AML XML document and nothing else.
+Do not output JSON. Do not output graph_design.
 
-JSON schema notes:
-- Top-level MUST be: `{ "graph_design": { "nodes": [...], "edges": [...] } }`
-- Node fields:
-  - required: `id`, `type`, `label`
-  - `agent`: ONLY for `type="Action"`
-  - `sub_graph`: ONLY for `type="Loop"` or `type="Subgraph"` (must contain `{ "nodes": [...], "edges": [...] }`)
-- Edge fields:
-  - required: `source`, `target`
-
-# Example:
-```json
-{
-  "graph_design": {
-    "nodes": [
-      {
-        "id": "CollectRequirements",
-        "type": "Action",
-        "label": "Collect requirements and constraints",
-        "agent": "Planner"
-      },
-      {
-        "id": "RouteByInfoQuality",
-        "type": "Switch",
-        "label": "Route based on whether input information is sufficient"
-      },
-      {
-        "id": "ResearchSubflow",
-        "type": "Subgraph",
-        "label": "Reusable research sub-workflow",
-        "sub_graph": {
-          "nodes": [
-            { "id": "ExtractFacts", "type": "Action", "label": "Extract key facts", "agent": "Researcher" },
-            { "id": "SummarizeFindings", "type": "Action", "label": "Summarize findings", "agent": "Writer" }
-          ],
-          "edges": [
-            { "source": "ENTRY", "target": "ExtractFacts" },
-            { "source": "ExtractFacts", "target": "SummarizeFindings" },
-            { "source": "SummarizeFindings", "target": "EXIT" }
-          ]
-        }
-      },
-      {
-        "id": "BuildDraft",
-        "type": "Action",
-        "label": "Build the first draft using collected inputs",
-        "agent": "Engineer"
-      },
-      {
-        "id": "RefineLoop",
-        "type": "Loop",
-        "label": "Iteratively refine the draft until it meets acceptance criteria",
-        "terminate_condition":"no longer needs revision.",
-        "sub_graph": {
-          "nodes": [
-            { "id": "ReviseDraft", "type": "Action", "label": "Revise the draft", "agent": "Engineer" },
-            { "id": "ValidateDraft", "type": "Action", "label": "Validate the draft against constraints", "agent": "QA Engineer" }
-          ],
-          "edges": [
-            { "source": "CONTROLLER", "target": "ReviseDraft",},
-            { "source": "ReviseDraft", "target": "ValidateDraft" },
-            { "source": "ValidateDraft", "target": "CONTROLLER" },
-          ]
-        }
-      },
-      {
-        "id": "Finalize",
-        "type": "Action",
-        "label": "Finalize the deliverable and write the summary",
-        "agent": "Writer"
-      }
-    ],
-    "edges": [
-      { "source": "ENTRY", "target": "CollectRequirements" },
-      { "source": "CollectRequirements", "target": "RouteByInfoQuality" },
-      { "source": "RouteByInfoQuality", "target": "ResearchSubflow" },
-      { "source": "RouteByInfoQuality", "target": "BuildDraft" },
-      { "source": "ResearchSubflow", "target": "BuildDraft" },
-      { "source": "BuildDraft", "target": "RefineLoop" },
-      { "source": "RefineLoop", "target": "Finalize" },
-      { "source": "Finalize", "target": "EXIT" }
-    ]
-  }
-}
+# Example AML topology
+Use this as a structural example only. Recreate the workflow for the user's goal; do not blindly copy these node names.
+```xml
+<aml version="0.2" profile="masfactory" kind="graph" id="vibe.generated.workflow" lang="en">
+  <definitions>
+    <agents>
+      <agent id="planner">
+        <instructions>Placeholder; profile_designer will refine this.</instructions>
+      </agent>
+      <agent id="researcher">
+        <instructions>Placeholder; profile_designer will refine this.</instructions>
+      </agent>
+      <agent id="engineer">
+        <instructions>Placeholder; profile_designer will refine this.</instructions>
+      </agent>
+      <agent id="reviewer">
+        <instructions>Placeholder; profile_designer will refine this.</instructions>
+      </agent>
+      <agent id="writer">
+        <instructions>Placeholder; profile_designer will refine this.</instructions>
+      </agent>
+    </agents>
+    <graphs>
+      <graph id="root" kind="root">
+        <nodes>
+          <agent id="collect_requirements" ref="#planner" label="Collect requirements and constraints" />
+          <logic_switch id="route_by_info_quality" label="Route by information quality" />
+          <graph id="research_subflow" label="Research missing information">
+            <nodes>
+              <agent id="extract_facts" ref="#researcher" label="Extract key facts" />
+              <agent id="summarize_findings" ref="#writer" label="Summarize findings" />
+            </nodes>
+            <edges>
+              <edge from="entry" to="extract_facts"><keys /></edge>
+              <edge from="extract_facts" to="summarize_findings"><keys /></edge>
+              <edge from="summarize_findings" to="exit"><keys /></edge>
+            </edges>
+          </graph>
+          <agent id="build_draft" ref="#engineer" label="Build the first draft" />
+          <loop id="refine_loop" label="Refine until accepted" max_iterations="3">
+            <terminate match="draft no longer needs revision" />
+            <nodes>
+              <agent id="revise_draft" ref="#engineer" label="Revise the draft" />
+              <agent id="validate_draft" ref="#reviewer" label="Validate the draft against constraints" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="revise_draft"><keys /></edge>
+              <edge from="revise_draft" to="validate_draft"><keys /></edge>
+              <edge from="validate_draft" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <agent id="finalize" ref="#writer" label="Finalize the deliverable" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="collect_requirements"><keys /></edge>
+          <edge from="collect_requirements" to="route_by_info_quality"><keys /></edge>
+          <edge from="route_by_info_quality" to="research_subflow" if="information_missing"><keys /></edge>
+          <edge from="route_by_info_quality" to="build_draft" if="information_sufficient"><keys /></edge>
+          <edge from="research_subflow" to="build_draft"><keys /></edge>
+          <edge from="build_draft" to="refine_loop"><keys /></edge>
+          <edge from="refine_loop" to="finalize"><keys /></edge>
+          <edge from="finalize" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+    </graphs>
+  </definitions>
+</aml>
 ```
 
 """
@@ -175,7 +155,7 @@ PlannerAgent = NodeTemplate(
    Agent,
    instructions=INSTRUCTIONS,
    prompt_template=PROMPT_TEXT,
-   formatters = [ParagraphMessageFormatter(), JsonMessageFormatter()],
+   formatters = [ParagraphMessageFormatter(), TwinsFieldTextFormatter()],
    memories=[HistoryMemory()]   
 )
 

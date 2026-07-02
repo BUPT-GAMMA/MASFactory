@@ -10,7 +10,7 @@ function getWasmDir(extensionPath: string): string {
 }
 
 function assertFileExists(filePath: string, label: string): void {
-  if (fs.existsSync(filePath)) return;
+  if (fs.existsSync(filePath)) {return;}
   throw new Error(`[TreeSitter] Missing ${label} at: ${filePath}`);
 }
 
@@ -20,7 +20,7 @@ function assertFileExists(filePath: string, label: string): void {
  * This must be called once before any parsing occurs.
  */
 export async function initTreeSitter(extensionPath: string): Promise<void> {
-  if (initPromise) return initPromise;
+  if (initPromise) {return initPromise;}
 
   initPromise = (async () => {
     const wasmDir = getWasmDir(extensionPath);
@@ -47,7 +47,7 @@ export function isTreeSitterReady(): boolean {
 export function createPythonParser(): Parser | null {
   // `web-tree-sitter` requires `Parser.init()` before any `new Parser()` calls.
   // So we only construct the parser after initTreeSitter() has successfully loaded the language.
-  if (!pythonLanguage) return null;
+  if (!pythonLanguage) {return null;}
 
   const parser = new Parser();
   try {

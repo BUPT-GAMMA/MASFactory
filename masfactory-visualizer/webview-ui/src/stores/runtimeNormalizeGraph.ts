@@ -116,7 +116,7 @@ export function normalizeGraph(graph: unknown): GraphData | null {
       .filter(Boolean) as GraphEdge[];
 
     // Ensure all edge endpoints exist in node list.
-    const nodeSet = new Set(nodes);
+    const nodeSet = new Set<string>(nodes);
     for (const e of edges) {
       nodeSet.add(e.from);
       nodeSet.add(e.to);
@@ -265,7 +265,7 @@ export function normalizeGraph(graph: unknown): GraphData | null {
       edges.push(out);
     }
 
-    const nodeSet = new Set(nodes);
+    const nodeSet = new Set<string>(nodes);
     for (const e of edges) {
       nodeSet.add(e.from);
       nodeSet.add(e.to);
@@ -291,4 +291,3 @@ export function normalizeGraph(graph: unknown): GraphData | null {
 
   return null;
 }
-

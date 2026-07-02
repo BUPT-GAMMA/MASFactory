@@ -15,7 +15,7 @@ export function registerPythonDebugAdapterTracking(args: {
     typeof v === 'string' && v.trim() ? v : undefined;
 
   const tryResolvePilotSessionId = (pid: number | null): string | undefined => {
-    if (pid === null) return undefined;
+    if (pid === null) {return undefined;}
     try {
       const sessions = runtimeHub.getSessionsSnapshot();
       return sessions.find((s) => s.pid === pid)?.id;
@@ -136,8 +136,8 @@ export function registerPythonDebugAdapterTracking(args: {
         createDebugAdapterTracker(debugSession: vscode.DebugSession) {
           return {
             onDidSendMessage(message: any) {
-              if (!message || typeof message !== 'object') return;
-              if (message.type !== 'event') return;
+              if (!message || typeof message !== 'object') {return;}
+              if (message.type !== 'event') {return;}
               const ev = asString(message.event) ?? '';
               const body = message.body ?? {};
 

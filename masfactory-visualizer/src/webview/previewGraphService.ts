@@ -7,6 +7,24 @@ import { ControlFlowContext } from '../parser/buildMethodParser';
 import { ControlFlowStateStore, type ViewKind } from './controlFlowStateStore';
 import { mergePrefixedStructure, type ComponentLikeStructure } from './graphMerge';
 
+export type AmlImportedDocumentPreview = {
+  alias: string;
+  filePath: string;
+  text: string;
+};
+
+export type AmlImplementationTarget = {
+  filePath: string;
+  line?: number;
+  column?: number;
+};
+
+export type AmlPreviewData = {
+  implementationGraphs: Record<string, GraphData>;
+  implementationTargets: Record<string, AmlImplementationTarget>;
+  importedDocuments: Record<string, AmlImportedDocumentPreview>;
+};
+
 export class PreviewGraphService {
   private latestGraphUpdateToken = 0;
   private workspaceRoot: string = '';
@@ -16,6 +34,7 @@ export class PreviewGraphService {
       parser: GraphParser;
       controlFlowState: ControlFlowStateStore;
       safePostMessage: (webview: vscode.Webview, message: unknown) => void;
+      ensureParserReady?: () => Promise<void>;
     }
   ) {
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -27,7 +46,7 @@ export class PreviewGraphService {
   clearGraph(reason: string, targets: Array<vscode.Webview | undefined>): void {
     const message = { type: 'clear', reason };
     for (const wv of targets) {
-      if (!wv) continue;
+      if (!wv) {continue;}
       this.deps.safePostMessage(wv, message);
     }
   }
@@ -76,11 +95,11 @@ export class PreviewGraphService {
     // Async: expand composite components and builder functions, then send update
     this.expandAllSubgraphs(graphData, resolutionCtx)
       .then((expandedData: GraphData) => {
-        if (updateToken !== this.latestGraphUpdateToken) return;
+        if (updateToken !== this.latestGraphUpdateToken) {return;}
         this.sendGraphUpdate(expandedData, document, conditionVariables, targets);
       })
       .catch((err: Error) => {
-        if (updateToken !== this.latestGraphUpdateToken) return;
+        if (updateToken !== this.latestGraphUpdateToken) {return;}
         console.log('[PreviewGraphService] Error expanding subgraphs:', err);
         this.sendGraphUpdate(graphData, document, conditionVariables, targets);
       });
@@ -144,7 +163,7 @@ export class PreviewGraphService {
     };
 
     // Send updated graph back to the webview that triggered the change
-    if (updateToken !== this.latestGraphUpdateToken) return;
+    if (updateToken !== this.latestGraphUpdateToken) {return;}
     this.deps.safePostMessage(args.webview, {
       type: 'update',
       data: graphData,
@@ -226,7 +245,7 @@ export class PreviewGraphService {
     };
 
     // Send updated graph back to the webview that triggered the change
-    if (updateToken !== this.latestGraphUpdateToken) return;
+    if (updateToken !== this.latestGraphUpdateToken) {return;}
     this.deps.safePostMessage(args.webview, {
       type: 'update',
       data: graphData,
@@ -320,7 +339,7 @@ export class PreviewGraphService {
     };
 
     // Send updated graph back to the webview that triggered the change
-    if (updateToken !== this.latestGraphUpdateToken) return;
+    if (updateToken !== this.latestGraphUpdateToken) {return;}
     this.deps.safePostMessage(args.webview, {
       type: 'update',
       data: graphData,
@@ -369,7 +388,7 @@ export class PreviewGraphService {
     };
 
     for (const wv of targets) {
-      if (!wv) continue;
+      if (!wv) {continue;}
       this.deps.safePostMessage(wv, message);
     }
   }
@@ -410,14 +429,14 @@ export class PreviewGraphService {
 
   private setWorkspaceRoot(workspaceRoot: string): void {
     const nextRoot = workspaceRoot || '';
-    if (nextRoot === this.workspaceRoot) return;
+    if (nextRoot === this.workspaceRoot) {return;}
     this.workspaceRoot = nextRoot;
     this.deps.parser.setFileReader(this.createFileReader(nextRoot), nextRoot);
   }
 
   private updateWorkspaceRoot(document: vscode.TextDocument): void {
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-    if (!workspaceFolder) return;
+    if (!workspaceFolder) {return;}
     this.setWorkspaceRoot(workspaceFolder.uri.fsPath);
   }
 
@@ -434,7 +453,7 @@ export class PreviewGraphService {
   }
 
   private async expandCompositeComponents(graphData: GraphData, ctx: ResolutionContext): Promise<GraphData> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
     const { isCompositeComponent, isBaseFrameworkType } = require('../parser/importResolver');
 
     const MAX_PASSES = 6;
@@ -445,14 +464,14 @@ export class PreviewGraphService {
       let expandedThisPass = 0;
 
       for (const [nodeName, nodeType] of Object.entries(graphData.nodeTypes)) {
-        if (totalExpansions >= MAX_TOTAL_EXPANSIONS) break;
-        if (['entry', 'exit', 'controller', 'terminate'].includes(nodeName)) continue;
-        if (nodeName.endsWith('_controller') || nodeName.endsWith('_terminate')) continue;
-        if (nodeName.endsWith('_entry') || nodeName.endsWith('_exit')) continue;
+        if (totalExpansions >= MAX_TOTAL_EXPANSIONS) {break;}
+        if (['entry', 'exit', 'controller', 'terminate'].includes(nodeName)) {continue;}
+        if (nodeName.endsWith('_controller') || nodeName.endsWith('_terminate')) {continue;}
+        if (nodeName.endsWith('_entry') || nodeName.endsWith('_exit')) {continue;}
 
         const normalizedType = String(nodeType || '');
-        if (!normalizedType) continue;
-        if (isBaseFrameworkType(normalizedType)) continue;
+        if (!normalizedType) {continue;}
+        if (isBaseFrameworkType(normalizedType)) {continue;}
 
         const existingChildren = graphData.subgraphs?.[nodeName];
         if (existingChildren && existingChildren.length > 2) {
@@ -466,20 +485,20 @@ export class PreviewGraphService {
           expandedThisPass++;
           totalExpansions++;
           if (structure.hasComplexStructure) {
-            if (!graphData.warnings) graphData.warnings = [];
+            if (!graphData.warnings) {graphData.warnings = [];}
             graphData.warnings.push(
               `Composite component '${nodeName}' (${nodeType}) contains dynamic control flow; preview may be incomplete.`
             );
           }
         } else if (isCompositeComponent(normalizedType)) {
-          if (!graphData.warnings) graphData.warnings = [];
+          if (!graphData.warnings) {graphData.warnings = [];}
           graphData.warnings.push(
             `Composite component '${nodeName}' (${nodeType}) could not be expanded; showing as a black box (preview may be incomplete).`
           );
         }
       }
 
-      if (expandedThisPass === 0) break;
+      if (expandedThisPass === 0) {break;}
     }
 
     return graphData;
@@ -487,6 +506,232 @@ export class PreviewGraphService {
 
   private mergeComponentStructure(graphData: GraphData, parentNode: string, structure: any): void {
     mergePrefixedStructure(graphData, parentNode, structure as ComponentLikeStructure, { mode: 'replace' });
+  }
+
+  async resolveAmlPreviewData(document: vscode.TextDocument): Promise<AmlPreviewData> {
+    this.updateWorkspaceRoot(document);
+    const sourceText = document.getText();
+    const importedDocuments = this.resolveAmlImportedDocuments(sourceText, document.uri.fsPath);
+    const bindingSourceFiles = new Map<string, string>();
+    for (const binding of this.extractPythonImplementationBindings(sourceText)) {
+      bindingSourceFiles.set(binding, document.uri.fsPath);
+    }
+    for (const imported of Object.values(importedDocuments)) {
+      for (const binding of this.extractPythonImplementationBindings(imported.text)) {
+        if (!bindingSourceFiles.has(binding)) {
+          bindingSourceFiles.set(binding, imported.filePath);
+        }
+      }
+    }
+
+    const implementationGraphs: Record<string, GraphData> = {};
+    const implementationTargets: Record<string, AmlImplementationTarget> = {};
+    let canResolvePythonBindings = true;
+    if (bindingSourceFiles.size > 0 && this.deps.ensureParserReady) {
+      try {
+        await this.deps.ensureParserReady();
+      } catch (error) {
+        canResolvePythonBindings = false;
+        console.log('[PreviewGraphService] AML implementation expansion skipped because parser initialization failed:', error);
+      }
+    }
+
+    if (canResolvePythonBindings) {
+      for (const [binding, sourceFilePath] of bindingSourceFiles.entries()) {
+        try {
+          const resolved = await this.resolveAmlImplementationGraph(binding, sourceFilePath);
+          if (resolved?.target) {
+            implementationTargets[binding] = resolved.target;
+          }
+          if (resolved?.graphData && resolved.graphData.nodes.length > 0) {
+            implementationGraphs[binding] = resolved.graphData;
+          }
+        } catch (error) {
+          console.log(`[PreviewGraphService] AML implementation expansion failed for ${binding}:`, error);
+        }
+      }
+    }
+
+    return { implementationGraphs, implementationTargets, importedDocuments };
+  }
+
+  async resolveAmlImplementationGraphs(document: vscode.TextDocument): Promise<Record<string, GraphData>> {
+    const previewData = await this.resolveAmlPreviewData(document);
+    return previewData.implementationGraphs;
+  }
+
+  private extractPythonImplementationBindings(text: string): string[] {
+    const bindings: string[] = [];
+    const seen = new Set<string>();
+    const tagPattern = /<(graph|loop)\b[^>]*\bimplementation\s*=\s*(["'])(.*?)\2/gi;
+    for (const match of text.matchAll(tagPattern)) {
+      const value = String(match[3] || '').trim();
+      if (!value.startsWith('python:')) {continue;}
+      if (seen.has(value)) {continue;}
+      seen.add(value);
+      bindings.push(value);
+    }
+    return bindings;
+  }
+
+  private extractAmlImports(text: string): Array<{ alias: string; src: string }> {
+    const imports: Array<{ alias: string; src: string }> = [];
+    const pattern = /<import\b([^>]*?)\/?>/gi;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(text))) {
+      const attrs = match[1] || '';
+      const alias = this.extractXmlAttribute(attrs, 'alias');
+      const src = this.extractXmlAttribute(attrs, 'src');
+      if (!alias || !src) {continue;}
+      imports.push({ alias, src });
+    }
+    return imports;
+  }
+
+  private extractXmlAttribute(attrs: string, name: string): string {
+    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\b${escapedName}\\s*=\\s*(['"])(.*?)\\1`, 'i');
+    const match = pattern.exec(attrs);
+    return String(match?.[2] || '').trim();
+  }
+
+  private resolveAmlImportPath(src: string, sourceFilePath: string): string | null {
+    const value = String(src || '').trim();
+    if (!value) {return null;}
+    try {
+      if (/^file:\/\//i.test(value)) {
+        return vscode.Uri.parse(value).fsPath;
+      }
+      if (path.isAbsolute(value)) {
+        return value;
+      }
+      const candidates = [
+        path.resolve(path.dirname(sourceFilePath), value),
+        this.workspaceRoot ? path.resolve(this.workspaceRoot, value) : ''
+      ].filter(Boolean);
+      for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+          return candidate;
+        }
+      }
+      return candidates[0] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private resolveAmlImportedDocuments(
+    sourceText: string,
+    sourceFilePath: string
+  ): Record<string, AmlImportedDocumentPreview> {
+    const out: Record<string, AmlImportedDocumentPreview> = {};
+    const visitedFiles = new Set<string>();
+    const MAX_DEPTH = 8;
+
+    const visit = (text: string, filePath: string, depth: number): void => {
+      if (depth > MAX_DEPTH) {return;}
+      for (const item of this.extractAmlImports(text)) {
+        const resolved = this.resolveAmlImportPath(item.src, filePath);
+        if (!resolved) {continue;}
+        let importedText = '';
+        try {
+          importedText = fs.readFileSync(resolved, 'utf-8');
+        } catch {
+          continue;
+        }
+
+        if (!out[item.alias]) {
+          out[item.alias] = { alias: item.alias, filePath: resolved, text: importedText };
+        }
+
+        const normalized = path.resolve(resolved);
+        if (visitedFiles.has(normalized)) {continue;}
+        visitedFiles.add(normalized);
+        visit(importedText, resolved, depth + 1);
+      }
+    };
+
+    visitedFiles.add(path.resolve(sourceFilePath));
+    visit(sourceText, sourceFilePath, 0);
+    return out;
+  }
+
+  private async resolveAmlImplementationGraph(
+    binding: string,
+    sourceFilePath: string
+  ): Promise<{ graphData: GraphData; target: AmlImplementationTarget } | null> {
+    const structure = await this.deps.parser.getComponentStructureByPythonPath(binding, {
+      sourceFilePath
+    });
+    if (!structure || structure.nodes.length === 0) {
+      return null;
+    }
+
+    const graphData = this.componentStructureToGraphData(structure, binding);
+    const ctx: ResolutionContext = {
+      imports: structure.sourceImports ? new Map(structure.sourceImports) : new Map(),
+      sourceFilePath: structure.sourceFilePath || sourceFilePath
+    };
+
+    const expanded = await this.expandAllSubgraphs(graphData, ctx);
+    this.computeGraphAttributesSummary(expanded);
+    return { graphData: expanded, target: this.implementationTargetFromStructure(structure, sourceFilePath) };
+  }
+
+  private implementationTargetFromStructure(
+    structure: ComponentLikeStructure,
+    fallbackSourceFilePath: string
+  ): AmlImplementationTarget {
+    const filePath = structure.sourceFilePath || fallbackSourceFilePath;
+    const lineNumbers = Object.values(structure.nodeLineNumbers || {})
+      .map((line) => Number(line))
+      .filter((line) => Number.isFinite(line) && line > 0);
+    const line = lineNumbers.length > 0 ? Math.min(...lineNumbers) : undefined;
+    return {
+      filePath,
+      line,
+      column: 1
+    };
+  }
+
+  private componentStructureToGraphData(structure: ComponentLikeStructure, binding: string): GraphData {
+    const subgraphs: Record<string, string[]> = {};
+    const subgraphParents: Record<string, string> = {};
+    const subgraphTypes: Record<string, string> = {};
+
+    for (const [parent, children] of Object.entries(structure.subgraphs || {})) {
+      subgraphs[parent] = Array.isArray(children) ? [...children] : [];
+      for (const child of subgraphs[parent]) {
+        subgraphParents[child] = parent;
+      }
+
+      const childTypes = subgraphs[parent].map((child) => String(structure.nodeTypes?.[child] || ''));
+      const looksLoop =
+        childTypes.includes('Controller') ||
+        childTypes.includes('TerminateNode') ||
+        subgraphs[parent].some((child) => child === 'controller' || child === 'terminate');
+      subgraphTypes[parent] = looksLoop ? 'Loop' : 'Graph';
+    }
+
+    return {
+      nodes: Array.isArray(structure.nodes) ? [...structure.nodes] : [],
+      nodeTypes: { ...(structure.nodeTypes || {}) },
+      edges: Array.isArray(structure.edges) ? [...structure.edges] : [],
+      subgraphs,
+      subgraphTypes,
+      subgraphParents,
+      nodeLineNumbers: { ...(structure.nodeLineNumbers || {}) },
+      nodeFilePaths: structure.nodeFilePaths ? { ...structure.nodeFilePaths } : undefined,
+      nodePullKeys: { ...(structure.nodePullKeys || {}) },
+      nodePushKeys: { ...(structure.nodePushKeys || {}) },
+      nodeAttributes: { ...(structure.nodeAttributes || {}) },
+      graphType: subgraphTypes.root === 'Loop' || structure.nodes.includes('controller') ? 'Loop' : 'Graph',
+      warnings: structure.hasComplexStructure
+        ? [`AML implementation '${binding}' contains dynamic control flow; preview may be incomplete.`]
+        : [],
+      loopControls: {},
+      pendingBuilderCalls: {}
+    };
   }
 
   private async expandBuilderFunctions(graphData: GraphData, ctx: ResolutionContext): Promise<GraphData> {
@@ -514,7 +759,7 @@ export class PreviewGraphService {
           console.log(
             `[PreviewGraphService] Builder ${builderInfo.functionName} has complex structure; keeping ${nodeName} as black box`
           );
-          if (!graphData.warnings) graphData.warnings = [];
+          if (!graphData.warnings) {graphData.warnings = [];}
           graphData.warnings.push(
             `Builder function '${builderInfo.functionName}' contains dynamic control flow; preview may be incomplete.`
           );
@@ -522,7 +767,7 @@ export class PreviewGraphService {
           console.log(
             `[PreviewGraphService] Builder ${builderInfo.functionName} parse failed; keeping ${nodeName} as black box`
           );
-          if (!graphData.warnings) graphData.warnings = [];
+          if (!graphData.warnings) {graphData.warnings = [];}
           graphData.warnings.push(
             `Builder function '${builderInfo.functionName}' could not be expanded; showing as a black box (preview may be incomplete).`
           );
@@ -674,7 +919,7 @@ export class PreviewGraphService {
       const fromNode = nodeInfo.find((n) => n.index === edgeSpec.from);
       const toNode = nodeInfo.find((n) => n.index === edgeSpec.to);
 
-      if (!fromNode || !toNode) continue;
+      if (!fromNode || !toNode) {continue;}
 
       const edge: GraphEdge = {
         from: fromNode.name,
@@ -697,9 +942,9 @@ export class PreviewGraphService {
     );
     graphData.edges = [...filteredEdges, ...newEdges];
 
-    if (!graphData.subgraphs) graphData.subgraphs = {};
-    if (!graphData.subgraphTypes) graphData.subgraphTypes = {};
-    if (!graphData.subgraphParents) graphData.subgraphParents = {};
+    if (!graphData.subgraphs) {graphData.subgraphs = {};}
+    if (!graphData.subgraphTypes) {graphData.subgraphTypes = {};}
+    if (!graphData.subgraphParents) {graphData.subgraphParents = {};}
 
     if (graphData.subgraphs[graphName] && newNodeNames.length > 0) {
       for (const nodeName of newNodeNames) {

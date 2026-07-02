@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { type Core, type ElementDefinition, type Stylesheet } from 'cytoscape';
+import { type Core, type ElementDefinition, type StylesheetJson } from 'cytoscape';
 import type { GraphData } from '../types/graph';
 import type { ExecutionState, NodeExecution } from '../types/runtimeExec';
 import { ensureCyDagreRegistered } from '../utils/cyDagre';
@@ -183,7 +183,7 @@ const RUNTIME_LAYOUT_OPTS = {
   dagreRankSep: 65
 };
 
-const RUNTIME_STYLE: Stylesheet[] = [
+const RUNTIME_STYLE: StylesheetJson = [
   {
     selector: 'node',
     style: {
@@ -204,7 +204,7 @@ const RUNTIME_STYLE: Stylesheet[] = [
       height: 'label',
       padding: '10px',
       shape: 'round-rectangle'
-    }
+    } as any
   },
   // Match legacy Preview styles for internal control nodes.
   {
@@ -314,7 +314,6 @@ const RUNTIME_STYLE: Stylesheet[] = [
       color: '#9cdcfe',
       'font-size': 10,
       'text-rotation': 'none',
-      'edge-text-rotation': 'none',
       'text-background-color': '#252526',
       'text-background-opacity': 0.9,
       'text-background-padding': '2px',

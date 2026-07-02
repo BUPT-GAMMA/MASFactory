@@ -21,10 +21,10 @@ const EDGE_CREATION_METHODS = [
  * e.g., graph.create_edge(...).hooks.register(...) -> returns the create_edge call
  */
 export function findEdgeCreationCall(node: TSNode): TSNode | null {
-    if (node.type !== 'call') return null;
+    if (node.type !== 'call') {return null;}
 
     const functionNode = node.childForFieldName('function');
-    if (!functionNode) return null;
+    if (!functionNode) {return null;}
 
     if (functionNode.type === 'attribute') {
         const attrName = functionNode.childForFieldName('attribute');

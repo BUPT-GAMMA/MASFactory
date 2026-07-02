@@ -18,7 +18,7 @@ export type VibeNodeSpec = {
   label?: string;
   /**
    * Stage-1 `graph_design.json` (v4 schema) uses `agent` to reference an existing agent/role.
-   * (For now, this only applies to Action/Agent nodes.)
+   * AML uses this for `<agent ref="#...">`; legacy JSON uses the same field.
    */
   agent?: string;
   parent?: string;
@@ -34,7 +34,7 @@ export type VibeNodeSpec = {
   prompt?: unknown;
   prompt_template?: unknown;
   /**
-   * Unified graph_design spec: list of allowed tool names for an Action node.
+   * Unified graph_design spec: list of allowed tool names for an Agent node.
    */
   tools?: unknown;
   pull_keys?: unknown;
@@ -90,10 +90,17 @@ export type VibeHistorySnapshot = {
   ts: number;
 };
 
+export type VibeDocumentKind = 'graph_design' | 'aml' | 'unknown';
+
 export type VibeDocState = {
   uri: string;
   fileName: string;
+  languageId?: string;
+  documentKind: VibeDocumentKind;
   sourceText: string;
+  amlImportedDocuments?: Record<string, unknown>;
+  amlImplementationGraphs?: Record<string, unknown>;
+  amlImplementationTargets?: Record<string, unknown>;
   graph: VibeGraphDesign | null;
   graphLocator: VibeGraphLocator | null;
   baseGraphSig: string | null;

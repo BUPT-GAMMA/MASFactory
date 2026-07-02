@@ -28,13 +28,12 @@ applications/chatdev_lite_vibegraph/
     │   ├── test_error_summary_phase.txt
     │   └── test_modification_phase.txt
     ├── cache/
-    │   └── graph_design/                 # Cached VibeGraph designs (human-editable JSON)
-    │       ├── demand_analysis.graph_design.json
-    │       ├── language_choose.graph_design.json
-    │       ├── coding.graph_design.json
-    │       ├── test_error_summary.graph_design.json
-    │       ├── test_modification.graph_design.json
-    │       └── graph.json
+    │   └── aml/                           # Cached VibeGraph AML workflows
+    │       ├── demand_analysis.aml
+    │       ├── language_choose.aml
+    │       ├── coding.aml
+    │       ├── test_error_summary.aml
+    │       └── test_modification.aml
     ├── config/
     │   └── ChatChainConfig.json           # Background prompt (ChatDev-style)
     └── output/
@@ -68,10 +67,10 @@ uv run python applications/chatdev_lite_vibegraph/main.py \
 
 Outputs are written to `applications/chatdev_lite_vibegraph/assets/output/WareHouse/<project>_<org>_<timestamp>/`.
 
-## `graph_design` (Human-in-the-loop)
+## AML (Human-in-the-loop)
 
-VibeGraph builds each phase from a **`graph_design` JSON** artifact (nodes + edges + per-step instructions). This is the main “human interaction” surface for iterating on the workflow structure.
+VibeGraph builds each phase from an **AML** artifact. This is the main human interaction surface for iterating on the workflow structure.
 
-- Cached designs live in `applications/chatdev_lite_vibegraph/assets/cache/graph_design/*.graph_design.json` and are compiled directly on subsequent runs.
-- If a cache file is missing, VibeGraph runs the build workflow to regenerate it; during this step you may be prompted to **review/edit the JSON** (via MASFactory Visualizer in VS Code if available, otherwise via CLI) and type `AGREE` to accept.
-- After editing any `assets/build_instructions/*.txt`, delete the corresponding `*.graph_design.json` cache file to force a rebuild with your updated instructions.
+- Cached AML workflows live in `applications/chatdev_lite_vibegraph/assets/cache/aml/*.aml` and are compiled directly on subsequent runs.
+- If a cache file is missing, VibeGraph runs the build workflow to regenerate it; during this step you may be prompted to **review/edit the AML** (via MASFactory Visualizer in VS Code if available, otherwise via CLI) and type `AGREE` to accept.
+- After editing any `assets/build_instructions/*.txt`, delete the corresponding `*.aml` cache file to force a rebuild with your updated instructions.

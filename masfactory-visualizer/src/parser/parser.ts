@@ -132,7 +132,7 @@ export class GraphParser {
     constructor() {}
 
     private getParser(): TreeSitterParser | null {
-        if (this.parser) return this.parser;
+        if (this.parser) {return this.parser;}
         const parser = createPythonParser();
         if (parser) {
             this.parser = parser;
@@ -172,6 +172,56 @@ export class GraphParser {
      */
     async getComponentStructure(nodeType: string, ctx?: ResolutionContext): Promise<ComponentStructure | null> {
         return await this.parseExternalComponent(nodeType, ctx);
+    }
+
+    /**
+     * Resolve a Python symbol path such as
+     * `applications.chatdev.components.phase.phase.DemandAnalysisPhase`.
+     *
+     * AML implementation bindings do not live inside Python import statements, so they
+     * bypass the normal import map and enter the same external component parser here.
+     */
+    async getComponentStructureByPythonPath(
+        pythonPath: string,
+        ctx?: ResolutionContext
+    ): Promise<ComponentStructure | null> {
+        const value = String(pythonPath || '').trim().replace(/^python:/, '');
+        let modulePath = '';
+        let className = '';
+        if (value.includes(':')) {
+            const parts = value.split(':');
+            modulePath = parts[0] || '';
+            className = parts.slice(1).join(':') || '';
+        } else {
+            const lastDot = value.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < value.length - 1) {
+                modulePath = value.slice(0, lastDot);
+                className = value.slice(lastDot + 1);
+            }
+        }
+        if (!modulePath || !className) {
+            return null;
+        }
+        const nodeType = `${modulePath}.${className}`;
+        return await this.parseExternalComponent(value, {
+            ...ctx,
+            imports: new Map<string, ImportInfo>([
+                [
+                    value,
+                    {
+                        modulePath,
+                        className
+                    }
+                ],
+                [
+                    nodeType,
+                    {
+                        modulePath,
+                        className
+                    }
+                ]
+            ])
+        });
     }
 
     private getComponentCacheKey(filePath: string, className: string): string {
@@ -220,7 +270,7 @@ export class GraphParser {
 
         for (let depth = 0; depth < 10; depth++) {
             const visitKey = `${currentModulePath}::${currentClassName}`;
-            if (visited.has(visitKey)) break;
+            if (visited.has(visitKey)) {break;}
             visited.add(visitKey);
 
             const potentialPaths = Array.from(
@@ -242,7 +292,7 @@ export class GraphParser {
                     }
 
                     const code = await this.fileReader(filePath);
-                    if (!code) continue;
+                    if (!code) {continue;}
                     const parser = this.getParser();
                     const tree = parser ? parser.parse(code) : null;
                     const rootNode = tree?.rootNode || null;
@@ -252,6 +302,7 @@ export class GraphParser {
                     const structure = parseComponentStructure(code, currentClassName);
                     if (structure) {
                         structure.sourceFilePath = filePath;
+                        structure.sourceImports = fileImports;
                         this.componentCache.set(cacheKey, structure);
 
                         // Inheritance fallback:
@@ -266,19 +317,20 @@ export class GraphParser {
                                     const normalized = baseClassText.includes('.')
                                         ? baseClassText.split('.').pop()!
                                         : baseClassText;
-                                    if (!normalized || isBaseFrameworkType(normalized)) return null;
-                                    if (localVisited.has(normalized)) return null;
+                                    if (!normalized || isBaseFrameworkType(normalized)) {return null;}
+                                    if (localVisited.has(normalized)) {return null;}
                                     localVisited.add(normalized);
 
                                     const local = parseComponentStructure(code, normalized);
                                     if (local) {
                                         local.sourceFilePath = filePath;
+                                        local.sourceImports = fileImports;
                                         const empty = local.nodes.length <= 2 && local.edges.length === 0;
-                                        if (!empty) return local;
+                                        if (!empty) {return local;}
                                         if (local.baseClasses && local.baseClasses.length > 0) {
                                             for (const bc of local.baseClasses) {
                                                 const nested = resolveBaseInSameFile(bc);
-                                                if (nested && nested.nodes.length > 2) return nested;
+                                                if (nested && nested.nodes.length > 2) {return nested;}
                                             }
                                         }
                                     }
@@ -286,8 +338,9 @@ export class GraphParser {
                                     const tmpl = parseTemplateStructure(code, normalized);
                                     if (tmpl) {
                                         tmpl.sourceFilePath = filePath;
+                                        tmpl.sourceImports = fileImports;
                                         const empty = tmpl.nodes.length <= 2 && tmpl.edges.length === 0;
-                                        if (!empty) return tmpl;
+                                        if (!empty) {return tmpl;}
                                     }
 
                                     return null;
@@ -337,6 +390,7 @@ export class GraphParser {
                                 filePath
                             );
                             if (wrappedStructure && wrappedStructure.nodes.length > 0) {
+                                wrappedStructure.sourceImports = fileImports;
                                 this.componentCache.set(cacheKey, wrappedStructure);
                                 return wrappedStructure;
                             }
@@ -350,6 +404,7 @@ export class GraphParser {
                     const templateStructure = parseTemplateStructure(code, currentClassName);
                     if (templateStructure) {
                         templateStructure.sourceFilePath = filePath;
+                        templateStructure.sourceImports = fileImports;
                         this.componentCache.set(cacheKey, templateStructure);
                         return templateStructure;
                     }
@@ -363,6 +418,7 @@ export class GraphParser {
                             filePath
                         );
                         if (wrappedStructure) {
+                            wrappedStructure.sourceImports = fileImports;
                             this.componentCache.set(cacheKey, wrappedStructure);
                             return wrappedStructure;
                         }
@@ -421,12 +477,12 @@ export class GraphParser {
         sourceFilePath?: string,
         effectiveRoot?: string
     ): string {
-        if (!modulePathText.startsWith('.')) return modulePathText;
-        if (!sourceFilePath) return modulePathText;
+        if (!modulePathText.startsWith('.')) {return modulePathText;}
+        if (!sourceFilePath) {return modulePathText;}
 
         try {
             const root = effectiveRoot || this.workspaceRoot;
-            if (!root) return modulePathText;
+            if (!root) {return modulePathText;}
             const fromModulePath = this.filePathToModulePath(sourceFilePath, root);
             return this.resolveRelativeModulePath(sourceFilePath, fromModulePath, modulePathText);
         } catch {
@@ -453,7 +509,7 @@ export class GraphParser {
     }
 
     private resolveRelativeModulePath(fromFilePath: string, fromModulePath: string, targetModuleText: string): string {
-        if (!targetModuleText.startsWith('.')) return targetModuleText;
+        if (!targetModuleText.startsWith('.')) {return targetModuleText;}
 
         const match = targetModuleText.match(/^\.+/);
         const dotCount = match ? match[0].length : 0;
@@ -477,7 +533,7 @@ export class GraphParser {
     private inferTopPackage(modulePath: string | undefined, sourceFilePath?: string): string | undefined {
         if (modulePath && !modulePath.startsWith('.')) {
             const first = modulePath.split('.').filter(Boolean)[0];
-            if (first) return first;
+            if (first) {return first;}
         }
         if (sourceFilePath) {
             const normalized = sourceFilePath.replace(/\\/g, '/');
@@ -486,7 +542,7 @@ export class GraphParser {
             if (srcIndex !== -1 && parts[srcIndex + 1]) {
                 return parts[srcIndex + 1];
             }
-            if (parts.includes('masfactory')) return 'masfactory';
+            if (parts.includes('masfactory')) {return 'masfactory';}
         }
         return undefined;
     }
@@ -512,16 +568,16 @@ export class GraphParser {
             }
 
             const parent = path.dirname(dir);
-            if (parent === dir) break;
+            if (parent === dir) {break;}
             dir = parent;
         }
 
         // Fallback: if no repo marker is found, still allow locating a package root.
         dir = path.dirname(sourceFilePath);
         for (let i = 0; i < 25; i++) {
-            if (hasPkgDir(dir)) return dir;
+            if (hasPkgDir(dir)) {return dir;}
             const parent = path.dirname(dir);
-            if (parent === dir) break;
+            if (parent === dir) {break;}
             dir = parent;
         }
 
@@ -543,10 +599,10 @@ export class GraphParser {
         // This happens frequently when users open files via absolute paths or multi-repo layouts.
         if (derived && (!workspace || path.relative(workspace, sourceFilePath ?? '').startsWith('..'))) {
             roots.push(derived);
-            if (workspace) roots.push(workspace);
+            if (workspace) {roots.push(workspace);}
         } else {
-            if (workspace) roots.push(workspace);
-            if (derived) roots.push(derived);
+            if (workspace) {roots.push(workspace);}
+            if (derived) {roots.push(derived);}
         }
 
         // Python allows importing sibling modules when a script is executed directly (the script's
@@ -568,7 +624,7 @@ export class GraphParser {
             // Parse the exporting file and inspect its imports to see whether it re-exports the symbol.
             const parser = this.getParser();
             const tree = parser ? parser.parse(fileCode) : null;
-            if (!tree) return null;
+            if (!tree) {return null;}
             const rootNode = tree.rootNode;
             const exports = parseImports(rootNode, fileCode);
 
@@ -583,14 +639,14 @@ export class GraphParser {
                     return false;
                 }
             });
-            if (!root) return null;
+            if (!root) {return null;}
 
             const fromModulePath = this.filePathToModulePath(fromFilePath, root);
 
             // Match either by key (no alias) or by original className (aliased import).
             for (const [key, info] of exports.entries()) {
-                if (info.isModule) continue;
-                if (key !== symbolName && info.className !== symbolName) continue;
+                if (info.isModule) {continue;}
+                if (key !== symbolName && info.className !== symbolName) {continue;}
 
                 const resolvedModule = this.resolveRelativeModulePath(fromFilePath, fromModulePath, info.modulePath);
                 return { modulePath: resolvedModule, className: info.className };
@@ -603,7 +659,7 @@ export class GraphParser {
 
     private getCallArgs(callNode: TSNode): TSNode[] {
         const argsNode = callNode.childForFieldName('arguments');
-        if (!argsNode) return [];
+        if (!argsNode) {return [];}
         return argsNode.namedChildren.filter((n): n is TSNode => !!n && n.type !== 'comment');
     }
 
@@ -614,10 +670,10 @@ export class GraphParser {
     private getKeywordArgMap(args: TSNode[], code: string): Map<string, TSNode> {
         const map = new Map<string, TSNode>();
         for (const arg of args) {
-            if (arg.type !== 'keyword_argument') continue;
+            if (arg.type !== 'keyword_argument') {continue;}
             const nameNode = arg.childForFieldName('name');
             const valueNode = arg.childForFieldName('value');
-            if (!nameNode || !valueNode) continue;
+            if (!nameNode || !valueNode) {continue;}
             map.set(getNodeText(nameNode, code).trim(), valueNode);
         }
         return map;
@@ -627,16 +683,16 @@ export class GraphParser {
         const out: string[] = [];
         const push = (value: string) => {
             const next = String(value || '').trim();
-            if (!next || out.includes(next)) return;
+            if (!next || out.includes(next)) {return;}
             out.push(next);
         };
         const trimmed = String(raw || '').trim();
         push(trimmed);
-        if (trimmed.startsWith('self._')) push(trimmed.replace('self._', ''));
-        if (trimmed.startsWith('self.')) push(trimmed.replace('self.', ''));
+        if (trimmed.startsWith('self._')) {push(trimmed.replace('self._', ''));}
+        if (trimmed.startsWith('self.')) {push(trimmed.replace('self.', ''));}
         const last = trimmed.split('.').pop() || '';
         push(last);
-        if (last.startsWith('_')) push(last.slice(1));
+        if (last.startsWith('_')) {push(last.slice(1));}
         return out;
     }
 
@@ -649,10 +705,10 @@ export class GraphParser {
             }
 
             const parser = this.getParser();
-            if (!parser) return null;
+            if (!parser) {return null;}
             const code = fs.readFileSync(filePath, 'utf-8');
             const tree = parser.parse(code);
-            if (!tree) return null;
+            if (!tree) {return null;}
 
             const parsed: ParsedPythonFile = {
                 filePath,
@@ -670,33 +726,33 @@ export class GraphParser {
 
     private findTopLevelFunctionInRoot(rootNode: TSNode, code: string, functionName: string): TSNode | null {
         const target = String(functionName || '').trim();
-        if (!target) return null;
+        if (!target) {return null;}
         for (const child of rootNode.children) {
-            if (!child) continue;
+            if (!child) {continue;}
             const fn =
                 child.type === 'decorated_definition'
                     ? child.namedChildren.find((n): n is TSNode => !!n && n.type === 'function_definition') || null
                     : child.type === 'function_definition'
                         ? child
                         : null;
-            if (!fn) continue;
+            if (!fn) {continue;}
             const nameNode = fn.childForFieldName('name');
-            if (nameNode && getNodeText(nameNode, code).trim() === target) return fn;
+            if (nameNode && getNodeText(nameNode, code).trim() === target) {return fn;}
         }
         return null;
     }
 
     private findTopLevelAssignmentRight(rootNode: TSNode, code: string, names: string[]): TSNode | null {
         const wanted = new Set(names.map((n) => String(n || '').trim()).filter(Boolean));
-        if (wanted.size === 0) return null;
+        if (wanted.size === 0) {return null;}
         for (const child of rootNode.children) {
-            if (!child || child.type !== 'expression_statement') continue;
+            if (!child || child.type !== 'expression_statement') {continue;}
             const first = child.namedChildren[0];
-            if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) continue;
+            if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) {continue;}
             const left = first.childForFieldName('left');
             const right = first.childForFieldName('right');
-            if (!left || !right) continue;
-            if (wanted.has(getNodeText(left, code).trim())) return right;
+            if (!left || !right) {continue;}
+            if (wanted.has(getNodeText(left, code).trim())) {return right;}
         }
         return null;
     }
@@ -705,9 +761,9 @@ export class GraphParser {
         node: TSNode | null | undefined,
         type: 'function_definition' | 'class_definition'
     ): TSNode | null {
-        if (!node) return null;
-        if (node.type === type) return node;
-        if (node.type !== 'decorated_definition') return null;
+        if (!node) {return null;}
+        if (node.type === type) {return node;}
+        if (node.type !== 'decorated_definition') {return null;}
         return node.namedChildren.find((child): child is TSNode => !!child && child.type === type) || null;
     }
 
@@ -718,41 +774,41 @@ export class GraphParser {
 
     private findTopLevelClassInRoot(rootNode: TSNode, code: string, className: string): TSNode | null {
         const target = String(className || '').trim();
-        if (!target) return null;
+        if (!target) {return null;}
         for (const child of rootNode.children) {
             const classDef = this.unwrapNamedDefinition(child, 'class_definition');
-            if (!classDef) continue;
-            if (this.getDefinitionName(classDef, code) === target) return classDef;
+            if (!classDef) {continue;}
+            if (this.getDefinitionName(classDef, code) === target) {return classDef;}
         }
         return null;
     }
 
     private findMethodInClassNode(classNode: TSNode, code: string, methodName: string): TSNode | null {
         const target = String(methodName || '').trim();
-        if (!target) return null;
+        if (!target) {return null;}
         const body = classNode.childForFieldName('body');
-        if (!body) return null;
+        if (!body) {return null;}
         for (const child of body.namedChildren) {
             const methodDef = this.unwrapNamedDefinition(child, 'function_definition');
-            if (!methodDef) continue;
-            if (this.getDefinitionName(methodDef, code) === target) return methodDef;
+            if (!methodDef) {continue;}
+            if (this.getDefinitionName(methodDef, code) === target) {return methodDef;}
         }
         return null;
     }
 
     private getGraphKindFromFunctionText(functionText: string): 'Graph' | 'Loop' | 'RootGraph' | null {
         const normalized = String(functionText || '').trim();
-        if (!normalized) return null;
+        if (!normalized) {return null;}
         const last = normalized.includes('.') ? normalized.split('.').pop()! : normalized;
-        if (last === 'RootGraph') return 'RootGraph';
-        if (last === 'Loop') return 'Loop';
-        if (last === 'Graph') return 'Graph';
+        if (last === 'RootGraph') {return 'RootGraph';}
+        if (last === 'Loop') {return 'Loop';}
+        if (last === 'Graph') {return 'Graph';}
         return null;
     }
 
     private getGraphKindRank(kind: 'Graph' | 'Loop' | 'RootGraph'): number {
-        if (kind === 'RootGraph') return 3;
-        if (kind === 'Loop') return 2;
+        if (kind === 'RootGraph') {return 3;}
+        if (kind === 'Loop') {return 2;}
         return 1;
     }
 
@@ -761,7 +817,7 @@ export class GraphParser {
             let best: (GraphScopeMatch & { rank: number }) | null = null;
 
             for (const child of node.children) {
-                if (!child) continue;
+                if (!child) {continue;}
 
                 if (
                     this.unwrapNamedDefinition(child, 'function_definition') ||
@@ -775,16 +831,16 @@ export class GraphParser {
                     if (first && (first.type === 'assignment' || first.type === 'typed_assignment')) {
                         const left = first.childForFieldName('left');
                         const right = first.childForFieldName('right');
-                        if (!left || !right || right.type !== 'call') continue;
+                        if (!left || !right || right.type !== 'call') {continue;}
 
                         const functionNode = right.childForFieldName('function');
                         const graphKind = functionNode
                             ? this.getGraphKindFromFunctionText(getNodeText(functionNode, code).trim())
                             : null;
-                        if (!graphKind) continue;
+                        if (!graphKind) {continue;}
 
                         const rootGraphVariable = getNodeText(left, code).trim();
-                        if (!rootGraphVariable) continue;
+                        if (!rootGraphVariable) {continue;}
 
                         const candidate: GraphScopeMatch & { rank: number } = {
                             bodyNode: node,
@@ -812,11 +868,11 @@ export class GraphParser {
                         child.childForFieldName('body') || child.childForFieldName('consequence');
                     const alt = child.childForFieldName('alternative');
                     const fromBody = body ? inspect(body) : null;
-                    if (fromBody && (!best || fromBody.rank > best.rank)) best = fromBody;
-                    if (best?.rank === 3) return best;
+                    if (fromBody && (!best || fromBody.rank > best.rank)) {best = fromBody;}
+                    if (best?.rank === 3) {return best;}
                     const fromAlt = alt ? inspect(alt) : null;
-                    if (fromAlt && (!best || fromAlt.rank > best.rank)) best = fromAlt;
-                    if (best?.rank === 3) return best;
+                    if (fromAlt && (!best || fromAlt.rank > best.rank)) {best = fromAlt;}
+                    if (best?.rank === 3) {return best;}
                     continue;
                 }
 
@@ -824,10 +880,10 @@ export class GraphParser {
                     const fromTry = child.childForFieldName('body')
                         ? inspect(child.childForFieldName('body')!)
                         : null;
-                    if (fromTry && (!best || fromTry.rank > best.rank)) best = fromTry;
-                    if (best?.rank === 3) return best;
+                    if (fromTry && (!best || fromTry.rank > best.rank)) {best = fromTry;}
+                    if (best?.rank === 3) {return best;}
                     for (const clause of child.namedChildren) {
-                        if (!clause) continue;
+                        if (!clause) {continue;}
                         if (
                             clause.type !== 'except_clause' &&
                             clause.type !== 'else_clause' &&
@@ -840,16 +896,16 @@ export class GraphParser {
                             clause.namedChildren.find((n): n is TSNode => !!n && n.type === 'block') ||
                             null;
                         const fromClause = clauseBody ? inspect(clauseBody) : null;
-                        if (fromClause && (!best || fromClause.rank > best.rank)) best = fromClause;
-                        if (best?.rank === 3) return best;
+                        if (fromClause && (!best || fromClause.rank > best.rank)) {best = fromClause;}
+                        if (best?.rank === 3) {return best;}
                     }
                     continue;
                 }
 
                 if (child.type === 'block') {
                     const fromBlock = inspect(child);
-                    if (fromBlock && (!best || fromBlock.rank > best.rank)) best = fromBlock;
-                    if (best?.rank === 3) return best;
+                    if (fromBlock && (!best || fromBlock.rank > best.rank)) {best = fromBlock;}
+                    if (best?.rank === 3) {return best;}
                 }
             }
 
@@ -857,7 +913,7 @@ export class GraphParser {
         };
 
         const best = inspect(scopeNode);
-        if (!best) return null;
+        if (!best) {return null;}
         return {
             bodyNode: best.bodyNode,
             graphKind: best.graphKind,
@@ -868,23 +924,23 @@ export class GraphParser {
 
     private getGraphMethodPreference(methodName: string): number {
         const normalized = String(methodName || '').trim().toLowerCase();
-        if (!normalized) return 0;
-        if (normalized === 'build') return 100;
-        if (normalized === '__init__') return 90;
-        if (normalized === 'build_graph') return 80;
-        if (normalized === 'create_graph') return 75;
-        if (normalized === 'graph') return 70;
-        if (normalized.includes('graph')) return 60;
-        if (normalized.startsWith('build')) return 50;
-        if (normalized.startsWith('create')) return 40;
+        if (!normalized) {return 0;}
+        if (normalized === 'build') {return 100;}
+        if (normalized === '__init__') {return 90;}
+        if (normalized === 'build_graph') {return 80;}
+        if (normalized === 'create_graph') {return 75;}
+        if (normalized === 'graph') {return 70;}
+        if (normalized.includes('graph')) {return 60;}
+        if (normalized.startsWith('build')) {return 50;}
+        if (normalized.startsWith('create')) {return 40;}
         return 0;
     }
 
     private findFunctionGraphScope(rootNode: TSNode, code: string, functionName: string): GraphScopeMatch | null {
         const functionDef = this.findTopLevelFunctionInRoot(rootNode, code, functionName);
-        if (!functionDef) return null;
+        if (!functionDef) {return null;}
         const bodyNode = functionDef.childForFieldName('body');
-        if (!bodyNode) return null;
+        if (!bodyNode) {return null;}
         return this.findGraphAssignmentInScope(bodyNode, code);
     }
 
@@ -895,21 +951,21 @@ export class GraphParser {
         preferredMethodName?: string
     ): GraphScopeMatch | null {
         const classDef = this.findTopLevelClassInRoot(rootNode, code, className);
-        if (!classDef) return null;
+        if (!classDef) {return null;}
         const classBody = classDef.childForFieldName('body');
-        if (!classBody) return null;
+        if (!classBody) {return null;}
 
         let best: (GraphScopeMatch & { methodPreference: number; rank: number }) | null = null;
 
         for (const child of classBody.namedChildren) {
             const methodDef = this.unwrapNamedDefinition(child, 'function_definition');
-            if (!methodDef) continue;
+            if (!methodDef) {continue;}
             const methodName = this.getDefinitionName(methodDef, code);
-            if (preferredMethodName && methodName !== preferredMethodName) continue;
+            if (preferredMethodName && methodName !== preferredMethodName) {continue;}
             const bodyNode = methodDef.childForFieldName('body');
-            if (!bodyNode) continue;
+            if (!bodyNode) {continue;}
             const match = this.findGraphAssignmentInScope(bodyNode, code);
-            if (!match) continue;
+            if (!match) {continue;}
 
             const candidate: GraphScopeMatch & { methodPreference: number; rank: number } = {
                 ...match,
@@ -933,7 +989,7 @@ export class GraphParser {
             }
         }
 
-        if (!best) return null;
+        if (!best) {return null;}
         return {
             bodyNode: best.bodyNode,
             graphKind: best.graphKind,
@@ -997,7 +1053,7 @@ export class GraphParser {
                 candidate.template,
                 candidate.template.sourceCode || candidate.sourceCode || ''
             );
-            if (!structure) return null;
+            if (!structure) {return null;}
             const subgraphParents: { [child: string]: string } = {};
             const subgraphTypes: { [parent: string]: string } = {};
             for (const [parent, children] of Object.entries(structure.subgraphs || {})) {
@@ -1145,10 +1201,10 @@ export class GraphParser {
             ...(parsed.literalValues || {}),
             ...(env.exprBindings || {})
         };
-        if (Object.keys(scopedTemplates).length > 0) next.scopedTemplates = scopedTemplates;
-        if (Object.keys(literalValues).length > 0) next.literalValues = literalValues;
-        if (!next.sourceFilePath && env.sourceFilePath) next.sourceFilePath = env.sourceFilePath;
-        if (!next.sourceCode && env.code) next.sourceCode = env.code;
+        if (Object.keys(scopedTemplates).length > 0) {next.scopedTemplates = scopedTemplates;}
+        if (Object.keys(literalValues).length > 0) {next.literalValues = literalValues;}
+        if (!next.sourceFilePath && env.sourceFilePath) {next.sourceFilePath = env.sourceFilePath;}
+        if (!next.sourceCode && env.code) {next.sourceCode = env.code;}
         return next;
     }
 
@@ -1180,7 +1236,7 @@ export class GraphParser {
 
         for (let depth = 0; depth < 8; depth++) {
             const visitKey = `${currentModulePath}::${currentSymbol}`;
-            if (visited.has(visitKey)) break;
+            if (visited.has(visitKey)) {break;}
             visited.add(visitKey);
 
             const potentialPaths = Array.from(
@@ -1190,7 +1246,7 @@ export class GraphParser {
             let redirected = false;
             for (const filePath of potentialPaths) {
                 const parsed = this.getParsedPythonFile(filePath);
-                if (!parsed) continue;
+                if (!parsed) {continue;}
 
                 const hasFunction = !!this.findTopLevelFunctionInRoot(parsed.rootNode, parsed.code, currentSymbol);
                 const hasAssignment = !!this.findTopLevelAssignmentRight(
@@ -1213,7 +1269,7 @@ export class GraphParser {
                 }
             }
 
-            if (!redirected) break;
+            if (!redirected) {break;}
         }
 
         return null;
@@ -1238,7 +1294,7 @@ export class GraphParser {
                 const localClass = this.findTopLevelClassInRoot(rootNode, code, key);
                 if (localClass) {
                     const methodDef = this.findMethodInClassNode(localClass, code, methodName);
-                    if (!methodDef) continue;
+                    if (!methodDef) {continue;}
                     return {
                         callableDef: methodDef,
                         callableKind: 'method',
@@ -1252,22 +1308,22 @@ export class GraphParser {
                 }
 
                 const importInfo = this.resolveImportInfoForType(key, imports);
-                if (!importInfo) continue;
+                if (!importInfo) {continue;}
                 const source = this.resolveImportedSymbolSource(
                     importInfo,
                     sourceFilePath,
                     importInfo.className || key
                 );
-                if (!source) continue;
+                if (!source) {continue;}
 
                 const classNode = this.findTopLevelClassInRoot(
                     source.file.rootNode,
                     source.file.code,
                     source.symbolName || key
                 );
-                if (!classNode) continue;
+                if (!classNode) {continue;}
                 const methodDef = this.findMethodInClassNode(classNode, source.file.code, methodName);
-                if (!methodDef) continue;
+                if (!methodDef) {continue;}
                 return {
                     callableDef: methodDef,
                     callableKind: 'method',
@@ -1320,13 +1376,13 @@ export class GraphParser {
         const importInfo =
             this.resolveImportInfoForType(functionText, env.imports) ||
             this.resolveImportInfoForType(normalizedName, env.imports);
-        if (!importInfo) return null;
+        if (!importInfo) {return null;}
         const source = this.resolveImportedSymbolSource(
             importInfo,
             env.sourceFilePath,
             importInfo.className || normalizedName
         );
-        if (!source) return null;
+        if (!source) {return null;}
 
         const importedFunction = this.findTopLevelFunctionInRoot(
             source.file.rootNode,
@@ -1367,7 +1423,7 @@ export class GraphParser {
     }
 
     private resolveTemplateExpression(expr: TSNode, env: TemplateResolverEnv): ParsedNodeTemplate | null {
-        if (!expr || env.depth > 10) return null;
+        if (!expr || env.depth > 10) {return null;}
 
         const rawText = getNodeText(expr, env.code).trim();
         const lookupKeys = this.normalizeLookupKeys(rawText);
@@ -1391,7 +1447,7 @@ export class GraphParser {
                         preferredName: env.preferredName || key,
                         depth: env.depth + 1
                     });
-                    if (resolved) return resolved;
+                    if (resolved) {return resolved;}
                 }
             }
 
@@ -1402,20 +1458,20 @@ export class GraphParser {
                     preferredName: env.preferredName || lookupKeys[0],
                     depth: env.depth + 1
                 });
-                if (resolved) return resolved;
+                if (resolved) {return resolved;}
             }
 
             for (const key of lookupKeys) {
                 const importInfo = this.resolveImportInfoForType(key, env.imports);
-                if (!importInfo) continue;
+                if (!importInfo) {continue;}
                 const source = this.resolveImportedSymbolSource(importInfo, env.sourceFilePath, importInfo.className || key);
-                if (!source) continue;
+                if (!source) {continue;}
                 const assignmentNode = this.findTopLevelAssignmentRight(
                     source.file.rootNode,
                     source.file.code,
                     this.normalizeLookupKeys(source.symbolName)
                 );
-                if (!assignmentNode) continue;
+                if (!assignmentNode) {continue;}
                 const resolved = this.resolveTemplateExpression(assignmentNode, {
                     preferredName: env.preferredName || key,
                     code: source.file.code,
@@ -1427,15 +1483,15 @@ export class GraphParser {
                     depth: env.depth + 1,
                     visited: env.visited
                 });
-                if (resolved) return resolved;
+                if (resolved) {return resolved;}
             }
             return null;
         }
 
-        if (expr.type !== 'call') return null;
+        if (expr.type !== 'call') {return null;}
 
         const functionNode = expr.childForFieldName('function');
-        if (!functionNode) return null;
+        if (!functionNode) {return null;}
         const functionText = getNodeText(functionNode, env.code).trim();
         const args = this.getCallArgs(expr);
         const positional = this.getPositionalArgs(args);
@@ -1470,16 +1526,16 @@ export class GraphParser {
                         ...base,
                         templateName: env.preferredName || base.templateName
                     };
-                    if (kw.has('nodes')) next.nodesArg = kw.get('nodes');
-                    if (kw.has('edges')) next.edgesArg = kw.get('edges');
-                    if (kw.has('pull_keys')) next.pullKeys = parseKeysArgument(kw.get('pull_keys')!, env.code);
-                    if (kw.has('push_keys')) next.pushKeys = parseKeysArgument(kw.get('push_keys')!, env.code);
-                    if (kw.has('attributes')) next.attributes = parseDictArgument(kw.get('attributes')!, env.code);
+                    if (kw.has('nodes')) {next.nodesArg = kw.get('nodes');}
+                    if (kw.has('edges')) {next.edgesArg = kw.get('edges');}
+                    if (kw.has('pull_keys')) {next.pullKeys = parseKeysArgument(kw.get('pull_keys')!, env.code);}
+                    if (kw.has('push_keys')) {next.pushKeys = parseKeysArgument(kw.get('push_keys')!, env.code);}
+                    if (kw.has('attributes')) {next.attributes = parseDictArgument(kw.get('attributes')!, env.code);}
                     if (kw.has('build_func')) {
                         const buildFuncExpr = kw.get('build_func');
                         if (buildFuncExpr) {
                             const fallback = tryParseNodeTemplateAssignment('__tmp__', expr, env.code);
-                            if (fallback?.buildFunc) next.buildFunc = fallback.buildFunc;
+                            if (fallback?.buildFunc) {next.buildFunc = fallback.buildFunc;}
                         }
                     }
                     return this.mergeTemplateScope(next, env);
@@ -1492,13 +1548,13 @@ export class GraphParser {
 
     private resolveFunctionCallToTemplate(callNode: TSNode, env: TemplateResolverEnv): ParsedNodeTemplate | null {
         const functionNode = callNode.childForFieldName('function');
-        if (!functionNode) return null;
+        if (!functionNode) {return null;}
         const functionText = getNodeText(functionNode, env.code).trim();
         const normalizedName = functionText.includes('.') ? functionText.split('.').pop()! : functionText;
         const visitKey = `${env.sourceFilePath || '<memory>'}::${functionText}::${getNodeText(callNode, env.code).trim()}`;
-        if (env.visited.has(visitKey)) return null;
+        if (env.visited.has(visitKey)) {return null;}
         const callable = this.resolveCallableDefinition(functionNode, env);
-        if (!callable) return null;
+        if (!callable) {return null;}
 
         const fileCode = callable.code;
         const fileRoot = callable.rootNode;
@@ -1512,14 +1568,14 @@ export class GraphParser {
             const paramNames: string[] = [];
             if (parametersNode) {
                 for (const child of parametersNode.namedChildren) {
-                    if (!child) continue;
+                    if (!child) {continue;}
                     const nameNode =
                         child.type === 'identifier'
                             ? child
                             : child.childForFieldName('name') || child.childForFieldName('pattern');
-                    if (!nameNode) continue;
+                    if (!nameNode) {continue;}
                     const name = getNodeText(nameNode, fileCode).trim();
-                    if (name && !paramNames.includes(name)) paramNames.push(name);
+                    if (name && !paramNames.includes(name)) {paramNames.push(name);}
                 }
             }
             if (
@@ -1540,7 +1596,7 @@ export class GraphParser {
             for (let i = 0; i < paramNames.length; i++) {
                 const paramName = paramNames[i];
                 const argNode = kw.get(paramName) || positional[i];
-                if (!argNode) continue;
+                if (!argNode) {continue;}
                 localExprBindings[paramName] = argNode;
                 const resolved = this.resolveTemplateExpression(argNode, {
                     preferredName: paramName,
@@ -1553,23 +1609,23 @@ export class GraphParser {
                     depth: env.depth + 1,
                     visited: env.visited
                 });
-                if (resolved) localTemplates[paramName] = resolved;
+                if (resolved) {localTemplates[paramName] = resolved;}
             }
 
             const bodyNode = functionDef.childForFieldName('body');
-            if (!bodyNode) return null;
+            if (!bodyNode) {return null;}
 
             for (const stmt of bodyNode.children) {
-                if (!stmt) continue;
+                if (!stmt) {continue;}
 
                 if (stmt.type === 'expression_statement') {
                     const first = stmt.namedChildren[0];
-                    if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) continue;
+                    if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) {continue;}
                     const left = first.childForFieldName('left');
                     const right = first.childForFieldName('right');
-                    if (!left || !right) continue;
+                    if (!left || !right) {continue;}
                     const leftText = getNodeText(left, fileCode).trim();
-                    if (!leftText) continue;
+                    if (!leftText) {continue;}
 
                     localExprBindings[leftText] = right;
                     const resolved = this.resolveTemplateExpression(right, {
@@ -1594,7 +1650,7 @@ export class GraphParser {
                         stmt.childForFieldName('value') ||
                         stmt.namedChildren.find((n): n is TSNode => !!n) ||
                         null;
-                    if (!valueNode) continue;
+                    if (!valueNode) {continue;}
                     const resolved = this.resolveTemplateExpression(valueNode, {
                         preferredName: env.preferredName || normalizedName,
                         code: fileCode,
@@ -1606,7 +1662,7 @@ export class GraphParser {
                         depth: env.depth + 1,
                         visited: env.visited
                     });
-                    if (resolved) return resolved;
+                    if (resolved) {return resolved;}
                 }
             }
         } finally {
@@ -1620,7 +1676,7 @@ export class GraphParser {
         parsed: ParsedNodeTemplate,
         env: StandaloneTemplateScopeEnv
     ): ParsedNodeTemplate {
-        if (!parsed.nodesArg) return parsed;
+        if (!parsed.nodesArg) {return parsed;}
 
         let scopeCode = parsed.sourceCode || env.code;
         let scopeRoot = env.rootNode;
@@ -1647,12 +1703,12 @@ export class GraphParser {
         };
 
         for (const item of parsed.nodesArg.namedChildren) {
-            if (!item || item.type !== 'tuple') continue;
+            if (!item || item.type !== 'tuple') {continue;}
             const elems = item.namedChildren.filter((n): n is TSNode => !!n && n.type !== 'comment');
-            if (elems.length < 2) continue;
+            if (elems.length < 2) {continue;}
             const typeNode = elems[1];
             const rawType = getNodeText(typeNode, scopeCode).trim();
-            if (!rawType) continue;
+            if (!rawType) {continue;}
             if (scopedTemplates[rawType] || scopedTemplates[rawType.includes('.') ? rawType.split('.').pop()! : rawType]) {
                 continue;
             }
@@ -1668,11 +1724,11 @@ export class GraphParser {
                 depth: 0,
                 visited: new Set<string>()
             });
-            if (!resolved) continue;
+            if (!resolved) {continue;}
 
             const register = (key: string, value: ParsedNodeTemplate) => {
                 const next = String(key || '').trim();
-                if (!next) return;
+                if (!next) {return;}
                 scopedTemplates[next] = value;
             };
             register(rawType, resolved);
@@ -1789,7 +1845,7 @@ export class GraphParser {
         const seen = new Set<string>();
         const push = (raw: string): void => {
             const next = String(raw || '').trim();
-            if (!next || next === '_' || seen.has(next)) return;
+            if (!next || next === '_' || seen.has(next)) {return;}
             seen.add(next);
             out.push(next);
         };
@@ -1811,7 +1867,7 @@ export class GraphParser {
             ) {
                 for (let i = node.namedChildren.length - 1; i >= 0; i--) {
                     const child = node.namedChildren[i];
-                    if (child) stack.push(child);
+                    if (child) {stack.push(child);}
                 }
             }
         }
@@ -1825,7 +1881,7 @@ export class GraphParser {
         lineNumber?: number
     ): StandaloneRenderableCandidate {
         const nextId = String(alias || '').trim();
-        if (!nextId) return candidate;
+        if (!nextId) {return candidate;}
 
         if (candidate.kind === 'template' && candidate.template) {
             return {
@@ -1852,14 +1908,14 @@ export class GraphParser {
         env: TemplateResolverEnv
     ): StandaloneRenderableCandidate[] | null {
         const functionNode = callNode.childForFieldName('function');
-        if (!functionNode) return null;
+        if (!functionNode) {return null;}
 
         const functionText = getNodeText(functionNode, env.code).trim();
         const normalizedName = functionText.includes('.') ? functionText.split('.').pop()! : functionText;
         const visitKey = `${env.sourceFilePath || '<memory>'}::renderable::${functionText}::${getNodeText(callNode, env.code).trim()}`;
-        if (env.visited.has(visitKey)) return null;
+        if (env.visited.has(visitKey)) {return null;}
         const callable = this.resolveCallableDefinition(functionNode, env);
-        if (!callable) return null;
+        if (!callable) {return null;}
 
         const fileCode = callable.code;
         const fileRoot = callable.rootNode;
@@ -1873,14 +1929,14 @@ export class GraphParser {
             const paramNames: string[] = [];
             if (parametersNode) {
                 for (const child of parametersNode.namedChildren) {
-                    if (!child) continue;
+                    if (!child) {continue;}
                     const nameNode =
                         child.type === 'identifier'
                             ? child
                             : child.childForFieldName('name') || child.childForFieldName('pattern');
-                    if (!nameNode) continue;
+                    if (!nameNode) {continue;}
                     const name = getNodeText(nameNode, fileCode).trim();
-                    if (name && !paramNames.includes(name)) paramNames.push(name);
+                    if (name && !paramNames.includes(name)) {paramNames.push(name);}
                 }
             }
             if (
@@ -1906,7 +1962,7 @@ export class GraphParser {
             const lookupLocalCandidate = (raw: string): StandaloneRenderableCandidate | null => {
                 for (const key of this.normalizeLookupKeys(raw)) {
                     const candidate = localCandidates[key];
-                    if (candidate) return candidate;
+                    if (candidate) {return candidate;}
                 }
                 return null;
             };
@@ -1918,7 +1974,7 @@ export class GraphParser {
             const lookupExpr = (raw: string): TSNode | null => {
                 for (const key of this.normalizeLookupKeys(raw)) {
                     const bound = localExprBindings[key];
-                    if (bound) return bound;
+                    if (bound) {return bound;}
                 }
                 return null;
             };
@@ -1934,7 +1990,7 @@ export class GraphParser {
                 visited: env.visited
             });
             const resolveReturnValue = (valueNode: TSNode | null | undefined): StandaloneRenderableCandidate[] => {
-                if (!valueNode) return [];
+                if (!valueNode) {return [];}
 
                 if (
                     valueNode.type === 'tuple' ||
@@ -1943,7 +1999,7 @@ export class GraphParser {
                 ) {
                     const nested: StandaloneRenderableCandidate[] = [];
                     for (const child of valueNode.namedChildren) {
-                        if (!child || child.type === 'comment') continue;
+                        if (!child || child.type === 'comment') {continue;}
                         nested.push(...resolveReturnValue(child));
                     }
                     return nested;
@@ -1952,12 +2008,12 @@ export class GraphParser {
                 if (valueNode.type === 'identifier' || valueNode.type === 'attribute') {
                     const raw = getNodeText(valueNode, fileCode).trim();
                     const localCandidate = lookupLocalCandidate(raw);
-                    if (localCandidate) return [localCandidate];
+                    if (localCandidate) {return [localCandidate];}
 
                     const bound = lookupExpr(raw);
                     if (bound && bound !== valueNode) {
                         const resolved = resolveReturnValue(bound);
-                        if (resolved.length > 0) return resolved;
+                        if (resolved.length > 0) {return resolved;}
                     }
 
                     const parsed = this.resolveTemplateExpression(valueNode, resolveNestedEnv(raw));
@@ -1997,7 +2053,7 @@ export class GraphParser {
             for (let i = 0; i < paramNames.length; i++) {
                 const paramName = paramNames[i];
                 const argNode = kw.get(paramName) || positional[i];
-                if (!argNode) continue;
+                if (!argNode) {continue;}
                 bindExpr(paramName, argNode);
                 const resolved = this.resolveTemplateExpression(argNode, {
                     preferredName: paramName,
@@ -2010,21 +2066,21 @@ export class GraphParser {
                     depth: env.depth + 1,
                     visited: env.visited
                 });
-                if (resolved) localTemplates[paramName] = resolved;
+                if (resolved) {localTemplates[paramName] = resolved;}
             }
 
             const bodyNode = functionDef.childForFieldName('body');
-            if (!bodyNode) return null;
+            if (!bodyNode) {return null;}
 
             for (const stmt of bodyNode.children) {
-                if (!stmt) continue;
+                if (!stmt) {continue;}
 
                 if (stmt.type === 'expression_statement') {
                     const first = stmt.namedChildren[0];
-                    if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) continue;
+                    if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) {continue;}
                     const left = first.childForFieldName('left');
                     const right = first.childForFieldName('right');
-                    if (!left || !right) continue;
+                    if (!left || !right) {continue;}
 
                     const bindingNames = this.extractPatternBindingNames(left, fileCode);
                     if (bindingNames.length === 1) {
@@ -2124,7 +2180,7 @@ export class GraphParser {
                         stmt.namedChildren.find((n): n is TSNode => !!n) ||
                         null;
                     const resolved = resolveReturnValue(valueNode);
-                    if (resolved.length > 0) return resolved;
+                    if (resolved.length > 0) {return resolved;}
                 }
             }
         } finally {
@@ -2521,7 +2577,7 @@ export class GraphParser {
      * Determine the specific graph type from class name
      */
     private determineGraphType(className: string, baseType: string): GraphType {
-        if (baseType === BASE_TYPES.ROOT_GRAPH) return 'RootGraph';
+        if (baseType === BASE_TYPES.ROOT_GRAPH) {return 'RootGraph';}
 
         const loopTypes: GraphType[] = ['HubGraph', 'MeshGraph', 'Loop'];
         const graphTypes: GraphType[] = [
@@ -2556,10 +2612,10 @@ export class GraphParser {
 
     private inferNonClassGraphType(rootNode: TSNode, code: string): GraphType {
         const inspect = (node: TSNode | null | undefined): GraphType | null => {
-            if (!node) return null;
+            if (!node) {return null;}
 
             for (const child of node.children) {
-                if (!child) continue;
+                if (!child) {continue;}
 
                 const functionNode =
                     child.type === 'decorated_definition'
@@ -2569,7 +2625,7 @@ export class GraphParser {
                             : null;
                 if (functionNode) {
                     const foundInFunction = inspect(functionNode.childForFieldName('body'));
-                    if (foundInFunction) return foundInFunction;
+                    if (foundInFunction) {return foundInFunction;}
                     continue;
                 }
 
@@ -2581,9 +2637,9 @@ export class GraphParser {
                         const functionExpr = call?.childForFieldName('function');
                         const functionText = functionExpr ? getNodeText(functionExpr, code).trim() : '';
                         const normalized = functionText.includes('.') ? functionText.split('.').pop()! : functionText;
-                        if (normalized === 'RootGraph') return 'RootGraph';
-                        if (normalized === 'Loop') return 'Loop';
-                        if (normalized === 'Graph') return 'Graph';
+                        if (normalized === 'RootGraph') {return 'RootGraph';}
+                        if (normalized === 'Loop') {return 'Loop';}
+                        if (normalized === 'Graph') {return 'Graph';}
                     }
                 }
 
@@ -2594,16 +2650,16 @@ export class GraphParser {
                     child.type === 'with_statement'
                 ) {
                     const foundInBody = inspect(child.childForFieldName('body') || child.childForFieldName('consequence'));
-                    if (foundInBody) return foundInBody;
+                    if (foundInBody) {return foundInBody;}
                     const foundInAlt = inspect(child.childForFieldName('alternative'));
-                    if (foundInAlt) return foundInAlt;
+                    if (foundInAlt) {return foundInAlt;}
                 }
 
                 if (child.type === 'try_statement') {
                     const foundInTry = inspect(child.childForFieldName('body'));
-                    if (foundInTry) return foundInTry;
+                    if (foundInTry) {return foundInTry;}
                     for (const clause of child.namedChildren) {
-                        if (!clause) continue;
+                        if (!clause) {continue;}
                         if (clause.type !== 'except_clause' && clause.type !== 'else_clause' && clause.type !== 'finally_clause') {
                             continue;
                         }
@@ -2612,13 +2668,13 @@ export class GraphParser {
                                 clause.namedChildren.find((n): n is TSNode => !!n && n.type === 'block') ||
                                 null
                         );
-                        if (foundInClause) return foundInClause;
+                        if (foundInClause) {return foundInClause;}
                     }
                 }
 
                 if (child.type === 'block') {
                     const foundInBlock = inspect(child);
-                    if (foundInBlock) return foundInBlock;
+                    if (foundInBlock) {return foundInBlock;}
                 }
             }
 
@@ -2644,12 +2700,12 @@ export class GraphParser {
         const lastSegment = (name: string): string => (name.includes('.') ? name.split('.').pop()! : name);
         const normalizeTypeName = (raw: string): string => {
             const text = String(raw || '').trim();
-            if (!text) return 'Node';
+            if (!text) {return 'Node';}
             return text.includes('.') ? text.split('.').pop()! : text;
         };
         const registerCandidate = (candidate: StandaloneRenderableCandidate): void => {
             const id = String(candidate.id || '').trim();
-            if (!id) return;
+            if (!id) {return;}
             candidateEntries[id] = candidate;
             if (!candidates.includes(id)) {
                 candidates.push(id);
@@ -2657,7 +2713,7 @@ export class GraphParser {
         };
         const hasEquivalentAssignmentCandidate = (match: GraphScopeMatch): boolean => {
             const sameScope = (node: TSNode | undefined, target: TSNode): boolean => {
-                if (!node) return false;
+                if (!node) {return false;}
                 return (
                     node.type === target.type &&
                     node.startPosition.row === target.startPosition.row &&
@@ -2678,7 +2734,7 @@ export class GraphParser {
         const registerTemplate = (parsed: ParsedNodeTemplate): void => {
             const store = (key: string, value: ParsedNodeTemplate) => {
                 const next = String(key || '').trim();
-                if (!next) return;
+                if (!next) {return;}
                 templates[next] = value;
             };
             store(parsed.templateName, parsed);
@@ -2699,11 +2755,11 @@ export class GraphParser {
         };
         const registerLiteral = (key: string, value: TSNode): void => {
             const next = String(key || '').trim();
-            if (!next) return;
+            if (!next) {return;}
             literalValues[next] = value;
         };
         const resolveLiteralNode = (node: TSNode): TSNode => {
-            if (node.type !== 'identifier' && node.type !== 'attribute') return node;
+            if (node.type !== 'identifier' && node.type !== 'attribute') {return node;}
             const raw = getNodeText(node, code).trim();
             return (
                 literalValues[raw] ||
@@ -2715,20 +2771,20 @@ export class GraphParser {
         };
         const parseAllList = (listNode: TSNode): void => {
             for (const item of listNode.namedChildren) {
-                if (!item) continue;
-                if (item.type !== 'string') continue;
+                if (!item) {continue;}
+                if (item.type !== 'string') {continue;}
                 exportedNames.add(stripStringQuotes(getNodeText(item, code).trim()));
             }
         };
 
         for (const child of rootNode.children) {
-            if (!child) continue;
-            if (child.type !== 'expression_statement') continue;
+            if (!child) {continue;}
+            if (child.type !== 'expression_statement') {continue;}
             const first = child.namedChildren.filter((n): n is TSNode => !!n)[0];
-            if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) continue;
+            if (!first || (first.type !== 'assignment' && first.type !== 'typed_assignment')) {continue;}
             const left = first.childForFieldName('left');
             const right = first.childForFieldName('right');
-            if (!left || !right) continue;
+            if (!left || !right) {continue;}
 
             const bindingNames = this.extractPatternBindingNames(left, code);
             const leftText = bindingNames[0] || getNodeText(left, code).trim();
@@ -2742,15 +2798,15 @@ export class GraphParser {
                 (right.type === 'list' || right.type === 'tuple' || right.type === 'dictionary')
             ) {
                 registerLiteral(leftText, right);
-                if (leftText.startsWith('self._')) registerLiteral(leftText.replace('self._', ''), right);
-                if (leftText.startsWith('self.')) registerLiteral(leftText.replace('self.', ''), right);
+                if (leftText.startsWith('self._')) {registerLiteral(leftText.replace('self._', ''), right);}
+                if (leftText.startsWith('self.')) {registerLiteral(leftText.replace('self.', ''), right);}
                 const last = leftText.split('.').pop();
-                if (last) registerLiteral(last, right);
-                if (last?.startsWith('_')) registerLiteral(last.slice(1), right);
+                if (last) {registerLiteral(last, right);}
+                if (last?.startsWith('_')) {registerLiteral(last.slice(1), right);}
                 continue;
             }
 
-            if (right.type !== 'call') continue;
+            if (right.type !== 'call') {continue;}
 
             const functionNode = right.childForFieldName('function');
             const functionText = functionNode ? getNodeText(functionNode, code).trim() : '';
@@ -2814,7 +2870,7 @@ export class GraphParser {
                 depth: 0,
                 visited: new Set<string>()
             });
-            if (!returned?.length) continue;
+            if (!returned?.length) {continue;}
 
             if (bindingNames.length <= 1 && returned.length === 1 && leftText) {
                 registerCandidate(this.cloneRenderableCandidateWithAlias(returned[0], leftText, right.startPosition.row + 1));
@@ -2850,10 +2906,10 @@ export class GraphParser {
             }
 
             const classDef = this.unwrapNamedDefinition(child, 'class_definition');
-            if (!classDef) continue;
+            if (!classDef) {continue;}
             const className = this.getDefinitionName(classDef, code);
             const classMatch = this.findClassGraphScope(rootNode, code, className);
-            if (!className || !classMatch || hasEquivalentAssignmentCandidate(classMatch)) continue;
+            if (!className || !classMatch || hasEquivalentAssignmentCandidate(classMatch)) {continue;}
             registerCandidate(
                 this.createRenderableCandidateFromGraphScope(
                     className,
@@ -2866,13 +2922,13 @@ export class GraphParser {
             );
         }
 
-        if (candidates.length === 0) return null;
+        if (candidates.length === 0) {return null;}
 
         const getTemplateStructure = (() => {
             const cache = new Map<string, ComponentStructure | null>();
             return (name: string): ComponentStructure | null => {
                 const key = lastSegment(name);
-                if (cache.has(key)) return cache.get(key) || null;
+                if (cache.has(key)) {return cache.get(key) || null;}
                 const template = templates[name] || templates[key];
                 const sourceCode = template?.sourceCode || code;
                 const scopedTemplate = template
@@ -2897,13 +2953,13 @@ export class GraphParser {
 
         const selectByPreferred = (): string | null => {
             const pref = typeof preferredTemplate === 'string' ? preferredTemplate.trim() : '';
-            if (!pref || pref === 'all') return null;
+            if (!pref || pref === 'all') {return null;}
             const prefLast = lastSegment(pref);
             return candidates.find((c) => c === pref || lastSegment(c) === prefLast) || null;
         };
 
         const selectByExports = (): string | null => {
-            if (exportedNames.size === 0) return null;
+            if (exportedNames.size === 0) {return null;}
             return candidates.find((c) => exportedNames.has(c) || exportedNames.has(lastSegment(c))) || null;
         };
 
@@ -2921,36 +2977,36 @@ export class GraphParser {
             for (const c of candidates) {
                 const from = lastSegment(c);
                 const s = getTemplateStructure(c);
-                if (!s) continue;
+                if (!s) {continue;}
                 for (const t of Object.values(s.nodeTypes || {})) {
-                    if (typeof t !== 'string' || !t) continue;
+                    if (typeof t !== 'string' || !t) {continue;}
                     const to = lastSegment(t);
-                    if (!candidateSet.has(to)) continue;
-                    if (to === from) continue;
+                    if (!candidateSet.has(to)) {continue;}
+                    if (to === from) {continue;}
                     outgoing.get(from)!.add(to);
                 }
             }
 
             const anyDeps = Array.from(outgoing.values()).some((s) => s.size > 0);
-            if (!anyDeps) return null;
+            if (!anyDeps) {return null;}
 
             for (const tos of outgoing.values()) {
-                for (const to of tos) incoming.set(to, (incoming.get(to) || 0) + 1);
+                for (const to of tos) {incoming.set(to, (incoming.get(to) || 0) + 1);}
             }
 
             const roots = candidates.filter((c) => (incoming.get(lastSegment(c)) || 0) === 0);
-            if (roots.length === 0) return null;
-            if (roots.length === 1) return roots[0];
+            if (roots.length === 0) {return null;}
+            if (roots.length === 1) {return roots[0];}
 
             const reachSize = (start: string): number => {
                 const seen = new Set<string>();
                 const stack = [start];
                 while (stack.length > 0) {
                     const cur = stack.pop()!;
-                    if (seen.has(cur)) continue;
+                    if (seen.has(cur)) {continue;}
                     seen.add(cur);
                     for (const nxt of outgoing.get(cur) || []) {
-                        if (!seen.has(nxt)) stack.push(nxt);
+                        if (!seen.has(nxt)) {stack.push(nxt);}
                     }
                 }
                 return seen.size;
@@ -3053,7 +3109,7 @@ export class GraphParser {
             const cache = new Map<string, GraphData | null>();
             return (name: string): GraphData | null => {
                 const key = lastSegment(name);
-                if (cache.has(key)) return cache.get(key) || null;
+                if (cache.has(key)) {return cache.get(key) || null;}
 
                 const candidate = candidateEntries[name];
                 if (!candidate) {
@@ -3102,7 +3158,7 @@ export class GraphParser {
 
         const resolveCandidateIdFromTypeName = (rawType: string): string | null => {
             const next = String(rawType || '').trim();
-            if (!next) return null;
+            if (!next) {return null;}
             const normalized = lastSegment(next);
             return candidates.find((candidate) => candidate === next || lastSegment(candidate) === normalized) || null;
         };
@@ -3112,7 +3168,7 @@ export class GraphParser {
                 const raw = getNodeText(node, code).trim();
                 return resolveCandidateIdFromTypeName(raw);
             }
-            if (node.type !== 'call') return null;
+            if (node.type !== 'call') {return null;}
             const resolved = this.resolveTemplateExpression(node, {
                 preferredName: '__inline__',
                 code,
@@ -3124,26 +3180,26 @@ export class GraphParser {
                 depth: 0,
                 visited: new Set<string>()
             });
-            if (!resolved) return null;
+            if (!resolved) {return null;}
             return resolveCandidateIdFromTypeName(resolved.templateName);
         };
 
         const collectCandidateDependencies = (candidateId: string): Set<string> => {
             const deps = new Set<string>();
             const candidate = candidateEntries[candidateId];
-            if (!candidate) return deps;
+            if (!candidate) {return deps;}
 
             if (candidate.kind === 'template' && candidate.template?.nodesArg) {
                 const nodesNode = resolveLiteralNode(candidate.template.nodesArg);
                 if (nodesNode.type === 'list') {
                     for (const item of nodesNode.namedChildren) {
-                        if (!item || item.type !== 'tuple') continue;
+                        if (!item || item.type !== 'tuple') {continue;}
                         const elems = item.namedChildren.filter(
                             (child): child is TSNode => !!child && child.type !== 'comment'
                         );
-                        if (elems.length < 2) continue;
+                        if (elems.length < 2) {continue;}
                         const depId = resolveCandidateIdForNode(elems[1]);
-                        if (!depId || depId === candidateId) continue;
+                        if (!depId || depId === candidateId) {continue;}
                         deps.add(depId);
                     }
                 }
@@ -3163,13 +3219,13 @@ export class GraphParser {
                     const resolvedNodes = nodesNode ? resolveLiteralNode(nodesNode) : null;
                     if (resolvedNodes?.type === 'list') {
                         for (const item of resolvedNodes.namedChildren) {
-                            if (!item || item.type !== 'tuple') continue;
+                            if (!item || item.type !== 'tuple') {continue;}
                             const elems = item.namedChildren.filter(
                                 (child): child is TSNode => !!child && child.type !== 'comment'
                             );
-                            if (elems.length < 2) continue;
+                            if (elems.length < 2) {continue;}
                             const depId = resolveCandidateIdForNode(elems[1]);
-                            if (!depId || depId === candidateId) continue;
+                            if (!depId || depId === candidateId) {continue;}
                             deps.add(depId);
                         }
                     }
@@ -3180,7 +3236,7 @@ export class GraphParser {
             if (data) {
                 for (const nodeType of Object.values(data.nodeTypes || {})) {
                     const depId = resolveCandidateIdFromTypeName(nodeType);
-                    if (!depId || depId === candidateId) continue;
+                    if (!depId || depId === candidateId) {continue;}
                     deps.add(depId);
                 }
             }
@@ -3214,13 +3270,13 @@ export class GraphParser {
             for (const candidateId of selectedIds) {
                 const candidate = candidateEntries[candidateId];
                 const data = getCandidateGraphData(candidateId);
-                if (!candidate || !data) continue;
+                if (!candidate || !data) {continue;}
 
                 if (candidate.kind === 'template' && candidate.template?.baseKind === 'Node') {
                     const nodeData = buildNodeTemplateGraphData(candidate.template);
                     const sourceNode = data.nodes[0];
                     const nodeId = candidateId;
-                    if (!merged.nodes.includes(nodeId)) merged.nodes.push(nodeId);
+                    if (!merged.nodes.includes(nodeId)) {merged.nodes.push(nodeId);}
                     merged.nodeTypes[nodeId] =
                         nodeData.nodeTypes[sourceNode] ||
                         normalizeTypeName(candidate.template.nodeClass);
@@ -3234,7 +3290,7 @@ export class GraphParser {
 
                 const wrapperId = candidateId;
                 const prefix = `${wrapperId}_`;
-                if (!merged.nodes.includes(wrapperId)) merged.nodes.push(wrapperId);
+                if (!merged.nodes.includes(wrapperId)) {merged.nodes.push(wrapperId);}
                 merged.nodeTypes[wrapperId] =
                     candidate.kind === 'template' && candidate.template
                         ? normalizeTypeName(candidate.template.nodeClass) || (data.graphType === 'Loop' ? 'Loop' : 'Graph')
@@ -3256,7 +3312,7 @@ export class GraphParser {
 
                 for (const node of data.nodes) {
                     const prefixed = `${prefix}${node}`;
-                    if (!merged.nodes.includes(prefixed)) merged.nodes.push(prefixed);
+                    if (!merged.nodes.includes(prefixed)) {merged.nodes.push(prefixed);}
                     merged.nodeTypes[prefixed] = data.nodeTypes[node] || 'Node';
                     merged.nodeLineNumbers[prefixed] = data.nodeLineNumbers?.[node] || 0;
                     merged.nodePullKeys[prefixed] = data.nodePullKeys?.[node] ?? null;
@@ -3267,7 +3323,7 @@ export class GraphParser {
                 const topLevelNodes = data.nodes.filter((node) => !data.subgraphParents?.[node]);
                 for (const node of topLevelNodes) {
                     const prefixed = `${prefix}${node}`;
-                    if (!merged.subgraphs[wrapperId].includes(prefixed)) merged.subgraphs[wrapperId].push(prefixed);
+                    if (!merged.subgraphs[wrapperId].includes(prefixed)) {merged.subgraphs[wrapperId].push(prefixed);}
                     merged.subgraphParents[prefixed] = wrapperId;
                 }
 
@@ -3307,7 +3363,7 @@ export class GraphParser {
         const selected = explicitSelection || defaultSelection;
 
         const incoming = new Map<string, number>();
-        for (const candidate of candidates) incoming.set(candidate, 0);
+        for (const candidate of candidates) {incoming.set(candidate, 0);}
         for (const candidate of candidates) {
             for (const dep of collectCandidateDependencies(candidate)) {
                 incoming.set(dep, (incoming.get(dep) || 0) + 1);
@@ -3316,14 +3372,14 @@ export class GraphParser {
 
         const rootCandidates = candidates.filter((candidate) => {
             const entry = candidateEntries[candidate];
-            if (!entry) return false;
+            if (!entry) {return false;}
             return (incoming.get(candidate) || 0) === 0;
         });
         const effectiveAllCandidates = rootCandidates.length > 0 ? rootCandidates : candidates.slice();
 
         const chosen =
             (selected === 'all' ? mergeAllCandidates(effectiveAllCandidates) : getCandidateGraphData(selected)) || null;
-        if (!chosen) return null;
+        if (!chosen) {return null;}
 
         const warnings: string[] = [];
 
@@ -3351,7 +3407,7 @@ export class GraphParser {
     getConditionVariables(code: string): string[] {
         const parser = this.getParser();
         const tree = parser ? parser.parse(code) : null;
-        if (!tree) return [];
+        if (!tree) {return [];}
         const rootNode = tree.rootNode;
 
         const { buildMethod } = findBuildMethodAndBaseType(rootNode);
@@ -3457,7 +3513,7 @@ export class GraphParser {
                     }
                 }
                 for (const child of current.children) {
-                    if (!child) continue;
+                    if (!child) {continue;}
                     stack.push(child);
                 }
             }
@@ -3486,7 +3542,7 @@ export class GraphParser {
                 }
             }
             for (const child of node.children) {
-                if (!child) continue;
+                if (!child) {continue;}
                 stack.push(child);
             }
         }
@@ -3526,7 +3582,7 @@ export class GraphParser {
                     }
                 }
                 for (const child of current.children) {
-                    if (!child) continue;
+                    if (!child) {continue;}
                     stack.push(child);
                 }
             }
@@ -3542,7 +3598,7 @@ export class GraphParser {
                     // Only surface loops that affect graph structure in the UI.
                     // The main parser still executes them for best-effort expansion.
                     for (const child of node.children) {
-                        if (!child) continue;
+                        if (!child) {continue;}
                         stack.push(child);
                     }
                     continue;
@@ -3563,7 +3619,7 @@ export class GraphParser {
                 };
             }
             for (const child of node.children) {
-                if (!child) continue;
+                if (!child) {continue;}
                 stack.push(child);
             }
         }
@@ -3599,7 +3655,7 @@ export class GraphParser {
         }
 
         const parseIntNode = (n: TSNode): number | null => {
-            if (n.type !== 'integer') return null;
+            if (n.type !== 'integer') {return null;}
             const raw = getNodeText(n, code).replace(/_/g, '');
             const value = Number.parseInt(raw, 10);
             return Number.isFinite(value) ? value : null;
@@ -3607,7 +3663,7 @@ export class GraphParser {
 
         if (args.length === 1) {
             const end = parseIntNode(args[0]);
-            if (end !== null) iterations = end;
+            if (end !== null) {iterations = end;}
         } else {
             // range(start, end, step?) -> approximate as end - start
             const start = parseIntNode(args[0]);
@@ -3634,8 +3690,8 @@ export class GraphParser {
         controlFlowCtx?: ControlFlowContext
     ): void {
         const ensureTopLevelEndpoints = (kind: GraphType): void => {
-            if (kind === 'Loop') return;
-            if (!nodeCtx.nodes.includes('controller') || !nodeCtx.nodes.includes('terminate')) return;
+            if (kind === 'Loop') {return;}
+            if (!nodeCtx.nodes.includes('controller') || !nodeCtx.nodes.includes('terminate')) {return;}
             nodeCtx.nodes.length = 0;
             nodeCtx.nodes.push('entry', 'exit');
             delete nodeCtx.nodeTypes['controller'];

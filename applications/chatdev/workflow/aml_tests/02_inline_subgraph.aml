@@ -1,0 +1,60 @@
+<aml version="0.2" profile="masfactory" kind="graph" id="aml_tests.inline_subgraph" lang="zh-CN">
+  <definitions>
+    <agents>
+      <agent id="analyst">
+        <instructions>Identify product requirements and constraints.</instructions>
+      </agent>
+      <agent id="architect">
+        <instructions>Translate requirements into a technical architecture.</instructions>
+      </agent>
+      <agent id="qa">
+        <instructions>Check whether the architecture satisfies the requirements.</instructions>
+      </agent>
+    </agents>
+  </definitions>
+
+  <graph id="root" kind="root" label="Inline Subgraph">
+    <nodes>
+      <custom_node id="normalize_input" label="Normalize Input">
+        <attributes>
+          <pull_keys mode="all" />
+          <push_keys mode="keys">
+            <field name="normalized_task" type="string" description="Normalized task text" />
+          </push_keys>
+        </attributes>
+      </custom_node>
+
+      <graph id="design_phase" label="Design Phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="normalized_task" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="architecture" type="string" />
+            <field name="risk_notes" type="string" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <agent id="requirements_agent" ref="#analyst" label="Requirements" />
+          <agent id="architecture_agent" ref="#architect" label="Architecture" />
+          <agent id="qa_agent" ref="#qa" label="QA Check" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="requirements_agent" />
+          <edge from="requirements_agent" to="architecture_agent" />
+          <edge from="architecture_agent" to="qa_agent" />
+          <edge from="qa_agent" to="exit" />
+        </edges>
+      </graph>
+
+      <agent id="summarize_design" ref="#qa" label="Summarize Design" />
+    </nodes>
+
+    <edges>
+      <edge from="entry" to="normalize_input" />
+      <edge from="normalize_input" to="design_phase" />
+      <edge from="design_phase" to="summarize_design" />
+      <edge from="summarize_design" to="exit" />
+    </edges>
+  </graph>
+</aml>

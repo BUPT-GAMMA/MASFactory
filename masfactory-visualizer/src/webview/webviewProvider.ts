@@ -11,6 +11,26 @@ import { registerWebviewMessageHandling } from './webviewMessageRouter';
 import { PreviewGraphService } from './previewGraphService';
 import { PROTOCOL_VERSION } from '../shared/protocolVersion';
 
+type WebviewProviderOptions = {
+    ensureParserReady?: () => Promise<void>;
+};
+
+function isVibeDocument(document: vscode.TextDocument | undefined): document is vscode.TextDocument {
+    if (!document) {
+        return false;
+    }
+    const languageId = document.languageId;
+    if (languageId === 'json' || languageId === 'jsonc' || languageId === 'aml') {
+        return true;
+    }
+    return document.uri.fsPath.toLowerCase().endsWith('.aml');
+}
+
+function isAmlDocument(document: vscode.TextDocument | undefined): document is vscode.TextDocument {
+    if (!document) {return false;}
+    return document.languageId === 'aml' || document.uri.fsPath.toLowerCase().endsWith('.aml');
+}
+
 /**
  * Manages webview panels and sidebar views for graph visualization
  */
@@ -24,14 +44,21 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     private readonly controlFlowState: ControlFlowStateStore;
     // Track the last active Python document to avoid clearing graph when clicking on preview panel
     private lastActivePythonDocument: vscode.TextDocument | undefined;
-    // Track the last active JSON graph_design document for the Vibe tab
+    // Track the last active graph_design JSON or AML document for the Vibe tab
     private lastActiveVibeDocument: vscode.TextDocument | undefined;
     private readonly runtimeHub?: RuntimeHub;
     private readonly runtimePanels?: RuntimeSessionPanelManager;
     private readonly vibeDocs: VibeDocumentService;
     private readonly previewGraph: PreviewGraphService;
+    private latestVibeDocumentToken = 0;
+    private readonly pendingAmlGraphIdsByUri = new Map<string, string>();
 
-    constructor(context: vscode.ExtensionContext, parser: GraphParser, runtimeHub?: RuntimeHub) {
+    constructor(
+        context: vscode.ExtensionContext,
+        parser: GraphParser,
+        runtimeHub?: RuntimeHub,
+        options: WebviewProviderOptions = {}
+    ) {
         this.context = context;
         this.runtimeHub = runtimeHub;
         this.controlFlowState = new ControlFlowStateStore(context);
@@ -39,7 +66,8 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         this.previewGraph = new PreviewGraphService({
             parser,
             controlFlowState: this.controlFlowState,
-            safePostMessage: this.safePostMessage.bind(this)
+            safePostMessage: this.safePostMessage.bind(this),
+            ensureParserReady: options.ensureParserReady
         });
 
         if (this.runtimeHub) {
@@ -79,7 +107,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     }
 
     /**
-     * Set the last active Vibe (graph_design JSON) document
+     * Set the last active Vibe document
      */
     public setLastActiveVibeDocument(document: vscode.TextDocument): void {
         this.lastActiveVibeDocument = document;
@@ -101,17 +129,59 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     }
 
     /**
-     * Push the current JSON text to webviews for Vibe parsing/rendering (webview decides if it's a graph_design).
+     * Push the current Vibe document text to webviews for parsing/rendering.
      */
     public updateVibeDocument(document: vscode.TextDocument): void {
+        const updateToken = ++this.latestVibeDocumentToken;
+        const text = document.getText();
         const message = {
             type: 'vibeDocument',
             documentUri: document.uri.toString(),
             fileName: path.basename(document.uri.fsPath),
-            text: document.getText(),
+            text,
             languageId: document.languageId,
+            amlGraphId: this.findRequestedAmlGraphId(document),
         };
 
+        if (isAmlDocument(document)) {
+            this.postVibeDocumentMessage(message);
+            void this.previewGraph.resolveAmlPreviewData(document)
+                .then((previewData) => {
+                    if (updateToken !== this.latestVibeDocumentToken) {return;}
+                    if (
+                        Object.keys(previewData.implementationGraphs).length === 0 &&
+                        Object.keys(previewData.importedDocuments).length === 0 &&
+                        Object.keys(previewData.implementationTargets).length === 0
+                    ) {
+                        return;
+                    }
+                    this.postVibeDocumentMessage({
+                        ...message,
+                        implementationGraphs: previewData.implementationGraphs,
+                        implementationTargets: previewData.implementationTargets,
+                        importedDocuments: previewData.importedDocuments
+                    });
+                })
+                .catch((error: unknown) => {
+                    console.log('[MASFactory Visualizer] Failed to resolve AML preview data:', error);
+                });
+            return;
+        }
+
+        this.postVibeDocumentMessage(message);
+    }
+
+    private findRequestedAmlGraphId(document: vscode.TextDocument): string | undefined {
+        const uri = document.uri.toString();
+        const requested = this.pendingAmlGraphIdsByUri.get(uri) || '';
+        if (requested) {
+            this.pendingAmlGraphIdsByUri.delete(uri);
+            return requested;
+        }
+        return undefined;
+    }
+
+    private postVibeDocumentMessage(message: unknown): void {
         // Update main panel if it exists
         if (this.panel) {
             this.safePostMessage(this.panel.webview, message);
@@ -142,7 +212,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
      */
     public async handleVisualizerUiCommand(cmd: VisualizerUiCommand): Promise<void> {
         try {
-            if (!cmd || typeof cmd !== 'object') return;
+            if (!cmd || typeof cmd !== 'object') {return;}
             if (cmd.kind === 'openFile') {
                 await this.openFileInVisualizer({
                     filePath: cmd.filePath,
@@ -184,7 +254,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         preserveFocus: boolean;
     }): Promise<void> {
         const filePath = typeof opts.filePath === 'string' ? opts.filePath : '';
-        if (!filePath) return;
+        if (!filePath) {return;}
 
         const viewRaw = typeof opts.view === 'string' ? opts.view.toLowerCase() : 'auto';
         const view: 'auto' | 'preview' | 'vibe' =
@@ -202,16 +272,15 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
             return;
         }
 
-        const isJsonLang = (id?: string): boolean => id === 'json' || id === 'jsonc';
         const resolvedView: 'preview' | 'vibe' =
             view === 'auto'
-                ? isJsonLang(doc.languageId)
+                ? isVibeDocument(doc)
                     ? 'vibe'
                     : 'preview'
                 : view;
 
         // Keep the appropriate "last active" doc so webviews can rehydrate correctly.
-        if (resolvedView === 'vibe' && isJsonLang(doc.languageId)) {
+        if (resolvedView === 'vibe' && isVibeDocument(doc)) {
             this.setLastActiveVibeDocument(doc);
             this.updateVibeDocument(doc);
             this.postToAllWebviews({ type: 'uiSetActiveTab', tab: 'drag' });
@@ -271,18 +340,17 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
 
             // Initial update: prefer the active editor document, otherwise fall back to last known documents.
             const activeDoc = vscode.window.activeTextEditor?.document;
-            const isJsonLang = (id?: string): boolean => id === 'json' || id === 'jsonc';
             if (activeDoc?.languageId === 'python') {
                 this.setLastActivePythonDocument(activeDoc);
                 this.updateGraph(activeDoc);
-            } else if (activeDoc && isJsonLang(activeDoc.languageId)) {
+            } else if (isVibeDocument(activeDoc)) {
                 this.setLastActiveVibeDocument(activeDoc);
                 this.updateVibeDocument(activeDoc);
             } else {
                 const pythonDoc = this.lastActivePythonDocument;
                 const vibeDoc = this.lastActiveVibeDocument;
-                if (pythonDoc) this.updateGraph(pythonDoc);
-                if (vibeDoc) this.updateVibeDocument(vibeDoc);
+                if (pythonDoc) {this.updateGraph(pythonDoc);}
+                if (vibeDoc) {this.updateVibeDocument(vibeDoc);}
             }
         } else {
             this.panel.reveal();
@@ -326,18 +394,17 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
 
             // Update graph: prefer last active Python document over current active editor
             const activeDoc = vscode.window.activeTextEditor?.document;
-            const isJsonLang = (id?: string): boolean => id === 'json' || id === 'jsonc';
             if (activeDoc?.languageId === 'python') {
                 this.setLastActivePythonDocument(activeDoc);
                 this.updateGraph(activeDoc);
-            } else if (activeDoc && isJsonLang(activeDoc.languageId)) {
+            } else if (isVibeDocument(activeDoc)) {
                 this.setLastActiveVibeDocument(activeDoc);
                 this.updateVibeDocument(activeDoc);
             } else {
                 const pythonDoc = this.lastActivePythonDocument;
                 const vibeDoc = this.lastActiveVibeDocument;
-                if (pythonDoc) this.updateGraph(pythonDoc);
-                if (vibeDoc) this.updateVibeDocument(vibeDoc);
+                if (pythonDoc) {this.updateGraph(pythonDoc);}
+                if (vibeDoc) {this.updateVibeDocument(vibeDoc);}
             }
         } else {
             this.editorPanel.reveal(vscode.ViewColumn.One);
@@ -377,10 +444,8 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         
         // Restore: prefer serialized documentUri, otherwise fall back to workspaceState.
         void (async () => {
-            const isJsonLang = (id?: string): boolean => id === 'json' || id === 'jsonc';
-
             const tryRestoreFromUri = async (uriStr: string | undefined): Promise<boolean> => {
-                if (!uriStr) return false;
+                if (!uriStr) {return false;}
                 try {
                     const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(uriStr));
                     if (doc.languageId === 'python') {
@@ -388,7 +453,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
                         this.updateGraph(doc);
                         return true;
                     }
-                    if (isJsonLang(doc.languageId)) {
+                    if (isVibeDocument(doc)) {
                         this.setLastActiveVibeDocument(doc);
                         this.updateVibeDocument(doc);
                         return true;
@@ -400,13 +465,13 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
             };
 
             const stateUri = typeof state?.documentUri === 'string' ? String(state.documentUri) : undefined;
-            if (await tryRestoreFromUri(stateUri)) return;
+            if (await tryRestoreFromUri(stateUri)) {return;}
 
             const lastPy = this.context.workspaceState.get<string>(WebviewProvider.STORAGE_KEY_LAST_ACTIVE_PY);
-            if (await tryRestoreFromUri(lastPy)) return;
+            if (await tryRestoreFromUri(lastPy)) {return;}
 
             const lastVibe = this.context.workspaceState.get<string>(WebviewProvider.STORAGE_KEY_LAST_ACTIVE_VIBE);
-            if (await tryRestoreFromUri(lastVibe)) return;
+            if (await tryRestoreFromUri(lastVibe)) {return;}
 
             this.restoreFromActiveEditor();
         })();
@@ -417,14 +482,13 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
      */
     private restoreFromActiveEditor(): void {
         const editor = vscode.window.activeTextEditor;
-        const isJsonLang = (id?: string): boolean => id === 'json' || id === 'jsonc';
-        if (!editor) return;
+        if (!editor) {return;}
         if (editor.document.languageId === 'python') {
             this.setLastActivePythonDocument(editor.document);
             this.updateGraph(editor.document);
             return;
         }
-        if (isJsonLang(editor.document.languageId)) {
+        if (isVibeDocument(editor.document)) {
             this.setLastActiveVibeDocument(editor.document);
             this.updateVibeDocument(editor.document);
         }
@@ -465,9 +529,11 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
 
             // Update graph if there's an active editor
             const doc = vscode.window.activeTextEditor?.document;
-            const isJsonLang = (id?: string): boolean => id === 'json' || id === 'jsonc';
-            if (doc?.languageId === 'python') this.updateGraph(doc);
-            else if (doc && isJsonLang(doc.languageId)) this.updateVibeDocument(doc);
+            if (doc?.languageId === 'python') {
+                this.updateGraph(doc);
+            } else if (isVibeDocument(doc)) {
+                this.updateVibeDocument(doc);
+            }
         } catch (error) {
             console.error('[MASFactory Visualizer] Error resolving webview:', error);
             vscode.window.showErrorMessage(`MASFactory Visualizer: failed to initialize view - ${error}`);
@@ -551,13 +617,44 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
                     this.runtimeHub?.sendHumanResponse(sessionId, requestId, content),
                 runtimeExportSession: (sessionId, format, content, fileName) =>
                     this.handleRuntimeExportSession(sessionId, format, content, fileName),
-                openFileLocation: (filePath, line, column) => openFileLocation(filePath, line, column),
-                vibeSave: (wv, documentUri, text) => this.vibeDocs.save(wv, { documentUri, text }),
+                openFileLocation: (filePath, line, column, targetTab, amlGraphId) =>
+                    this.handleOpenFileLocation(filePath, line, column, targetTab, amlGraphId),
+                vibeSave: (wv, documentUri, text, extraWrites) => this.vibeDocs.save(wv, { documentUri, text, extraWrites }),
                 vibeReload: async (documentUri) => {
                     const doc = await this.vibeDocs.reload({ documentUri });
-                    if (!doc) return;
+                    if (!doc) {return;}
                     this.setLastActiveVibeDocument(doc);
                     this.updateVibeDocument(doc);
+                }
+            }
+        });
+    }
+
+    private handleOpenFileLocation(
+        filePath?: unknown,
+        line?: unknown,
+        column?: unknown,
+        targetTab?: unknown,
+        amlGraphId?: unknown
+    ): void {
+        const tab = targetTab === 'preview' || targetTab === 'drag' || targetTab === 'vibe' ? targetTab : undefined;
+        const graphId = typeof amlGraphId === 'string' && amlGraphId.trim() ? amlGraphId.trim() : undefined;
+
+        openFileLocation(filePath, line, column, {
+            onOpened: (doc) => {
+                if (graphId && isAmlDocument(doc)) {
+                    this.pendingAmlGraphIdsByUri.set(doc.uri.toString(), graphId);
+                }
+                if (tab === 'preview' && doc.languageId === 'python') {
+                    this.setLastActivePythonDocument(doc);
+                    this.updateGraph(doc);
+                    this.postToAllWebviews({ type: 'uiSetActiveTab', tab: 'preview' });
+                    return;
+                }
+                if ((tab === 'drag' || tab === 'vibe') && isVibeDocument(doc)) {
+                    this.setLastActiveVibeDocument(doc);
+                    this.updateVibeDocument(doc);
+                    this.postToAllWebviews({ type: 'uiSetActiveTab', tab });
                 }
             }
         });
@@ -573,15 +670,14 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
             this.lastActivePythonDocument ||
             (activeDoc?.languageId === 'python' ? activeDoc : undefined);
 
-        const isJsonLang = (id?: string): boolean => id === 'json' || id === 'jsonc';
         const vibeDoc =
             this.lastActiveVibeDocument ||
-            (isJsonLang(activeDoc?.languageId) ? activeDoc : undefined);
+            (isVibeDocument(activeDoc) ? activeDoc : undefined);
 
-        if (!pythonDoc && !vibeDoc) return;
+        if (!pythonDoc && !vibeDoc) {return;}
         console.log('[WebviewProvider] Webview ready, triggering initial update');
-        if (pythonDoc) this.updateGraph(pythonDoc);
-        if (vibeDoc) this.updateVibeDocument(vibeDoc);
+        if (pythonDoc) {this.updateGraph(pythonDoc);}
+        if (vibeDoc) {this.updateVibeDocument(vibeDoc);}
     }
 
     private postToAllWebviews(message: unknown): void {
@@ -607,7 +703,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     }
 
     private async handleResetViewState(documentUri: string | undefined): Promise<void> {
-        if (!documentUri) return;
+        if (!documentUri) {return;}
 
         // Clear persisted control-flow selections for this file.
         this.controlFlowState.clearUri(documentUri);
@@ -627,13 +723,13 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         documentUri: string | undefined,
         templateName: string | null
     ): Promise<void> {
-        if (!documentUri) return;
+        if (!documentUri) {return;}
         this.controlFlowState.setTemplateSelection(documentUri, templateName);
         await this.handleRefreshGraph(documentUri);
     }
 
     private async handleRefreshGraph(documentUri: string | undefined): Promise<void> {
-        if (!documentUri) return;
+        if (!documentUri) {return;}
 
         try {
             const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(documentUri));
@@ -680,7 +776,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     ): Promise<void> {
         const sid = typeof sessionId === 'string' ? sessionId.trim() : '';
         const text = typeof content === 'string' ? content : '';
-        if (!sid || !text) return;
+        if (!sid || !text) {return;}
 
         const normalizedFormat = format === 'markdown' ? 'markdown' : 'json';
         const suggestedNameRaw =
@@ -697,7 +793,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
                     ? { Markdown: ['md'] }
                     : { JSON: ['json'] }
         });
-        if (!target) return;
+        if (!target) {return;}
 
         try {
             const encoder = new TextEncoder();

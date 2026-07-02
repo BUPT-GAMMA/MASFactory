@@ -1,4 +1,4 @@
-import type { Core, Stylesheet } from 'cytoscape';
+import type { Core, StylesheetJson } from 'cytoscape';
 import type { VisualizationSettings } from '../types/preview';
 
 export type EdgeStyleMode = 'fan' | 'straight';
@@ -84,8 +84,7 @@ function deriveEdgeStyles(mode: EdgeStyleMode, isDark: boolean, edgeColor: strin
     'text-margin-y': -10,
     'text-wrap': 'wrap',
     'text-max-width': '150px',
-    'text-rotation': 'none',
-    'edge-text-rotation': 'none'
+    'text-rotation': 'none'
   };
 
   const hover: Record<string, unknown> = {
@@ -108,8 +107,7 @@ function deriveEdgeStyles(mode: EdgeStyleMode, isDark: boolean, edgeColor: strin
     'text-margin-y': -10,
     'text-wrap': 'wrap',
     'text-max-width': '150px',
-    'text-rotation': 'none',
-    'edge-text-rotation': 'none'
+    'text-rotation': 'none'
   };
 
   const incoming: Record<string, unknown> = {
@@ -132,8 +130,7 @@ function deriveEdgeStyles(mode: EdgeStyleMode, isDark: boolean, edgeColor: strin
     'text-margin-y': -10,
     'text-wrap': 'wrap',
     'text-max-width': '150px',
-    'text-rotation': 'none',
-    'edge-text-rotation': 'none'
+    'text-rotation': 'none'
   };
 
   if (preset.curveStyle === 'straight') {
@@ -148,7 +145,7 @@ function deriveEdgeStyles(mode: EdgeStyleMode, isDark: boolean, edgeColor: strin
   return { base, hover, incoming };
 }
 
-export function createPreviewStyle(settings?: VisualizationSettings, edgeStyle: EdgeStyleMode = 'fan'): Stylesheet[] {
+export function createPreviewStyle(settings?: VisualizationSettings, edgeStyle: EdgeStyleMode = 'fan'): StylesheetJson {
   const { isDark, nodeBackground, nodeText, nodeBorder, edgeColor } = resolveColor(settings);
   const { base: baseEdgeStyle, hover: hoverEdgeStyle } = deriveEdgeStyles(edgeStyle, isDark, edgeColor);
 

@@ -1,0 +1,55 @@
+<aml version="0.2" profile="masfactory" kind="graph" id="aml_tests.linear_agents" lang="zh-CN">
+  <definitions>
+    <agents>
+      <agent id="product_owner">
+        <instructions>Clarify the task and keep the requested output concrete.</instructions>
+      </agent>
+      <agent id="engineer">
+        <instructions>Produce a concise implementation plan from the clarified task.</instructions>
+      </agent>
+      <agent id="reviewer">
+        <instructions>Check the plan for missing assumptions and risky steps.</instructions>
+      </agent>
+    </agents>
+  </definitions>
+
+  <graph id="root" kind="root" label="Linear Agents">
+    <nodes>
+      <agent id="clarify_task" ref="#product_owner" label="Clarify Task">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" description="User request" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="brief" type="string" description="Clarified task brief" />
+          </push_keys>
+        </attributes>
+      </agent>
+      <agent id="draft_plan" ref="#engineer" label="Draft Plan" />
+      <agent id="review_plan" ref="#reviewer" label="Review Plan" />
+    </nodes>
+
+    <edges>
+      <edge from="entry" to="clarify_task">
+        <keys>
+          <field name="task" description="User request" />
+        </keys>
+      </edge>
+      <edge from="clarify_task" to="draft_plan">
+        <keys>
+          <field name="brief" description="Clarified task brief" />
+        </keys>
+      </edge>
+      <edge from="draft_plan" to="review_plan">
+        <keys>
+          <field name="plan" description="Implementation plan" />
+        </keys>
+      </edge>
+      <edge from="review_plan" to="exit">
+        <keys>
+          <field name="review" description="Plan review" />
+        </keys>
+      </edge>
+    </edges>
+  </graph>
+</aml>

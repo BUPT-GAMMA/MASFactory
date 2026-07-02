@@ -173,3 +173,5 @@ vibe_test/
 plugins/
 CLAUDE.md
 AGENT.md
+
+.modelpilot

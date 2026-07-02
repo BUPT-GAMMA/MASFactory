@@ -8,6 +8,6 @@ export type {
   VibeLayoutMeta,
   VibeGraphLocator,
   VibeHistorySnapshot,
+  VibeDocumentKind,
   VibeDocState
 } from './vibeTypes';
-

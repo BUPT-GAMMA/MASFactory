@@ -18,7 +18,7 @@ class HumanFileEditVisual(HumanFileEdit):
     If Visualizer is unavailable, falls back to CLI behavior (HumanFileEdit).
 
     Notes:
-    - JSON graph_design files are opened in the Visualizer "Vibe" tab (editable).
+    - AML and legacy JSON design files are opened in the Visualizer "Vibe" tab (editable).
     - Code files are opened in the Visualizer "Preview" tab (graph preview is read-only);
       the source file itself can still be edited in VS Code.
     """
@@ -57,9 +57,9 @@ class HumanFileEditVisual(HumanFileEdit):
             return text
         return text[:max_chars] + "…(truncated)"
 
-    def _is_json_file(self, file_path: str) -> bool:
+    def _is_vibe_file(self, file_path: str) -> bool:
         p = str(file_path or "").lower()
-        return p.endswith(".json") or p.endswith(".jsonc")
+        return p.endswith(".aml") or p.endswith(".json") or p.endswith(".jsonc")
 
     @masf_hook(Node.Hook.FORWARD)
     def _forward(self, input_dict: dict[str, object]):
@@ -105,7 +105,7 @@ class HumanFileEditVisual(HumanFileEdit):
             if not ok_write:
                 print(f"[{self._name}] Failed to write file for '{field_name}': {file_path}")
             
-            view = "vibe" if self._is_json_file(file_path) else "preview"
+            view = "vibe" if self._is_vibe_file(file_path) else "preview"
             try:
                 visualizer.open_file(
                     VisualizerOpenFileOptions(

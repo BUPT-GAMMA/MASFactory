@@ -21,11 +21,11 @@ export function parseImports(rootNode: TSNode, code: string): Map<string, Import
     const importNodes = queryNodes(rootNode, 'import_statement');
     for (const importNode of importNodes) {
         for (const child of importNode.namedChildren) {
-            if (!child) continue;
+            if (!child) {continue;}
             if (child.type === 'aliased_import') {
                 const nameNode = child.childForFieldName('name');
                 const aliasNode = child.childForFieldName('alias');
-                if (!nameNode || !aliasNode) continue;
+                if (!nameNode || !aliasNode) {continue;}
                 const modulePath = getNodeText(nameNode, code);
                 const alias = getNodeText(aliasNode, code);
                 imports.set(alias, { modulePath, className: '', alias, isModule: true });
@@ -45,13 +45,13 @@ export function parseImports(rootNode: TSNode, code: string): Map<string, Import
     
     for (const importNode of importFromNodes) {
         const moduleNameNode = importNode.childForFieldName('module_name');
-        if (!moduleNameNode) continue;
+        if (!moduleNameNode) {continue;}
         
         const modulePath = getNodeText(moduleNameNode, code);
         
         // Get imported names
         for (const child of importNode.namedChildren) {
-            if (!child) continue;
+            if (!child) {continue;}
             if (child.type === 'aliased_import') {
                 // from xxx import YYY as ZZZ
                 const nameNode = child.childForFieldName('name');
@@ -65,11 +65,11 @@ export function parseImports(rootNode: TSNode, code: string): Map<string, Import
             } else if (child.type === 'import_list') {
                 // from xxx import (YYY, ZZZ as AAA)
                 for (const item of child.namedChildren) {
-                    if (!item) continue;
+                    if (!item) {continue;}
                     if (item.type === 'aliased_import') {
                         const nameNode = item.childForFieldName('name');
                         const aliasNode = item.childForFieldName('alias');
-                        if (!nameNode) continue;
+                        if (!nameNode) {continue;}
                         const className = getNodeText(nameNode, code);
                         const alias = aliasNode ? getNodeText(aliasNode, code) : undefined;
                         const key = alias || className;

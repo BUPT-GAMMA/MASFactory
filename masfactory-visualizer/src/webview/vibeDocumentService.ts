@@ -2,12 +2,37 @@ import * as vscode from 'vscode';
 
 export type WebviewPostMessage = (target: vscode.Webview, message: unknown) => void;
 
+type VibeSaveWrite = {
+  documentUri?: unknown;
+  filePath?: unknown;
+  text?: unknown;
+};
+
 export class VibeDocumentService {
   constructor(private readonly postMessage: WebviewPostMessage) {}
 
+  private writeUri(write: VibeSaveWrite): vscode.Uri | null {
+    if (typeof write.documentUri === 'string' && write.documentUri.trim()) {
+      return vscode.Uri.parse(write.documentUri.trim());
+    }
+    if (typeof write.filePath === 'string' && write.filePath.trim()) {
+      return vscode.Uri.file(write.filePath.trim());
+    }
+    return null;
+  }
+
+  private async saveText(uri: vscode.Uri, text: string): Promise<void> {
+    const doc = await vscode.workspace.openTextDocument(uri);
+    const fullRange = new vscode.Range(new vscode.Position(0, 0), doc.positionAt(doc.getText().length));
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(uri, fullRange, text);
+    await vscode.workspace.applyEdit(edit);
+    await doc.save();
+  }
+
   async save(
     webview: vscode.Webview,
-    payload: { documentUri?: unknown; text?: unknown }
+    payload: { documentUri?: unknown; text?: unknown; extraWrites?: unknown }
   ): Promise<void> {
     const uriStr = typeof payload.documentUri === 'string' ? payload.documentUri : '';
     if (!uriStr || typeof payload.text !== 'string') {
@@ -35,12 +60,15 @@ export class VibeDocumentService {
     }
 
     try {
-      const doc = await vscode.workspace.openTextDocument(uri);
-      const fullRange = new vscode.Range(new vscode.Position(0, 0), doc.positionAt(doc.getText().length));
-      const edit = new vscode.WorkspaceEdit();
-      edit.replace(uri, fullRange, nextText);
-      await vscode.workspace.applyEdit(edit);
-      await doc.save();
+      await this.saveText(uri, nextText);
+      const extraWrites = Array.isArray(payload.extraWrites) ? payload.extraWrites : [];
+      for (const item of extraWrites) {
+        const write = item as VibeSaveWrite;
+        if (typeof write.text !== 'string') {continue;}
+        const writeUri = this.writeUri(write);
+        if (!writeUri) {continue;}
+        await this.saveText(writeUri, write.text);
+      }
 
       this.postMessage(webview, {
         type: 'vibeSaveResult',

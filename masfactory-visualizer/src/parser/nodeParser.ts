@@ -36,9 +36,9 @@ function resolveTemplateBaseKind(
     nodeType: string,
     templates?: { [name: string]: ParsedNodeTemplate }
 ): 'Graph' | 'Loop' | 'Node' | null {
-    if (!templates) return null;
+    if (!templates) {return null;}
     const direct = templates[nodeType];
-    if (direct) return direct.baseKind;
+    if (direct) {return direct.baseKind;}
     const normalized = nodeType.includes('.') ? nodeType.split('.').pop()! : nodeType;
     const byLast = templates[normalized];
     return byLast ? byLast.baseKind : null;
@@ -54,19 +54,19 @@ function resolveLocalClassKind(
     templates?: { [name: string]: ParsedNodeTemplate },
     visited: Set<string> = new Set()
 ): 'Graph' | 'Loop' | null {
-    if (!localClassBases) return null;
+    if (!localClassBases) {return null;}
     const normalized = normalizeTypeName(nodeType);
-    if (!normalized || visited.has(normalized)) return null;
+    if (!normalized || visited.has(normalized)) {return null;}
     visited.add(normalized);
 
     const bases = localClassBases[normalized] || localClassBases[nodeType];
-    if (!bases || bases.length === 0) return null;
+    if (!bases || bases.length === 0) {return null;}
 
     for (const base of bases) {
         const baseName = normalizeTypeName(base);
         const templateKind = resolveTemplateBaseKind(baseName, templates);
-        if (templateKind === 'Graph' || templateKind === 'Loop') return templateKind;
-        if (baseName === 'Loop' || LOOP_TYPES.includes(baseName) || baseName.endsWith('Loop')) return 'Loop';
+        if (templateKind === 'Graph' || templateKind === 'Loop') {return templateKind;}
+        if (baseName === 'Loop' || LOOP_TYPES.includes(baseName) || baseName.endsWith('Loop')) {return 'Loop';}
         if (
             baseName === 'Graph' ||
             baseName === 'RootGraph' ||
@@ -77,7 +77,7 @@ function resolveLocalClassKind(
             return 'Graph';
         }
         const inherited = resolveLocalClassKind(baseName, localClassBases, templates, visited);
-        if (inherited) return inherited;
+        if (inherited) {return inherited;}
     }
 
     return null;
@@ -90,10 +90,10 @@ function isLoopType(
 ): boolean {
     const normalized = nodeType.includes('.') ? nodeType.split('.').pop()! : nodeType;
     const templateKind = resolveTemplateBaseKind(nodeType, templates);
-    if (templateKind === 'Loop') return true;
+    if (templateKind === 'Loop') {return true;}
     const localKind = resolveLocalClassKind(nodeType, localClassBases, templates);
-    if (localKind === 'Loop') return true;
-    if (localKind === 'Graph') return false;
+    if (localKind === 'Loop') {return true;}
+    if (localKind === 'Graph') {return false;}
     return LOOP_TYPES.includes(normalized) || normalized.endsWith('Loop');
 }
 
@@ -107,14 +107,14 @@ function isGraphType(
 ): boolean {
     const normalized = nodeType.includes('.') ? nodeType.split('.').pop()! : nodeType;
     const templateKind = resolveTemplateBaseKind(nodeType, templates);
-    if (templateKind === 'Graph') return true;
+    if (templateKind === 'Graph') {return true;}
     const localKind = resolveLocalClassKind(nodeType, localClassBases, templates);
-    if (localKind === 'Graph') return true;
-    if (localKind === 'Loop') return false;
-    if (GRAPH_TYPES.includes(normalized)) return true;
+    if (localKind === 'Graph') {return true;}
+    if (localKind === 'Loop') {return false;}
+    if (GRAPH_TYPES.includes(normalized)) {return true;}
     // Best-effort: treat custom graph/workflow classes as subgraphs unless explicitly a Loop.
-    if (normalized.endsWith('Workflow')) return true;
-    if (normalized.endsWith('Graph')) return !isLoopType(normalized, templates, localClassBases);
+    if (normalized.endsWith('Workflow')) {return true;}
+    if (normalized.endsWith('Graph')) {return !isLoopType(normalized, templates, localClassBases);}
     return false;
 }
 
@@ -170,10 +170,10 @@ function getKeywordArgMap(
 ): Map<string, TSNode> {
     const map = new Map<string, TSNode>();
     for (const arg of args) {
-        if (arg.type !== 'keyword_argument') continue;
+        if (arg.type !== 'keyword_argument') {continue;}
         const argNameNode = arg.childForFieldName('name');
         const argValueNode = arg.childForFieldName('value');
-        if (!argNameNode || !argValueNode) continue;
+        if (!argNameNode || !argValueNode) {continue;}
         const argName = getNodeText(argNameNode, code);
         map.set(argName, argValueNode);
     }
@@ -186,13 +186,13 @@ function getExpandedDictNode(
     literalValues?: { [name: string]: TSNode }
 ): TSNode | null {
     const raw = getNodeText(arg, code).trim();
-    if (!raw.startsWith('**')) return null;
+    if (!raw.startsWith('**')) {return null;}
 
     const inlineDict = arg.namedChildren.find((child): child is TSNode => !!child && child.type === 'dictionary');
-    if (inlineDict) return inlineDict;
+    if (inlineDict) {return inlineDict;}
 
     const expr = raw.slice(2).trim();
-    if (!expr || !literalValues) return null;
+    if (!expr || !literalValues) {return null;}
     return literalValues[expr] && literalValues[expr].type === 'dictionary' ? literalValues[expr] : null;
 }
 
@@ -205,17 +205,17 @@ function getExpandedKeywordArgValue(
     const kw = getKeywordArgMap(args, code);
     for (const name of names) {
         const direct = kw.get(name);
-        if (direct) return direct;
+        if (direct) {return direct;}
     }
 
     for (const arg of args) {
         const expanded = getExpandedDictNode(arg, code, literalValues);
-        if (!expanded) continue;
+        if (!expanded) {continue;}
         for (const child of expanded.namedChildren) {
-            if (!child || child.type !== 'pair') continue;
+            if (!child || child.type !== 'pair') {continue;}
             const keyNode = child.childForFieldName('key');
             const valueNode = child.childForFieldName('value');
-            if (!keyNode || !valueNode) continue;
+            if (!keyNode || !valueNode) {continue;}
             const keyText = getNodeText(keyNode, code).replace(/^["']|["']$/g, '');
             if (names.includes(keyText)) {
                 return valueNode;
@@ -325,7 +325,7 @@ export function parseCreateNode(
     
     // Check if this is a subgraph node by examining the function call
     const functionNode = callNode.childForFieldName('function');
-    if (!functionNode) return;
+    if (!functionNode) {return;}
     
     const functionText = getNodeText(functionNode, code);
     let parentGraph = '';
@@ -366,10 +366,10 @@ export function parseCreateNode(
     
     // Get arguments
     const argsNode = callNode.childForFieldName('arguments');
-    if (!argsNode) return;
+    if (!argsNode) {return;}
 
     const args = argsNode.namedChildren.filter(isNonNullNode);
-    if (args.length === 0) return;
+    if (args.length === 0) {return;}
 
     const fallbackBaseName = variableName.replace('self._', '').replace('self.', '');
 
@@ -508,13 +508,13 @@ export function parseCreateNodeWithRootGraph(
     const variableName = getNodeText(leftSide, code);
     
     const functionNode = callNode.childForFieldName('function');
-    if (!functionNode) return;
+    if (!functionNode) {return;}
     
     const functionText = getNodeText(functionNode, code);
     
     // Extract parent graph from function call
     const methodCall = extractMethodCall(functionText);
-    if (!methodCall || methodCall.method !== 'create_node') return;
+    if (!methodCall || methodCall.method !== 'create_node') {return;}
     const parentVar = methodCall.caller;
     let parentGraph = '';
     
@@ -532,10 +532,10 @@ export function parseCreateNodeWithRootGraph(
     
     // Get arguments
     const argsNode = callNode.childForFieldName('arguments');
-    if (!argsNode) return;
+    if (!argsNode) {return;}
 
     const args = argsNode.namedChildren.filter(isNonNullNode);
-    if (args.length === 0) return;
+    if (args.length === 0) {return;}
 
     // Extract node type and base name (support positional + keyword styles)
     const nodeType = extractNodeTypeFromCreateNodeArgs(args, code, ctx.literalValues);

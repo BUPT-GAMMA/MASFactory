@@ -1,0 +1,60 @@
+<aml version="0.2" profile="masfactory" kind="graph" id="aml_tests.nested_graphs" lang="zh-CN">
+  <definitions>
+    <agents>
+      <agent id="ideator">
+        <instructions>Generate several candidate ideas.</instructions>
+      </agent>
+      <agent id="selector">
+        <instructions>Select the best idea and explain the reason.</instructions>
+      </agent>
+      <agent id="architect">
+        <instructions>Turn the selected idea into a concrete design.</instructions>
+      </agent>
+      <agent id="publisher">
+        <instructions>Package the final answer for the user.</instructions>
+      </agent>
+    </agents>
+  </definitions>
+
+  <graph id="root" kind="root" label="Nested Graphs">
+    <nodes>
+      <graph id="planning_phase" label="Planning Phase">
+        <nodes>
+          <graph id="brainstorm_graph" label="Brainstorm Graph">
+            <nodes>
+              <agent id="generate_ideas" ref="#ideator" label="Generate Ideas" />
+              <agent id="select_idea" ref="#selector" label="Select Idea" />
+            </nodes>
+            <edges>
+              <edge from="entry" to="generate_ideas" />
+              <edge from="generate_ideas" to="select_idea" />
+              <edge from="select_idea" to="exit" />
+            </edges>
+          </graph>
+          <agent id="write_design" ref="#architect" label="Write Design" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="brainstorm_graph" />
+          <edge from="brainstorm_graph" to="write_design" />
+          <edge from="write_design" to="exit" />
+        </edges>
+      </graph>
+
+      <graph id="delivery_phase" label="Delivery Phase">
+        <nodes>
+          <agent id="finalize_response" ref="#publisher" label="Finalize Response" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="finalize_response" />
+          <edge from="finalize_response" to="exit" />
+        </edges>
+      </graph>
+    </nodes>
+
+    <edges>
+      <edge from="entry" to="planning_phase" />
+      <edge from="planning_phase" to="delivery_phase" />
+      <edge from="delivery_phase" to="exit" />
+    </edges>
+  </graph>
+</aml>

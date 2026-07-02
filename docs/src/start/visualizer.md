@@ -9,7 +9,7 @@ This page is a quick-start overview. For full details, see: [Dev Guide · MASFac
 ## What it provides
 
 - **Preview**: Inspect graph topology parsed from Python/JSON (subgraphs, loops, switches, etc.).
-- **Vibe**: Preview/edit `graph_design.json` for VibeGraphing iterations.
+- **Vibe**: Preview/edit `.aml` workflows for VibeGraphing iterations, with legacy graph-design preview support.
 - **Run / Debug**: Track node states, message events, and errors at runtime.
 - **Human-in-the-loop**: Receive user requests (chat / file preview & edit) and send replies back to the running process.
 
@@ -43,7 +43,7 @@ Or click the top-right action button in a `.py` / `.json` editor tab:
 
 1. Open a `.py` file that builds a MASFactory graph;
 2. Open Visualizer and switch to **Preview**;
-3. If you use VibeGraphing: generate/update `graph_design.json`, then iterate in **Vibe**;
+3. If you use VibeGraphing: generate/update the `.aml` cache, then iterate in **Vibe**;
 4. Run your workflow and inspect **Run / Debug** for runtime traces and user requests.
 
 For full layout and per-tab functionality, see: [Dev Guide · MASFactory Visualizer](/guide/visualizer).

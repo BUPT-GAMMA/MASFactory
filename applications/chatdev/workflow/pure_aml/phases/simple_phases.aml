@@ -1,0 +1,615 @@
+<aml version="0.2" profile="masfactory" kind="library" id="applications.chatdev.pure_aml.simple_phases" lang="zh-CN">
+  <imports>
+    <import alias="common" src="../common.aml" />
+  </imports>
+
+  <definitions>
+    <agents>
+      <agent id="demand_analysis_instructor" name="Chief Executive Officer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="DemandAnalysis.phase_prompt" />
+          <include source="common::role_config" key="Chief Executive Officer" />
+        </instructions>
+        <memories><use ref="common::demand_analysis_memory" /></memories>
+      </agent>
+      <agent id="demand_analysis_assistant" name="Chief Product Officer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="DemandAnalysis.phase_prompt" />
+          <include source="common::role_config" key="Chief Product Officer" />
+        </instructions>
+        <memories><use ref="common::demand_analysis_memory" /></memories>
+      </agent>
+
+      <agent id="language_choose_instructor" name="Chief Executive Officer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="LanguageChoose.phase_prompt" />
+          <include source="common::role_config" key="Chief Executive Officer" />
+        </instructions>
+        <memories><use ref="common::language_choose_memory" /></memories>
+      </agent>
+      <agent id="language_choose_assistant" name="Chief Technology Officer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="LanguageChoose.phase_prompt" />
+          <include source="common::role_config" key="Chief Technology Officer" />
+        </instructions>
+        <memories><use ref="common::language_choose_memory" /></memories>
+      </agent>
+
+      <agent id="coding_instructor" name="Chief Technology Officer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="Coding.phase_prompt" />
+          <include source="common::role_config" key="Chief Technology Officer" />
+        </instructions>
+        <memories><use ref="common::coding_memory" /></memories>
+      </agent>
+      <agent id="coding_assistant" name="Programmer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="Coding.phase_prompt" />
+          <include source="common::role_config" key="Programmer" />
+        </instructions>
+        <memories><use ref="common::coding_memory" /></memories>
+      </agent>
+
+      <agent id="code_complete_instructor" name="Chief Technology Officer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="CodeComplete.phase_prompt" />
+          <include source="common::role_config" key="Chief Technology Officer" />
+        </instructions>
+        <memories><use ref="common::code_complete_memory" /></memories>
+      </agent>
+      <agent id="code_complete_assistant" name="Programmer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="CodeComplete.phase_prompt" />
+          <include source="common::role_config" key="Programmer" />
+        </instructions>
+        <memories><use ref="common::code_complete_memory" /></memories>
+      </agent>
+
+      <agent id="code_review_comment_instructor" name="Programmer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="CodeReviewComment.phase_prompt" />
+          <include source="common::role_config" key="Programmer" />
+        </instructions>
+        <memories><use ref="common::code_review_memory" /></memories>
+      </agent>
+      <agent id="code_review_comment_assistant" name="Code Reviewer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="CodeReviewComment.phase_prompt" />
+          <include source="common::role_config" key="Code Reviewer" />
+        </instructions>
+        <memories><use ref="common::code_review_memory" /></memories>
+      </agent>
+
+      <agent id="code_review_modification_instructor" name="Code Reviewer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="CodeReviewModification.phase_prompt" />
+          <include source="common::role_config" key="Code Reviewer" />
+        </instructions>
+        <memories><use ref="common::code_review_memory" /></memories>
+      </agent>
+      <agent id="code_review_modification_assistant" name="Programmer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="CodeReviewModification.phase_prompt" />
+          <include source="common::role_config" key="Programmer" />
+        </instructions>
+        <memories><use ref="common::code_review_memory" /></memories>
+      </agent>
+
+      <agent id="test_error_summary_instructor" name="Software Test Engineer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="TestErrorSummary.phase_prompt" />
+          <include source="common::role_config" key="Software Test Engineer" />
+        </instructions>
+        <memories><use ref="common::test_memory" /></memories>
+      </agent>
+      <agent id="test_error_summary_assistant" name="Programmer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="TestErrorSummary.phase_prompt" />
+          <include source="common::role_config" key="Programmer" />
+        </instructions>
+        <memories><use ref="common::test_memory" /></memories>
+      </agent>
+
+      <agent id="test_modification_instructor" name="Software Test Engineer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="TestModification.phase_prompt" />
+          <include source="common::role_config" key="Software Test Engineer" />
+        </instructions>
+        <memories><use ref="common::test_memory" /></memories>
+      </agent>
+      <agent id="test_modification_assistant" name="Programmer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="TestModification.phase_prompt" />
+          <include source="common::role_config" key="Programmer" />
+        </instructions>
+        <memories><use ref="common::test_memory" /></memories>
+      </agent>
+
+      <agent id="environment_doc_instructor" name="Chief Technology Officer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="EnvironmentDoc.phase_prompt" />
+          <include source="common::role_config" key="Chief Technology Officer" />
+        </instructions>
+        <memories><use ref="common::environment_doc_memory" /></memories>
+      </agent>
+      <agent id="environment_doc_assistant" name="Programmer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="EnvironmentDoc.phase_prompt" />
+          <include source="common::role_config" key="Programmer" />
+        </instructions>
+        <memories><use ref="common::environment_doc_memory" /></memories>
+      </agent>
+
+      <agent id="manual_instructor" name="Chief Executive Officer" role="instructor">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="Manual.phase_prompt" />
+          <include source="common::role_config" key="Chief Executive Officer" />
+        </instructions>
+        <memories><use ref="common::manual_memory" /></memories>
+      </agent>
+      <agent id="manual_assistant" name="Chief Product Officer" role="assistant">
+        <model ref="common::chat_model" />
+        <instructions format="markdown">
+          <include source="common::phase_config" key="Manual.phase_prompt" />
+          <include source="common::role_config" key="Chief Product Officer" />
+        </instructions>
+        <memories><use ref="common::manual_memory" /></memories>
+      </agent>
+    </agents>
+
+    <graphs>
+      <graph id="demand_analysis_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="description" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="discussion_opinion" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="discussion_opinion" type="string" />
+            <field name="modality" type="string" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="builtin:noop" />
+          <loop id="role_playing" max_iterations="19">
+            <terminate if="discussion_finished == true" />
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#demand_analysis_instructor" />
+              <agent id="assistant" ref="#demand_analysis_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="builtin:noop" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="role_playing"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="language_choose_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="description" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="discussion_opinion" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="discussion_opinion" type="string" />
+            <field name="language" type="string" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="builtin:noop" />
+          <loop id="role_playing" max_iterations="19">
+            <terminate if="discussion_finished == true" />
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#language_choose_instructor" />
+              <agent id="assistant" ref="#language_choose_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="builtin:noop" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="role_playing"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="coding_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="description" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="git_management" type="boolean" />
+            <field name="gui" type="string" />
+            <field name="code_manager" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="builtin:noop" />
+          <loop id="role_playing" max_iterations="1">
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#coding_instructor" />
+              <agent id="assistant" ref="#coding_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="python:applications.chatdev.components.phase.handlers.codes_check_and_processing"><arguments><arg value="Finish Coding!" /></arguments></custom_node>
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="role_playing"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="code_complete_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="unimplemented_file" type="string" />
+            <field name="cycle_index" type="integer" />
+            <field name="git_management" type="boolean" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="python:applications.chatdev.components.phase.handlers.check_un_implemented_file" />
+          <loop id="role_playing" max_iterations="1">
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#code_complete_instructor" />
+              <agent id="assistant" ref="#code_complete_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="python:applications.chatdev.components.phase.handlers.codes_check_and_processing"><arguments><arg value="Code Complete # {} Finished." /><arg value="cycle_index" /></arguments></custom_node>
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="role_playing"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="code_review_comment_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="images" type="array" />
+            <field name="cycle_index" type="integer" />
+            <field name="chatdev_prompt" type="string" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="review_comments" type="string" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="builtin:noop" />
+          <loop id="role_playing" max_iterations="1">
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#code_review_comment_instructor" />
+              <agent id="assistant" ref="#code_review_comment_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="builtin:noop" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="role_playing"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="code_review_modification_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="review_comments" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="cycle_index" type="integer" />
+            <field name="git_management" type="boolean" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+            <field name="modification_conclusion" type="string" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="builtin:noop" />
+          <loop id="role_playing" max_iterations="1">
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#code_review_modification_instructor" />
+              <agent id="assistant" ref="#code_review_modification_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="python:applications.chatdev.components.phase.handlers.codes_check_and_processing"><arguments><arg value="Review # {} Finished." /><arg value="cycle_index" /></arguments></custom_node>
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="role_playing"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="test_error_summary_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="directory" type="string" />
+            <field name="incorporated_images" type="array" />
+            <field name="proposed_images" type="array" />
+            <field name="image_model" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="error_summary" type="string" />
+            <field name="test_reports" type="string" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="python:applications.chatdev.components.phase.handlers.check_bugs_and_get_error_summary" />
+          <logic_switch id="skip_switch" />
+          <loop id="role_playing" max_iterations="1">
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#test_error_summary_instructor" />
+              <agent id="assistant" ref="#test_error_summary_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="builtin:noop" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="skip_switch"><keys><field name="skip_flag" type="boolean" /></keys></edge>
+          <edge from="skip_switch" to="exit" if="skip_flag == true"><keys /></edge>
+          <edge from="skip_switch" to="role_playing" if="skip_flag == false"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="test_modification_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="test_reports" type="string" />
+            <field name="error_summary" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="codes" type="array" />
+            <field name="code_manager" type="object" />
+            <field name="directory" type="string" />
+            <field name="cycle_index" type="integer" />
+            <field name="git_management" type="boolean" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="codes" type="array" />
+            <field name="modification_conclusion" type="string" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="builtin:noop" />
+          <loop id="role_playing" max_iterations="1">
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#test_modification_instructor" />
+              <agent id="assistant" ref="#test_modification_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="python:applications.chatdev.components.phase.handlers.codes_check_and_processing"><arguments><arg value="Test # {} Finished." /><arg value="cycle_index" /></arguments></custom_node>
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="role_playing"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="environment_doc_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="requirement_manager" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="requirements" type="string" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="builtin:noop" />
+          <loop id="role_playing" max_iterations="1">
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#environment_doc_instructor" />
+              <agent id="assistant" ref="#environment_doc_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="python:applications.chatdev.components.phase.handlers.requirements_update_and_rewrite" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="role_playing"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+
+      <graph id="manual_phase">
+        <attributes>
+          <pull_keys mode="keys">
+            <field name="task" type="string" />
+            <field name="modality" type="string" />
+            <field name="ideas" type="string" />
+            <field name="language" type="string" />
+            <field name="codes" type="array" />
+            <field name="requirements" type="string" />
+            <field name="chatdev_prompt" type="string" />
+            <field name="manual_manager" type="object" />
+          </pull_keys>
+          <push_keys mode="keys">
+            <field name="manual" type="string" />
+          </push_keys>
+        </attributes>
+        <nodes>
+          <custom_node id="pre_processor" forward="builtin:noop" />
+          <loop id="role_playing" max_iterations="1">
+            <nodes>
+              <logic_switch id="turn_switch" />
+              <agent id="instructor" ref="#manual_instructor" />
+              <agent id="assistant" ref="#manual_assistant" />
+            </nodes>
+            <edges>
+              <edge from="controller" to="turn_switch"><keys /></edge>
+              <edge from="turn_switch" to="instructor" if="current_iteration % 2 == 1"><keys /></edge>
+              <edge from="turn_switch" to="assistant" if="current_iteration % 2 == 0"><keys /></edge>
+              <edge from="instructor" to="controller"><keys /></edge>
+              <edge from="assistant" to="controller"><keys /></edge>
+            </edges>
+          </loop>
+          <custom_node id="post_processor" forward="python:applications.chatdev.components.phase.handlers.manual_update_and_rewrite" />
+        </nodes>
+        <edges>
+          <edge from="entry" to="pre_processor"><keys /></edge>
+          <edge from="pre_processor" to="role_playing"><keys /></edge>
+          <edge from="role_playing" to="post_processor"><keys /></edge>
+          <edge from="post_processor" to="exit"><keys /></edge>
+        </edges>
+      </graph>
+    </graphs>
+  </definitions>
+</aml>

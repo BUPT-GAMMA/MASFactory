@@ -1,4 +1,4 @@
-import cytoscape, { type Core, type ElementDefinition, type Stylesheet } from 'cytoscape';
+import cytoscape, { type Core, type ElementDefinition, type StylesheetJson } from 'cytoscape';
 import { ensureCyDagreRegistered } from './cyDagre';
 import {
   captureSelectionSnapshot,
@@ -12,7 +12,7 @@ import { attachCyVisibilityObserver, type CyVisibilityObserverHandle } from './c
 
 export type CyGraphRendererInit = {
   getContainer: () => HTMLElement | null;
-  style: Stylesheet[] | Stylesheet;
+  style: StylesheetJson;
   minZoom?: number;
   maxZoom?: number;
   wheelSensitivity?: number;
@@ -58,7 +58,7 @@ function isContainerVisible(container: HTMLElement | null, thresholdPx: number):
 export class CyGraphRenderer {
   private readonly getContainer: () => HTMLElement | null;
   private readonly thresholdPx: number;
-  private style: Stylesheet[] | Stylesheet;
+  private style: StylesheetJson;
   private readonly layoutFn: ((cy: Core) => void) | null;
   private readonly onAfterInit: ((cy: Core) => void) | null;
   private readonly onVisible: ((cy: Core) => void) | null;
@@ -167,7 +167,7 @@ export class CyGraphRenderer {
     return this.cy;
   }
 
-  public setStyle(style: Stylesheet[] | Stylesheet): void {
+  public setStyle(style: StylesheetJson): void {
     this.style = style;
     if (!this.cy) return;
     try {
@@ -255,4 +255,3 @@ export class CyGraphRenderer {
     }
   }
 }
-

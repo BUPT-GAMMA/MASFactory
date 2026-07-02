@@ -8,15 +8,50 @@ from masfactory.adapters.tool_adapter import ToolAdapter
 from masfactory.utils.hook import masf_hook
 
 import os
-from .compiler import compile_graph_design, load_cached_graph_design, normalize_graph_design
+from .compiler import compile_aml
 from .vibe_workflow import VibeWorkflow
+
+
+def _is_aml_cache_path(path: str | Path | None) -> bool:
+    return path is not None and Path(path).suffix.lower() == ".aml"
+
+
+def _resolve_build_cache_path(path: str | Path | None) -> Path | None:
+    if path is None:
+        return None
+    cache_path = Path(path)
+    if not _is_aml_cache_path(cache_path):
+        raise ValueError(
+            "VibeGraph cache must be an .aml file; use LegacyVibeGraph for graph_design cache."
+        )
+    return cache_path
+
+
+def _aml_from_workflow_output(
+    output: dict[str, Any],
+    *,
+    document_id: str,
+    root_graph_id: str,
+) -> str:
+    raw_aml = output.get("aml")
+    if isinstance(raw_aml, str) and raw_aml.strip():
+        return raw_aml
+
+    if "graph_design" in output:
+        raise ValueError(
+            "VibeGraph requires AML output; use LegacyVibeGraph for graph_design workflows."
+        )
+    raise ValueError(
+        "VibeGraph build workflow must return a non-empty 'aml' field."
+    )
+
 
 class VibeGraph(Graph):
     """
     VibeGraphing:
     - Accept a reusable build workflow template (no registry).
     - The workflow is materialized inside a temporary RootGraph wrapper using MASFactory's native graph reuse path.
-    - The workflow is responsible for parsing its own raw output into canonical graph_design.
+    - The workflow is responsible for producing AML.
     - VibeGraph is responsible for caching and compiling into runnable nodes/edges.
     """
 
@@ -39,10 +74,10 @@ class VibeGraph(Graph):
         Args:
             name: Graph name.
             invoke_model: Model used by compiled agents for step execution.
-            build_instructions: Instructions used by the build workflow to produce graph_design.
+            build_instructions: Instructions used by the build workflow to produce AML.
             build_model: Model used by the build workflow.
             build_workflow: NodeTemplate for a reusable Graph build workflow.
-            build_cache_path: Optional cache file path for graph_design.
+            build_cache_path: Optional `.aml` cache file path.
             invoke_tools: Optional list of tool callables available to compiled agents.
             pull_keys: Attribute pull rule for this graph.
             push_keys: Attribute push rule for this graph.
@@ -81,27 +116,45 @@ class VibeGraph(Graph):
                         "system_advice": "",
                     },
                 ),
-                ("workflow", "EXIT", {"graph_design": ""}),
+                ("workflow", "EXIT", {"aml": ""}),
             ],
         )
         return wrapper
 
+    def _resolve_cache_path(self) -> Path | None:
+        return _resolve_build_cache_path(self._build_cache_path)
+
+    def _coerce_workflow_output(self, output: dict[str, Any]) -> str:
+        return _aml_from_workflow_output(
+            output,
+            document_id=f"{self.name}.vibe_cache",
+            root_graph_id=self.name,
+        )
+
+    def _load_cached_design(self, cache_path: Path) -> str | Path:
+        return cache_path
+
     @masf_hook(Node.Hook.BUILD)
     def build(self):
-        """Build the graph by producing (or loading) a graph_design and compiling it.
+        """Build the graph by producing (or loading) AML and compiling it.
 
-        - If `build_cache_path` is missing, it runs the build workflow to generate graph_design and caches it.
-        - Otherwise, it loads the cached graph_design.
+        - If `build_cache_path` is missing, it runs the build workflow to generate AML and caches it.
+        - Otherwise, it loads the cached AML.
         - It then compiles the design into runnable nodes/edges on this graph.
         """
         tools = list(self._invoke_tools or [])
-        graph_design: dict[str, Any] = {}
-        # build graph design
-        if self._build_cache_path is None or not os.path.exists(self._build_cache_path):
+        raw_aml: str | Path | None = None
+        cache_path = self._resolve_cache_path()
+        cache_exists = cache_path is not None and os.path.exists(cache_path)
+        # build AML design
+        if cache_path is None or not cache_exists:
             build_workflow = self._materialize_build_workflow()
+            file_fields = None
+            if cache_path is not None:
+                file_fields = {"aml": str(cache_path)}
             with template_defaults(
                 model=self._build_model,
-                file_fields={"graph_design": self._build_cache_path}
+                file_fields=file_fields
             ):
                 build_workflow.build()
                 tool_lines: list[str] = []
@@ -143,15 +196,16 @@ class VibeGraph(Graph):
                     raise TypeError(
                         f"Vibe build workflow must return dict output, got {type(output).__name__}"
                     )
-                raw_graph_design = output.get("graph_design", {})
-                graph_design = normalize_graph_design(raw_graph_design)
+                raw_aml = self._coerce_workflow_output(output)
+                if cache_path is not None:
+                    cache_path.parent.mkdir(parents=True, exist_ok=True)
+                    cache_path.write_text(raw_aml, encoding="utf-8")
         else:
-            graph_design = load_cached_graph_design(self._build_cache_path)
+            raw_aml = self._load_cached_design(cache_path)
 
-        # compile graph design
-        compile_graph_design(
+        compile_aml(
             target_graph=self,
-            graph_design=graph_design,
+            aml=raw_aml,
             model=self._invoke_model,
             tools=tools,
         )

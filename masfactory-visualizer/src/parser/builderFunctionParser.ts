@@ -44,11 +44,11 @@ export interface BuilderFunctionStructure {
  */
 export function detectBuilderFunction(code: string): BuilderFunctionInfo | null {
     const parser = createPythonParser();
-    if (!parser) return null;
+    if (!parser) {return null;}
     
     try {
         const tree = parser.parse(code);
-        if (!tree) return null;
+        if (!tree) {return null;}
         const rootNode = tree.rootNode;
         
         // Find function definitions at module level
@@ -56,28 +56,28 @@ export function detectBuilderFunction(code: string): BuilderFunctionInfo | null 
         
         for (const funcDef of functionDefs) {
             // Skip nested functions (only check top-level)
-            if (funcDef.parent?.type !== 'module') continue;
+            if (funcDef.parent?.type !== 'module') {continue;}
             
             const nameNode = funcDef.childForFieldName('name');
-            if (!nameNode) continue;
+            if (!nameNode) {continue;}
             
             const funcName = getNodeText(nameNode, code);
             
             // Get parameters
             const paramsNode = funcDef.childForFieldName('parameters');
-            if (!paramsNode) continue;
+            if (!paramsNode) {continue;}
             
             // Check first parameter - should be typed as Loop/Graph
             const firstParam = getFirstTypedParameter(paramsNode, code);
-            if (!firstParam) continue;
+            if (!firstParam) {continue;}
             
             // Check if the type hints to Loop, Graph, or their subclasses
             const graphTypes = ['Loop', 'Graph', 'RootGraph', 'HubGraph', 'MeshGraph'];
-            if (!graphTypes.some(t => firstParam.type.includes(t))) continue;
+            if (!graphTypes.some(t => firstParam.type.includes(t))) {continue;}
             
             // Check if function body contains calls on the first parameter
             const body = funcDef.childForFieldName('body');
-            if (!body) continue;
+            if (!body) {continue;}
             
             const bodyText = getNodeText(body, code);
             const hasCreateNodeCalls = bodyText.includes(`${firstParam.name}.create_node`);
@@ -112,11 +112,11 @@ export function parseBuilderFunction(
     functionName?: string
 ): BuilderFunctionStructure | null {
     const parser = createPythonParser();
-    if (!parser) return null;
+    if (!parser) {return null;}
     
     try {
         const tree = parser.parse(code);
-        if (!tree) return null;
+        if (!tree) {return null;}
         const rootNode = tree.rootNode;
         
         // Find the target function
@@ -126,21 +126,21 @@ export function parseBuilderFunction(
         let parentParamType = '';
         
         for (const funcDef of functionDefs) {
-            if (funcDef.parent?.type !== 'module') continue;
+            if (funcDef.parent?.type !== 'module') {continue;}
             
             const nameNode = funcDef.childForFieldName('name');
-            if (!nameNode) continue;
+            if (!nameNode) {continue;}
             
             const funcName = getNodeText(nameNode, code);
             
             // If function name specified, match it; otherwise find first builder function
-            if (functionName && funcName !== functionName) continue;
+            if (functionName && funcName !== functionName) {continue;}
             
             const paramsNode = funcDef.childForFieldName('parameters');
-            if (!paramsNode) continue;
+            if (!paramsNode) {continue;}
             
             const firstParam = getFirstTypedParameter(paramsNode, code);
-            if (!firstParam) continue;
+            if (!firstParam) {continue;}
             
             const graphTypes = ['Loop', 'Graph', 'RootGraph', 'HubGraph', 'MeshGraph'];
             if (graphTypes.some(t => firstParam.type.includes(t))) {
@@ -157,7 +157,7 @@ export function parseBuilderFunction(
         }
         
         const body = targetFunc.childForFieldName('body');
-        if (!body) return null;
+        if (!body) {return null;}
         
         // Check for complex structure
         const hasComplexStructure = checkForComplexStructure(body);
@@ -243,7 +243,7 @@ function getFirstTypedParameter(
     code: string
 ): { name: string; type: string } | null {
     for (const child of paramsNode.namedChildren) {
-        if (!child) continue;
+        if (!child) {continue;}
         if (child.type === 'typed_parameter') {
             const nameNode = child.children.find((c): c is TSNode => !!c && c.type === 'identifier');
             const typeNode = child.childForFieldName('type');
@@ -274,7 +274,7 @@ function checkForComplexStructure(body: TSNode): boolean {
     
     // Only check direct statements in the function body, not nested functions
     for (const child of body.namedChildren) {
-        if (!child) continue;
+        if (!child) {continue;}
         // Skip function definitions - they can have their own if/for
         if (child.type === 'function_definition') {
             console.log(`[BuilderFunctionParser] Skipping nested function definition`);
@@ -337,9 +337,9 @@ function parseBuilderFunctionBody(
     
     // Parse the rewritten code
     const parser = createPythonParser();
-    if (!parser) return;
+    if (!parser) {return;}
     const tree = parser.parse(rewrittenCode);
-    if (!tree) return;
+    if (!tree) {return;}
     
     // Directly iterate through statements in the module
     // (parseBuildMethod expects a function_definition node, but we have a module)
@@ -357,7 +357,7 @@ function parseStatementsDirectly(
     subgraphs: { [parent: string]: string[] }
 ): void {
     for (const child of moduleNode.namedChildren) {
-        if (!child) continue;
+        if (!child) {continue;}
         // Skip nested function definitions (helper functions)
         if (child.type === 'function_definition') {
             continue;
@@ -371,7 +371,7 @@ function parseStatementsDirectly(
         // Parse expression statements (which contain assignments or calls)
         if (child.type === 'expression_statement') {
             const firstChild = child.namedChildren[0];
-            if (!firstChild) continue;
+            if (!firstChild) {continue;}
             
             if (firstChild.type === 'assignment' || firstChild.type === 'typed_assignment') {
                 parseBuilderAssignment(firstChild, code, nodeCtx, edgeCtx, subgraphs);
@@ -395,11 +395,11 @@ function parseBuilderAssignment(
     const leftSide = node.childForFieldName('left');
     const rightSide = node.childForFieldName('right');
     
-    if (!leftSide || !rightSide) return;
+    if (!leftSide || !rightSide) {return;}
     
     if (rightSide.type === 'call') {
         const functionNode = rightSide.childForFieldName('function');
-        if (!functionNode) return;
+        if (!functionNode) {return;}
         
         const functionText = getNodeText(functionNode, code);
         
@@ -420,7 +420,7 @@ function parseBuilderCall(
     edgeCtx: EdgeParseContext
 ): void {
     const functionNode = callNode.childForFieldName('function');
-    if (!functionNode) return;
+    if (!functionNode) {return;}
     
     const functionText = getNodeText(functionNode, code);
     
@@ -461,11 +461,11 @@ export function extractBuilderFunctionCalls(
 ): Map<string, { functionName: string; modulePath: string; loopVarName: string }> {
     const parser = createPythonParser();
     const result = new Map<string, { functionName: string; modulePath: string; loopVarName: string }>();
-    if (!parser) return result;
+    if (!parser) {return result;}
     
     try {
         const tree = parser.parse(code);
-        if (!tree) return result;
+        if (!tree) {return result;}
         const rootNode = tree.rootNode;
         
         // Find all call expressions
@@ -478,22 +478,22 @@ export function extractBuilderFunctionCalls(
             }
             
             const funcNode = callNode.childForFieldName('function');
-            if (!funcNode) continue;
+            if (!funcNode) {continue;}
             
             const funcName = getNodeText(funcNode, code);
             
             // Check if this function is imported (could be any name, not just build_xxx)
             const importInfo = imports.get(funcName);
-            if (!importInfo) continue;
+            if (!importInfo) {continue;}
             
             // Get the first argument (should be a node variable like self._xxx or self.xxx)
             const argsNode = callNode.childForFieldName('arguments');
-            if (!argsNode) continue;
+            if (!argsNode) {continue;}
             
             // Extract first positional argument or any keyword argument that looks like a node reference
             let nodeVarName = '';
             for (const arg of argsNode.namedChildren) {
-                if (!arg) continue;
+                if (!arg) {continue;}
                 if (arg.type === 'keyword_argument') {
                     const argValue = arg.childForFieldName('value');
                     if (argValue) {
