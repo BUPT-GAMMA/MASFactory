@@ -1,0 +1,9 @@
+__pycache__/
+.conversations/
+answer/
+dataset/
+venv/
+test*.py
+test/
+.env
+*.sh

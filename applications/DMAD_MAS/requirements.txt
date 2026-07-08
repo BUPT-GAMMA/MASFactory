@@ -1,0 +1,8 @@
+masfactory>=1.0.4
+openai>=2.0
+datasets>=4.0
+python-dotenv>=1.0
+tqdm>=4.0
+pandas>=3.0
+numpy>=2.0
+Pillow>=12.0
