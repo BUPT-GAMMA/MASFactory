@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browser Game Agent</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <!-- highlight.js for code syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+  <header class="header">
+    <span class="logo">🎮 Browser Game Agent</span>
+    <span class="subtitle">AI-Powered Browser Game Generator</span>
+  </header>
+
+  <main class="main-layout">
+    <!-- Left: Game display area -->
+    <section class="game-panel" id="game-panel">
+      <div class="game-frame-wrapper" id="game-frame-wrapper">
+        <div class="game-placeholder" id="game-placeholder">
+          <div class="placeholder-icon">🎮</div>
+          <p>Your game will appear here</p>
+          <p class="placeholder-hint">Describe a game on the right to get started</p>
+        </div>
+        <!-- iframe wrapper for focus overlay -->
+        <div class="iframe-container hidden" id="iframe-container">
+          <iframe id="game-frame" class="game-frame" sandbox="allow-scripts allow-same-origin" title="Game"></iframe>
+          <!-- Click-to-focus overlay, shown when game is loaded but iframe not yet focused -->
+          <div class="focus-overlay" id="focus-overlay">
+            <div class="focus-hint">
+              <span class="focus-icon">🖱️</span>
+              <span>Click to focus &amp; play</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Test results bar -->
+      <div class="test-bar hidden" id="test-bar">
+        <span id="ui-test-badge" class="badge">UI: —</span>
+        <span id="func-test-badge" class="badge">Logic: —</span>
+        <button class="btn-icon" id="btn-view-code" title="View game source code">📄 View Code</button>
+        <button class="btn-icon" id="btn-open-new" title="Open game in new tab">↗ Open</button>
+        <button class="btn-icon" id="btn-reload" title="Reload game">⟳ Reload</button>
+      </div>
+    </section>
+
+    <!-- Right: Control panel -->
+    <aside class="control-panel" id="control-panel">
+
+      <!-- Phase: Initial input -->
+      <div class="phase" id="phase-input">
+        <h2 class="panel-title">Create Your Game</h2>
+        <p class="panel-desc">Describe the browser game you want to build. The AI agent will plan, code, test, and deploy it automatically.</p>
+
+        <!-- API Settings (collapsible) -->
+        <div class="api-settings" id="api-settings">
+          <button class="api-settings-toggle" id="api-settings-toggle">
+            <span>⚙️ API Settings</span>
+            <span class="toggle-arrow" id="toggle-arrow">▶</span>
+          </button>
+          <div class="api-settings-body hidden" id="api-settings-body">
+            <label class="api-label">API Key <span class="required">*</span></label>
+            <input type="password" id="input-api-key" class="api-input" placeholder="sk-..." autocomplete="off" />
+            <label class="api-label">Base URL</label>
+            <input type="text" id="input-base-url" class="api-input" placeholder="https://api.openai.com/v1" autocomplete="off" />
+            <label class="api-label">Model</label>
+            <input type="text" id="input-model" class="api-input" placeholder="gpt-4o-mini" autocomplete="off" />
+            <p class="api-hint">API key is required to generate games. It is only used for LLM calls and is not stored on the server.</p>
+          </div>
+        </div>
+
+        <textarea id="task-input" class="task-input" rows="5" placeholder="Describe the game you want to build..."></textarea>
+        <div class="suggestion-bar">
+          <span class="suggestion-label">Try an example:</span>
+          <button type="button" class="btn-suggestion" id="btn-suggestion">🎲 Example</button>
+        </div>
+        <button class="btn-primary" id="btn-generate">Generate Game</button>
+      </div>
+
+      <!-- Phase: Pipeline progress -->
+      <div class="phase hidden" id="phase-progress">
+        <h2 class="panel-title">Building Your Game</h2>
+        <div class="progress-steps" id="progress-steps">
+          <div class="step" id="step-planning">
+            <span class="step-icon">📋</span>
+            <span class="step-label">Planning</span>
+            <span class="step-status">—</span>
+          </div>
+          <div class="step" id="step-coding">
+            <span class="step-icon">💻</span>
+            <span class="step-label">Coding</span>
+            <span class="step-status">—</span>
+          </div>
+          <div class="step" id="step-testing">
+            <span class="step-icon">🧪</span>
+            <span class="step-label">Testing</span>
+            <span class="step-status">—</span>
+          </div>
+          <div class="step" id="step-fixing">
+            <span class="step-icon">🔧</span>
+            <span class="step-label">Fixing</span>
+            <span class="step-status">—</span>
+          </div>
+          <div class="step" id="step-readme">
+            <span class="step-icon">📄</span>
+            <span class="step-label">Documentation</span>
+            <span class="step-status">—</span>
+          </div>
+          <div class="step" id="step-deploy">
+            <span class="step-icon">🚀</span>
+            <span class="step-label">Deploying</span>
+            <span class="step-status">—</span>
+          </div>
+        </div>
+        <div class="log-box" id="log-box"></div>
+      </div>
+
+      <!-- Phase: Completed — Modification / Asking -->
+      <div class="phase hidden" id="phase-done">
+        <h2 class="panel-title">Game Ready!</h2>
+        <div class="done-info" id="done-info"></div>
+
+        <div class="action-buttons">
+          <button class="btn-action active" id="btn-modification">✏️ Modification</button>
+          <button class="btn-action" id="btn-asking">❓ Asking</button>
+        </div>
+
+        <!-- Modification sub-panel -->
+        <div class="sub-panel" id="sub-modification">
+          <p class="sub-desc">Describe what you'd like to change in the game. The agent will re-code, test, and redeploy it.</p>
+          <textarea id="modification-input" class="task-input" rows="4" placeholder="Example: Add a speed boost power-up that appears every 30 seconds..."></textarea>
+          <button class="btn-primary" id="btn-submit-modification">Apply Changes</button>
+        </div>
+
+        <!-- Asking sub-panel -->
+        <div class="sub-panel hidden" id="sub-asking">
+          <p class="sub-desc">Ask anything about the game mechanics, code, or features.</p>
+          <textarea id="asking-input" class="task-input" rows="4" placeholder="Example: How does the collision detection work?"></textarea>
+          <button class="btn-primary" id="btn-submit-ask">Ask</button>
+          <div class="answer-box hidden" id="answer-box"></div>
+        </div>
+
+        <!-- In-progress overlay for modification -->
+        <div class="phase hidden" id="phase-reprogress">
+          <div class="progress-steps" id="reprogress-steps">
+            <div class="step" id="rstep-modifying">
+              <span class="step-icon">✏️</span>
+              <span class="step-label">Modifying</span>
+              <span class="step-status">—</span>
+            </div>
+            <div class="step" id="rstep-testing">
+              <span class="step-icon">🧪</span>
+              <span class="step-label">Testing</span>
+              <span class="step-status">—</span>
+            </div>
+            <div class="step" id="rstep-fixing">
+              <span class="step-icon">🔧</span>
+              <span class="step-label">Fixing</span>
+              <span class="step-status">—</span>
+            </div>
+            <div class="step" id="rstep-done">
+              <span class="step-icon">🚀</span>
+              <span class="step-label">Deploying</span>
+              <span class="step-status">—</span>
+            </div>
+          </div>
+          <div class="log-box" id="rlog-box"></div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- ===== Code Viewer Modal ===== -->
+  <div class="modal-backdrop hidden" id="code-modal-backdrop">
+    <div class="code-modal" id="code-modal">
+      <div class="code-modal-header">
+        <span class="code-modal-title">📁 Game Source Files</span>
+        <button class="code-modal-close" id="code-modal-close" title="Close">✕</button>
+      </div>
+      <div class="code-modal-body">
+        <!-- Left sidebar: files + log tabs -->
+        <div class="code-sidebar">
+          <div class="code-sidebar-tabs">
+            <button class="sidebar-tab active" id="tab-files">📁 Files</button>
+            <button class="sidebar-tab" id="tab-log">📋 Log</button>
+          </div>
+          <div class="code-file-tree" id="code-file-tree">
+            <div class="tree-loading">Loading files...</div>
+          </div>
+          <div class="code-log-panel hidden" id="code-log-panel">
+            <div class="code-log-content" id="code-log-content">No log available.</div>
+          </div>
+        </div>
+        <!-- Code content area -->
+        <div class="code-content-area">
+          <div class="code-file-header" id="code-file-header">Select a file</div>
+          <pre class="code-pre" id="code-pre"><code id="code-content">—</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
