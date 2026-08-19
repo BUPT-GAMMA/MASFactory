@@ -372,7 +372,7 @@ python applications/camel/main.py "Create a sample adder by using python"
 
 ## ⭐ Star 趋势
 
-[![Star History Chart](https://api.star-history.com/svg?repos=BUPT-GAMMA/MASFactory&type=Date)](https://star-history.com/#BUPT-GAMMA/MASFactory&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=BUPT-GAMMA/MASFactory&type=Date)](https://star-history.dera.page/#BUPT-GAMMA/MASFactory&Date)
 
 ## 📬 交流讨论组
 QQ: 2157069383
