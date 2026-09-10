@@ -210,6 +210,14 @@ out, _attrs = g.invoke({"query": "I want to learn Python. Where should I start?"
 print(out["answer"])
 ```
 
+To use Atlas Cloud as an optional OpenAI-compatible provider:
+
+```python
+from masfactory import AtlasModel
+
+model = AtlasModel(api_key=os.environ["ATLASCLOUD_API_KEY"])
+```
+
 ## 🛠️ Reusable Skill Example
 
 Skills are loaded explicitly from a directory-based Anthropic-style `SKILL.md` package and attached to an `Agent` with `skills=[...]`.

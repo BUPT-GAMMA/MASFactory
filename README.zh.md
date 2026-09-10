@@ -208,6 +208,14 @@ out, _attrs = g.invoke({"query": "我想学习 Python，但不知道从哪里开
 print(out["answer"])
 ```
 
+如需将 Atlas Cloud 作为可选的 OpenAI 兼容 Provider：
+
+```python
+from masfactory import AtlasModel
+
+model = AtlasModel(api_key=os.environ["ATLASCLOUD_API_KEY"])
+```
+
 ## 🛠️ 可复用 Skill 示例
 
 Skill 采用 Anthropic 风格的目录包格式，并通过 `load_skill(...)` 显式加载，然后用 `skills=[...]` 挂到 `Agent` 上。
