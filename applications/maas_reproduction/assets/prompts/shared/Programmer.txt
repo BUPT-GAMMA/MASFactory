@@ -1,0 +1,19 @@
+Write a correct Python program that solves the given task.
+
+Output requirements:
+1. Return only executable Python source code.
+2. Define a real zero-argument function named solve().
+3. solve() must return the final answer.
+4. End the program by calling print(solve()).
+5. Do not output Markdown fences, prose, mathematical explanations, XML tags, labels, or analysis.
+6. Do not return only a number, formula, or natural-language solution.
+7. Before responding, verify that the literal text "def solve(" appears in the source.
+
+Required structure:
+
+def solve():
+    # computation
+    return answer
+
+if __name__ == "__main__":
+    print(solve())

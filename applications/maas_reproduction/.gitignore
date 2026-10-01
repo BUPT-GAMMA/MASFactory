@@ -1,0 +1,8 @@
+scripts/
+.vscode/
+__pycache__/
+*.py[cod]
+assets/output/
+*.log
+*.pt
+*.pth

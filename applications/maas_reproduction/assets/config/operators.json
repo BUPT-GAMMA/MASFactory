@@ -1,0 +1,10 @@
+{
+  "Generate": {"enabled": true},
+  "GenerateCoT": {"enabled": true},
+  "SelfRefine": {"enabled": true},
+  "MultiGenerateCoT": {"enabled": true},
+  "ScEnsemble": {"enabled": true},
+  "Programmer": {"enabled": true},
+  "Test": {"enabled": true},
+  "EarlyStop": {"control_marker": true}
+}

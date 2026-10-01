@@ -1,0 +1,15 @@
+
+Given a code problem and a python code solution which failed to pass test or execute, you need to analyze the reason for the failure and propose a better code solution.: 
+### problem
+{problem}
+
+### Code Solution
+{solution}
+
+### Execution Result
+{exec_pass}
+
+#### Failed Test Case
+{test_fail}
+
+Please provide a reflection on the failed test cases and code solution, followed by a better code solution without any additional text or test cases.

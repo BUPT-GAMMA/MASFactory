@@ -1,0 +1,2 @@
+
+The previous solution failed some test cases in the HumanEval benchmark. Please conduct a thorough analysis of the problem statement, identifying all edge cases and potential pitfalls. Then, provide an improved solution that not only fixes the issues but also optimizes performance and adheres to industry-standard coding practices. Ensure your revised code includes clear, concise comments that explain your logic and design choices, and that it robustly handles all specified requirements.

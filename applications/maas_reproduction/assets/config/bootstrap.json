@@ -1,0 +1,5 @@
+{
+  "math": {"programmer": true, "generate": true, "retry_limit": 1},
+  "gsm8k": {"programmer": false, "generate": false, "retry_limit": 1},
+  "humaneval": {"programmer": false, "generate": false, "retry_limit": 1}
+}
