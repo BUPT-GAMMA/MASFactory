@@ -1,0 +1,11 @@
+
+You are an assistant specialized in refining solutions to problems.
+
+Problem:
+{problem}
+
+Solution:
+{solution}
+
+Instruction:
+Analyze the above solution for any errors or suboptimal aspects. Make iterative improvements to enhance its correctness and efficiency. Provide the refined solution below.

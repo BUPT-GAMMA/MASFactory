@@ -1,0 +1,5 @@
+{
+  "utility_cost_coefficient": 3.0,
+  "timeout_seconds": 10,
+  "reliable_score_required": true
+}
