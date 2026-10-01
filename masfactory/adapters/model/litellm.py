@@ -49,9 +49,8 @@ class LiteLLMModel(Model):
     """Model adapter backed by the LiteLLM SDK (100+ providers behind one Chat Completions API).
 
     `model_name` uses LiteLLM's `<provider>/<model>` routing, e.g. `anthropic/claude-sonnet-4-5`,
-    `gemini/gemini-2.5-flash`, `bedrock/...`, `azure/<deployment>` or `ollama/llama3`. To go through
-    a LiteLLM Proxy (AI gateway), pass `base_url` plus a virtual key as `api_key` and use the proxy's
-    model alias, e.g. `litellm_proxy/<alias>`.
+    `gemini/gemini-2.5-flash`, `bedrock/...`, `azure/<deployment>` or `ollama/llama3`. `base_url`
+    is for routes that need an endpoint (Azure, Ollama, self-hosted vLLM).
 
     When `api_key` is omitted, LiteLLM reads the provider's own environment variables
     (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `AWS_*`, ...). Extra keyword arguments (for example
@@ -81,7 +80,7 @@ class LiteLLMModel(Model):
             image_input = bool(model_info.get("supports_vision"))
             pdf_input = bool(model_info.get("supports_pdf_input"))
         else:
-            # Unknown to LiteLLM's model map (proxy aliases, custom deployments): assume
+            # Unknown to LiteLLM's model map (custom deployments): assume
             # OpenAI-style image input; users can declare PDF support via capability_overrides.
             image_input, pdf_input = True, False
 

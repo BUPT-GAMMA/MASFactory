@@ -218,20 +218,17 @@ from masfactory import AtlasModel
 model = AtlasModel(api_key=os.environ["ATLASCLOUD_API_KEY"])
 ```
 
-To reach 100+ providers (Anthropic, Gemini, Vertex AI, Bedrock, Azure, Mistral, Ollama, ...) through one adapter, or to route every agent through a [LiteLLM](https://github.com/BerriAI/litellm) AI gateway, install the optional extra with `pip install "masfactory[litellm]"`:
+To reach 100+ providers (Anthropic, Gemini, Vertex AI, Bedrock, Azure, Mistral, Ollama, ...) through one adapter with the [LiteLLM](https://github.com/BerriAI/litellm) SDK, install the optional extra with `pip install "masfactory[litellm]"`:
 
 ```python
 from masfactory import LiteLLMModel
 
-# Direct: provider keys are read from their usual env vars (ANTHROPIC_API_KEY, GEMINI_API_KEY, AWS_*, ...)
+# Provider keys are read from their usual env vars (ANTHROPIC_API_KEY, GEMINI_API_KEY, AWS_*, ...)
 model = LiteLLMModel(model_name="anthropic/claude-sonnet-4-5")
+model = LiteLLMModel(model_name="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0")
 
-# Through a LiteLLM Proxy: a virtual key and the proxy's model alias
-model = LiteLLMModel(
-    model_name="litellm_proxy/claude-sonnet",
-    base_url=os.environ["LITELLM_BASE_URL"],
-    api_key=os.environ["LITELLM_API_KEY"],
-)
+# Routes that need an endpoint take it as base_url
+model = LiteLLMModel(model_name="azure/my-gpt-4o-deployment", base_url="https://my-resource.openai.azure.com")
 ```
 
 Dify workflows whose LLM nodes use Anthropic, Gemini, Bedrock, etc. can be imported with `DifyCompileOptions(model_factory=litellm_model_from_dify)` (from `masfactory.compatibility`).

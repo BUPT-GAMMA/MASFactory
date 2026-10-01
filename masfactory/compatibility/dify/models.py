@@ -49,8 +49,8 @@ def openai_compatible_model_from_dify(
 
     return OpenAIModel(
         model_name=str(name),
-        api_key=key,
-        base_url=url,
+        api_key=api_key or None,
+        base_url=base_url or None,
         invoke_settings=invoke_settings,
     )
 
@@ -88,8 +88,8 @@ def litellm_model_from_dify(
 
     Use it as `DifyCompileOptions(model_factory=litellm_model_from_dify)` to import workflows whose
     LLM nodes target Anthropic, Gemini, Vertex AI, Bedrock, Cohere, Azure, ... Credentials come from
-    each provider's usual environment variables unless `api_key` / `LITELLM_API_KEY` is set. Set
-    `base_url` or `LITELLM_BASE_URL` to route every node through a LiteLLM Proxy instead.
+    each provider's usual environment variables unless `api_key` is passed; `base_url` is for routes
+    that need an endpoint (Azure, Ollama, self-hosted vLLM).
     """
     from masfactory.adapters.model.litellm import LiteLLMModel
 
@@ -97,15 +97,9 @@ def litellm_model_from_dify(
     if not name:
         raise CompatibilityImportError("Dify LLM node is missing a model `name`.")
 
-    url = base_url or os.getenv("LITELLM_BASE_URL") or None
-    key = api_key or os.getenv("LITELLM_API_KEY") or None
-
     raw_provider = str(model_config.get("provider") or "").strip().lower()
     provider = raw_provider.rsplit("/", 1)[-1]
-    if url:
-        # Behind a LiteLLM Proxy the model name is the proxy's alias.
-        model_name = name if name.startswith("litellm_proxy/") else f"litellm_proxy/{name}"
-    elif not provider or ("/" in name and name.split("/", 1)[0] in _DIFY_TO_LITELLM_PROVIDER.values()):
+    if not provider or ("/" in name and name.split("/", 1)[0] in _DIFY_TO_LITELLM_PROVIDER.values()):
         model_name = name
     else:
         prefix = _DIFY_TO_LITELLM_PROVIDER.get(provider, provider)
@@ -116,7 +110,7 @@ def litellm_model_from_dify(
 
     return LiteLLMModel(
         model_name=model_name,
-        api_key=key,
-        base_url=url,
+        api_key=api_key or None,
+        base_url=base_url or None,
         invoke_settings=invoke_settings,
     )
