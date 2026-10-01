@@ -218,6 +218,21 @@ from masfactory import AtlasModel
 model = AtlasModel(api_key=os.environ["ATLASCLOUD_API_KEY"])
 ```
 
+To reach 100+ providers (Anthropic, Gemini, Vertex AI, Bedrock, Azure, Mistral, Ollama, ...) through one adapter with the [LiteLLM](https://github.com/BerriAI/litellm) SDK, install the optional extra with `pip install "masfactory[litellm]"`:
+
+```python
+from masfactory import LiteLLMModel
+
+# Provider keys are read from their usual env vars (ANTHROPIC_API_KEY, GEMINI_API_KEY, AWS_*, ...)
+model = LiteLLMModel(model_name="anthropic/claude-sonnet-4-5")
+model = LiteLLMModel(model_name="bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0")
+
+# Routes that need an endpoint take it as base_url
+model = LiteLLMModel(model_name="azure/my-gpt-4o-deployment", base_url="https://my-resource.openai.azure.com")
+```
+
+Dify workflows whose LLM nodes use Anthropic, Gemini, Bedrock, etc. can be imported with `DifyCompileOptions(model_factory=litellm_model_from_dify)` (from `masfactory.compatibility`).
+
 ## 🛠️ Reusable Skill Example
 
 Skills are loaded explicitly from a directory-based Anthropic-style `SKILL.md` package and attached to an `Agent` with `skills=[...]`.

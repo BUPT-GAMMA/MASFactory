@@ -5,7 +5,7 @@ from masfactory.compatibility.dify.api import (
     load_graph_from_dify_yaml,
 )
 from masfactory.compatibility.dify.materialize import blueprint_to_dify_graph
-from masfactory.compatibility.dify.models import openai_compatible_model_from_dify
+from masfactory.compatibility.dify.models import litellm_model_from_dify, openai_compatible_model_from_dify
 from masfactory.compatibility.dify.options import DifyCompileOptions
 from masfactory.compatibility.dify.parse import dify_document_to_blueprint, is_dify_app_document
 from masfactory.compatibility.dify.root_graph import DifyRootGraph
@@ -20,5 +20,6 @@ __all__ = [
     "is_dify_app_document",
     "load_graph_from_dify_dict",
     "load_graph_from_dify_yaml",
+    "litellm_model_from_dify",
     "openai_compatible_model_from_dify",
 ]

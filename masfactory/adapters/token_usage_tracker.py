@@ -292,20 +292,50 @@ class DefaultTokenCounter(TokenCounter):
                 total += self.count_tokens(fragment)
         return total
 
+class LiteLLMTokenCounter(TokenCounter):
+    """Token counter using `litellm.token_counter`, which picks the right tokenizer for the routed model."""
+
+    def __init__(self, model_name: str):
+        """Create a LiteLLM token counter.
+
+        Args:
+            model_name: LiteLLM model identifier (e.g. `anthropic/claude-sonnet-4-5`).
+        """
+        self.model_name = model_name
+
+    def count_tokens(self, text: str) -> int:
+        import litellm
+
+        return litellm.token_counter(model=self.model_name, text=text)
+
+    def count_message_tokens(self, messages: list[dict]) -> int:
+        total = 0
+        for msg in messages:
+            for fragment in _message_text_fragments(msg):
+                total += self.count_tokens(fragment)
+        return total
+
 class TokenUsageTracker:
     """Factory-backed token usage accumulator."""
-    
-    def __init__(self, model_name: str, api_key: Optional[str] = None, base_url: Optional[str] = None):
+
+    def __init__(
+        self,
+        model_name: str,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        counter: Optional[TokenCounter] = None,
+    ):
         """Create a TokenUsageTracker.
 
         Args:
             model_name: Model identifier used to select provider-specific counting logic.
             api_key: Optional API key passed to provider SDKs when needed for counting endpoints.
             base_url: Optional custom base URL passed to provider SDKs.
+            counter: Optional explicit counter; skips provider detection from `model_name`.
         """
         self.model_name = model_name
         self.provider = self._detect_provider(model_name)
-        self._counter = self._create_counter(model_name, self.provider, api_key, base_url)
+        self._counter = counter or self._create_counter(model_name, self.provider, api_key, base_url)
         self._total_input_usage = 0
         self._total_output_usage = 0
     
