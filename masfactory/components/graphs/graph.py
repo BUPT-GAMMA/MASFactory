@@ -161,6 +161,7 @@ class Graph(BaseGraph):
 
     def check_built(self) -> bool:
         return super().check_built() and self._entry.check_built() and self._exit.check_built()
+    
     @masf_hook(Node.Hook.FORWARD)
     def _forward(self, input:dict[str,object]) -> dict[str,object]:
         """Run one graph invocation and return exit output."""

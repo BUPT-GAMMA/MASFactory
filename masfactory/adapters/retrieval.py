@@ -11,9 +11,11 @@ import numpy as np
 
 from .context.provider import ContextProvider
 from .context.types import ContextBlock, ContextQuery
+from masfactory.checkpoint.checkpointable import Checkpointable
+from copy import deepcopy
 
 
-class Retrieval(ContextProvider, ABC):
+class Retrieval(ContextProvider, Checkpointable,ABC):
     """Read-only retrieval interface for external context (RAG)."""
 
     supports_passive: bool = True
@@ -32,7 +34,19 @@ class Retrieval(ContextProvider, ABC):
     def get_blocks(self, query: ContextQuery, *, top_k: int = 8) -> list[ContextBlock]:
         """Return structured context blocks relevant to the query."""
         raise NotImplementedError
-
+    
+    def get_checkpoint_state(self):
+        return {
+            "type":self.__class__.__name__,
+            "context_label":self._context_label,
+            "passive":self.passive,
+            "active":self.active,
+        }
+    
+    def load_checkpoint_state(self, state):
+        self._context_label =state["context_label"]
+        self.passive = state["passive"]
+        self.active = state["active"]
 
 class VectorRetriever(Retrieval):
     """In-memory semantic retriever based on embedding cosine similarity."""
@@ -94,8 +108,26 @@ class VectorRetriever(Retrieval):
         if norm1 == 0 or norm2 == 0:
             return 0.0
         return float(np.dot(vec1, vec2) / (norm1 * norm2))
-
-
+    
+    def get_checkpoint_state(self): 
+        state=super().get_checkpoint_state()
+        state.update({
+            "documents":deepcopy(self._documents),
+            "similarity_threshold":float(self._similarity_threshold),
+            "doc_embeddings":{
+                key:value.tolist() for key,value in self._doc_embeddings.items()
+            },
+        })
+        return state
+    
+    def load_checkpoint_state(self, state):
+        super().load_checkpoint_state(state)
+        self._documents =deepcopy(state["documents"])
+        self._similarity_threshold = float(state["similarity_threshold"])
+        self._doc_embeddings={
+            key:np.array(value) for key,value in state["doc_embeddings"].items()
+        }
+        
 class FileSystemRetriever(Retrieval):
     """File-system retriever that indexes files in a directory and retrieves by embeddings."""
 
@@ -202,6 +234,30 @@ class FileSystemRetriever(Retrieval):
             return 0.0
         return float(np.dot(vec1, vec2) / (norm1 * norm2))
 
+    def get_checkpoint_state(self): 
+        state=super().get_checkpoint_state()
+        state.update({
+            "documents":deepcopy(self._documents),
+            "similarity_threshold":float(self._similarity_threshold),
+            "doc_embeddings":{
+                key:value.tolist() for key,value in self._doc_embeddings.items()
+            },
+            "cache_path":str(self._cache_path) if self._cache_path else None,
+            "docs_dir": str(self._docs_dir),
+            "file_extension":self._file_extension,
+        })
+        return state
+    
+    def load_checkpoint_state(self, state):
+        super().load_checkpoint_state(state)
+        self._documents =deepcopy(state["documents"])
+        self._similarity_threshold = float(state["similarity_threshold"])
+        self._doc_embeddings={
+            key:np.array(value) for key,value in state["doc_embeddings"].items()
+        }
+        self._cache_path = Path(state["cache_path"]) if state.get("cache_path") else None
+        self._docs_dir = Path(state["docs_dir"])
+        self._file_extension = state["file_extension"]
 
 class SimpleKeywordRetriever(Retrieval):
     """Lightweight keyword-frequency retriever for small corpora."""
@@ -255,3 +311,13 @@ class SimpleKeywordRetriever(Retrieval):
             count += len(words) * 2
         return count / (len(document_lower.split()) + 1)
 
+    def get_checkpoint_state(self):
+        state=super().get_checkpoint_state()
+        state.update({ 
+            "documents":deepcopy(self._documents) 
+        })
+        return state
+    
+    def load_checkpoint_state(self, state):
+        super().load_checkpoint_state(state)
+        self._documents=deepcopy(state["documents"])

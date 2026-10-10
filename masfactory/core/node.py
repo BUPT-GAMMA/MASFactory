@@ -6,6 +6,8 @@ from .multimodal import FieldSpec, normalize_field_specs
 from masfactory.utils.hook import masf_hook, HookManager, HookStage
 from masfactory.utils.naming import validate_name
 from masfactory.utils.selector import Selector, build_selector
+from masfactory.checkpoint.checkpointable import Checkpointable
+from copy import deepcopy
 if TYPE_CHECKING:
     from .edge import Edge
 def merge_message(input:dict[str,object], message:dict[str,object]):
@@ -24,7 +26,7 @@ def merge_message(input:dict[str,object], message:dict[str,object]):
         else:
             input[key] = message[key]
     return input
-class Node(ABC):
+class Node(Checkpointable,ABC):
     """Base node type for MASFactory graphs.
 
     A node consumes attributes from an outer graph scope (via `pull_keys`), executes its core
@@ -391,3 +393,25 @@ class Node(ABC):
         )
         if selector.match(self):
             self._hooks.register(hook_key, func)
+    
+    def get_checkpoint_state(self) -> dict:
+        return {
+            "type":self.__class__.__name__,
+            "name":self.name,
+            "is_built": self._is_built,
+            "gate": self._gate.value,
+            "attributes": deepcopy(self._attributes_store),
+            "default_attributes": deepcopy(self._default_attributes),
+            "pull_keys": deepcopy(self._pull_keys),
+            "push_keys": deepcopy(self._push_keys),
+        }
+
+    def load_checkpoint_state(self, state: dict) -> None:
+        self._is_built = state["is_built"]
+        self._gate = Gate(state["gate"])
+        self._attributes_store = deepcopy(state["attributes"])
+        self._default_attributes = deepcopy(state["default_attributes"])
+        self._pull_keys = deepcopy(state["pull_keys"])
+        self._push_keys = deepcopy(state["push_keys"])
+
+        
