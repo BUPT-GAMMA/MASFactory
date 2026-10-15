@@ -6,10 +6,12 @@ from masfactory.utils.selector import Selector, build_selector
 
 from .gate import Gate
 from .multimodal import FieldSpec, normalize_field_specs, validate_field_value
+from masfactory.checkpoint.checkpointable import Checkpointable
+from copy import deepcopy
 if TYPE_CHECKING:
     from .node import Node
 
-class Edge:
+class Edge(Checkpointable):
     """Directed message channel between two nodes.
 
     An `Edge` buffers at most one in-flight message at a time. It can be opened/closed via a
@@ -158,3 +160,20 @@ class Edge:
         self._gate = Gate.OPEN
     def reset_gate(self):
         self._gate = Gate.OPEN
+
+    def get_checkpoint_state(self) -> dict:
+        return { 
+            "type": self.__class__.__name__,
+            "sender": self._sender.name,
+            "receiver": self._receiver.name,
+            "is_congested" : self._is_congested,
+            "gate" : self._gate.value,
+            "keys": deepcopy(self._keys),
+            "message" : deepcopy(self._message),
+        }
+    
+    def load_checkpoint_state(self,state:dict) -> None:
+        self._is_congested=state["is_congested"]
+        self._gate=Gate(state["gate"])
+        self._keys=deepcopy(state["keys"])
+        self._message=deepcopy(state["message"])

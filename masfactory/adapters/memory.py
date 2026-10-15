@@ -8,9 +8,10 @@ import numpy as np
 from .context.provider import ContextProvider, HistoryProvider
 from .context.types import ContextBlock, ContextQuery
 from masfactory.core.multimodal import MediaMessageBlock, TextMessageBlock, iter_media_message_blocks
+from masfactory.checkpoint.checkpointable import Checkpointable
+from copy import deepcopy
 
-
-class Memory(ContextProvider, ABC):
+class Memory(ContextProvider,Checkpointable,ABC):
     """Base interface for memory backends.
 
     Memory is a long-lived stateful adapter that can both:
@@ -50,7 +51,19 @@ class Memory(ContextProvider, ABC):
     def get_blocks(self, query: ContextQuery, *, top_k: int = 8) -> list[ContextBlock]:
         """Return context blocks relevant to the query."""
         raise NotImplementedError
+    
+    def get_checkpoint_state(self):
+        return {
+            "type":self.__class__.__name__,
+            "context_label":self._context_label,
+            "passive":self.passive,
+            "active":self.active,
+        }
 
+    def load_checkpoint_state(self, state):
+        self._context_label = state["context_label"]
+        self.passive = state["passive"]
+        self.active = state["active"]
 
 class HistoryMemory(Memory, HistoryProvider):
     """Conversation history memory (list-of-dict message format)."""
@@ -146,6 +159,22 @@ class HistoryMemory(Memory, HistoryProvider):
     def reset(self):
         self._memory = []
 
+    def get_checkpoint_state(self):
+        state=super().get_checkpoint_state()
+        state.update({
+            "memory":deepcopy(self._memory),
+            "memory_size":self._memory_size ,
+            "top_k":self._top_k,
+            "merge_historical_media":self._merge_historical_media,
+        })    
+        return state
+
+    def load_checkpoint_state(self, state):
+        super().load_checkpoint_state(state)
+        self._memory=deepcopy(state["memory"])
+        self._memory_size = int(state["memory_size"])
+        self._top_k = int(state["top_k"])
+        self._merge_historical_media = bool(state["merge_historical_media"])
 
 class VectorMemory(Memory):
     """Semantic memory backed by embeddings and cosine similarity."""
@@ -238,3 +267,26 @@ class VectorMemory(Memory):
         if norm1 == 0 or norm2 == 0:
             return 0.0
         return float(np.dot(vec1, vec2) / (norm1 * norm2))
+
+    def get_checkpoint_state(self)->dict:
+        state=super().get_checkpoint_state()
+        state.update({
+            "memory_size":self._memory_size,
+            "top_k":self._top_k,
+            "query_threshold":self._query_threshold,
+            "memory":deepcopy(self._memory),
+            "embeddings":{
+                key:value.tolist() for key,value in self._embeddings.items()
+            }
+        })
+        return state
+
+    def load_checkpoint_state(self, state:dict)->None:
+        super().load_checkpoint_state(state)
+        self._memory_size = int(state["memory_size"])
+        self._top_k = int(state["top_k"])
+        self._query_threshold =float(state["query_threshold"])
+        self._memory=deepcopy(state["memory"])
+        self._embeddings={
+            key:np.array(value) for key,value in state["embeddings"].items()
+        }

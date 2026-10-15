@@ -75,14 +75,15 @@ class OpenAIModel(Model):
             "tool_choice": {"name": "tool_choice", "type": (str, dict)},
         }
 
-    def _encode_responses_content(self, content: object) -> list[dict]:
+    def _encode_responses_content(self, content: object, role:str|None=None) -> list[dict]:
         encoded: list[dict] = []
+        text_type="output_text" if role=="assistant" else "input_text"
         for block in content_blocks(content):
             if isinstance(block, str):
-                encoded.append({"type": "input_text", "text": block})
+                encoded.append({"type": text_type, "text": block})
                 continue
             if isinstance(block, TextMessageBlock):
-                encoded.append({"type": "input_text", "text": block.text})
+                encoded.append({"type": text_type, "text": block.text})
                 continue
             if isinstance(block, MediaMessageBlock):
                 validate_media_capability(
@@ -109,9 +110,9 @@ class OpenAIModel(Model):
                         item["file_data"] = asset_to_base64(asset)
                     encoded.append(item)
                     continue
-            encoded.append({"type": "input_text", "text": str(block)})
+            encoded.append({"type": text_type, "text": str(block)})
         if not encoded:
-            encoded.append({"type": "input_text", "text": ""})
+            encoded.append({"type": text_type, "text": ""})
         return encoded
 
     def _encode_responses_input(self, messages: list[dict]) -> list[dict]:
@@ -135,7 +136,7 @@ class OpenAIModel(Model):
                     items.append(
                         {
                             "role": "assistant",
-                            "content": [{"type": "input_text", "text": assistant_text}],
+                            "content": [{"type": "output_text", "text": assistant_text}],
                         }
                     )
                 for tool_call in tool_calls:
@@ -154,7 +155,7 @@ class OpenAIModel(Model):
             items.append(
                 {
                     "role": role,
-                    "content": self._encode_responses_content(message.get("content")),
+                    "content": self._encode_responses_content(message.get("content"),role=role),
                 }
             )
         return items
