@@ -1,0 +1,12 @@
+data/
+results/
+comparisons/
+*.json
+*.jsonl
+*.csv
+*.log
+*.tmp
+__pycache__/
+*.py[cod]
+.env
+.env.*
