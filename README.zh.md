@@ -216,6 +216,14 @@ from masfactory import AtlasModel
 model = AtlasModel(api_key=os.environ["ATLASCLOUD_API_KEY"])
 ```
 
+如需将 Cheaper Inference 作为可选的 OpenAI 兼容 Provider：
+
+```python
+from masfactory import CheaperInferenceModel
+
+model = CheaperInferenceModel(api_key=os.environ["CHEAPER_INFERENCE_API_KEY"])
+```
+
 ## 🛠️ 可复用 Skill 示例
 
 Skill 采用 Anthropic 风格的目录包格式，并通过 `load_skill(...)` 显式加载，然后用 `skills=[...]` 挂到 `Agent` 上。

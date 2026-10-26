@@ -4,6 +4,7 @@ from .legacy_openai import LegacyOpenAIModel
 from .anthropic import AnthropicModel
 from .gemini import GeminiModel
 from .atlas import AtlasModel
+from .cheaper_inference import CheaperInferenceModel
 from .litellm import LiteLLMModel
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "AnthropicModel",
     "GeminiModel",
     "AtlasModel",
+    "CheaperInferenceModel",
     "LiteLLMModel",
 ]

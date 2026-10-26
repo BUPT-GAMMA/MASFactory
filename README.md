@@ -218,6 +218,14 @@ from masfactory import AtlasModel
 model = AtlasModel(api_key=os.environ["ATLASCLOUD_API_KEY"])
 ```
 
+To use Cheaper Inference as an optional OpenAI-compatible provider:
+
+```python
+from masfactory import CheaperInferenceModel
+
+model = CheaperInferenceModel(api_key=os.environ["CHEAPER_INFERENCE_API_KEY"])
+```
+
 To reach 100+ providers (Anthropic, Gemini, Vertex AI, Bedrock, Azure, Mistral, Ollama, ...) through one adapter with the [LiteLLM](https://github.com/BerriAI/litellm) SDK, install the optional extra with `pip install "masfactory[litellm]"`:
 
 ```python
